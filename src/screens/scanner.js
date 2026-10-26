@@ -1,7 +1,6 @@
-// Skrin Pengimbas 3-dalam-1 (pelan §3.1 & §3.3): AI Makanan, Kod Bar & OCR Label (Dioptimumkan Penuh untuk Mobile)
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import { icons } from '../components/icons.js';
-import { toast, statusBadge } from '../components/ui.js';
+import { toast, statusBadge, openSheet } from '../components/ui.js';
 import { analyzeFood, readNutritionLabel } from '../services/gemini.js';
 import { lookupBarcode, scaleNutrients } from '../services/openFoodFacts.js';
 import { compressImage, esc, round1, int } from '../utils/helpers.js';
@@ -19,6 +18,7 @@ export function renderScanner(container) {
   let analysisResult = null;
   let selectedChips = new Set();
   let customContextNote = '';
+  let analysisInterval = null;
 
   let cameraState = 'starting'; // 'starting' | 'active' | 'denied' | 'error'
   let cameraErrorMessage = '';
@@ -45,6 +45,17 @@ export function renderScanner(container) {
         <div>
           <span class="eyebrow">3-in-1 Scanner · Continuous Live Camera</span>
           <h1 class="page-title">Scan & Analyze</h1>
+        </div>
+        <div class="row" style="gap:6px;flex-wrap:wrap">
+          <button type="button" class="btn btn-sm btn-secondary" id="btn-iphone-snap" title="Direct iPhone / Smartphone Camera">
+            📱 iPhone Camera
+          </button>
+          <button type="button" class="btn btn-sm btn-ghost" id="btn-voice-log" title="Log food using speech">
+            ${icons.sound} <span>Voice Log</span>
+          </button>
+          <button type="button" class="btn btn-icon btn-ghost btn-sm" id="btn-iphone-help" title="iPhone camera setup guide">
+            ?
+          </button>
         </div>
       </div>
 
@@ -109,11 +120,11 @@ export function renderScanner(container) {
             </div>
           </div>
 
-          <!-- AI Analysis Spinner -->
-          <div id="camera-spinner" class="hidden" style="position:absolute;inset:0;background:rgba(0,0,0,0.75);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:20">
-            <div class="spinner" style="width:36px;height:36px;border-width:3.5px"></div>
-            <b style="color:#fff;font-size:15px">Gemini 3.5 Flash Lite analyzing...</b>
-            <span class="small muted">Identifying dishes, portions & nutrition</span>
+          <!-- AI Analysis Spinner with Dynamic Steps -->
+          <div id="camera-spinner" class="hidden" style="position:absolute;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:20;padding:24px;text-align:center">
+            <div class="spinner" style="width:40px;height:40px;border-width:3.5px"></div>
+            <b id="spinner-title" style="color:#fff;font-size:15px;letter-spacing:-0.2px">Gemini 3.5 Flash Lite analyzing...</b>
+            <span id="spinner-sub" class="small muted" style="max-width:270px;line-height:1.4">Mengenal pasti hidangan & lauk Malaysia...</span>
           </div>
         </div>
 
@@ -212,10 +223,36 @@ export function renderScanner(container) {
     }
   }
 
+  const ANALYSIS_STEPS = [
+    { title: 'Gemini 3.5 Flash Lite analyzing...', sub: '🔍 Mengenal pasti hidangan & lauk Malaysia...' },
+    { title: 'Estimating Portion & Kuah...', sub: '⚖️ Menganggar sukatan, kuah & saiz porsi...' },
+    { title: 'Computing Nutrition...', sub: '⚡ Mengira kalori, protein, karbo & lemak...' },
+    { title: 'Finalizing Recommendations...', sub: '💬 Merumuskan nasihat Deku & Bakugou...' },
+  ];
+
   function setAnalyzing(loading) {
     isAnalyzing = loading;
     const sp = container.querySelector('#camera-spinner');
+    const titleEl = container.querySelector('#spinner-title');
+    const subEl = container.querySelector('#spinner-sub');
+
+    if (analysisInterval) {
+      clearInterval(analysisInterval);
+      analysisInterval = null;
+    }
+
     if (sp) sp.classList.toggle('hidden', !loading);
+
+    if (loading) {
+      let stepIdx = 0;
+      if (titleEl) titleEl.textContent = ANALYSIS_STEPS[0].title;
+      if (subEl) subEl.textContent = ANALYSIS_STEPS[0].sub;
+      analysisInterval = setInterval(() => {
+        stepIdx = (stepIdx + 1) % ANALYSIS_STEPS.length;
+        if (titleEl) titleEl.textContent = ANALYSIS_STEPS[stepIdx].title;
+        if (subEl) subEl.textContent = ANALYSIS_STEPS[stepIdx].sub;
+      }, 950);
+    }
   }
 
   function renderResultHTML() {
@@ -661,6 +698,98 @@ export function renderScanner(container) {
     // 3. Text Notes
     container.querySelector('#custom-context-input')?.addEventListener('input', (e) => {
       customContextNote = e.target.value;
+    });
+
+    // 3b. Direct iPhone / Smartphone Native Camera Button
+    container.querySelector('#btn-iphone-snap')?.addEventListener('click', () => {
+      toast('Membuka kamera iPhone asli...', 'info', 1800);
+      container.querySelector('#file-input-native')?.click();
+    });
+
+    // 3c. iPhone Camera Guide Sheet
+    container.querySelector('#btn-iphone-help')?.addEventListener('click', () => {
+      openSheet(
+        `<div class="stack" style="gap:14px;padding:6px 0">
+          <div class="row" style="gap:10px;align-items:center">
+            <div style="font-size:26px">📱</div>
+            <div>
+              <h3 class="sheet-title" style="margin:0">iPhone / iOS Camera Guide</h3>
+              <span class="xs muted">Cara aktifkan & gunakan kamera di Safari / iOS</span>
+            </div>
+          </div>
+          
+          <div class="card flat stack" style="gap:12px;background:var(--surface-2);padding:14px">
+            <div style="font-size:13px;line-height:1.5">
+              <b style="color:var(--text-1);display:block;margin-bottom:2px">1. Pilihan Terpantas (Kamera Asli):</b>
+              Tekan butang <span class="badge" style="display:inline-flex;padding:2px 7px;font-weight:700">📱 iPhone Camera</span> di atas. Ia akan terus membuka aplikasi kamera rasmi iOS dengan HDR, fokus automatik dan resolusi penuh tanpa sebarang sekatan pelayar.
+            </div>
+            <div style="font-size:13px;line-height:1.5">
+              <b style="color:var(--text-1);display:block;margin-bottom:2px">2. Kebenaran Safari (Live Viewfinder):</b>
+              Jika viewfinder skrin gelap atau meminta kebenaran:
+              <ul style="margin:4px 0 0 18px;padding:0">
+                <li>Buka <b>Settings</b> iPhone ➔ <b>Safari</b> ➔ <b>Camera</b> ➔ pilih <b>Allow</b> (atau 'Ask').</li>
+                <li>Di Safari, tekan ikon <b>aA</b> di tepi bar URL ➔ <b>Website Settings</b> ➔ <b>Camera</b> ➔ <b>Allow</b>.</li>
+              </ul>
+            </div>
+            <div style="font-size:13px;line-height:1.5">
+              <b style="color:var(--text-1);display:block;margin-bottom:2px">3. PWA (Add to Home Screen):</b>
+              Jika dipasang pada skrin utama iPhone, pastikan anda klik "Allow" apabila iOS meminta izin akses kamera.
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary btn-block" data-close>Faham & Teruskan</button>
+        </div>`,
+        { className: 'sheet-md' }
+      );
+    });
+
+    // 3d. Voice Log (Speech-to-Text for food notes)
+    container.querySelector('#btn-voice-log')?.addEventListener('click', () => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        const text = prompt('Voice recognition tidak disokong pada pelayar ini. Sila taip nota makanan anda:');
+        if (text) {
+          customContextNote = (customContextNote ? customContextNote + ', ' : '') + text;
+          const inp = container.querySelector('#custom-context-input');
+          if (inp) inp.value = customContextNote;
+          toast(`Nota disimpan: "${text}"`, 'success');
+        }
+        return;
+      }
+
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ms-MY';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        const btnVoice = container.querySelector('#btn-voice-log');
+        if (btnVoice) btnVoice.classList.add('loading');
+        toast('Mendengar suara... Sila sebut makanan & kuantiti anda.', 'info', 4000);
+
+        recognition.onresult = (event) => {
+          const transcript = event.results?.[0]?.[0]?.transcript;
+          if (transcript) {
+            customContextNote = (customContextNote ? customContextNote + ', ' : '') + transcript;
+            const inp = container.querySelector('#custom-context-input');
+            if (inp) inp.value = customContextNote;
+            toast(`Dicatat: "${transcript}"`, 'success');
+          }
+        };
+
+        recognition.onerror = (err) => {
+          console.warn('Voice recognition error:', err);
+          toast('Tidak dapat menangkap suara. Sila cuba lagi atau taip nota.', 'warning');
+        };
+
+        recognition.onend = () => {
+          if (btnVoice) btnVoice.classList.remove('loading');
+        };
+
+        recognition.start();
+      } catch (e) {
+        toast('Gagal memulakan rakaman suara.', 'error');
+      }
     });
 
     // 4. Shutter Button (Capture Frame)
