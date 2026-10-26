@@ -460,14 +460,26 @@ export function renderScanner(container) {
       stream = mediaStream;
       video.srcObject = stream;
 
-      video.onloadedmetadata = () => {
-        const p = video.play();
-        if (p !== undefined) {
-          p.catch((e) => console.warn('video.play() deferred:', e));
-        }
+      const markReady = () => {
         setCameraUIState('active');
         setupBarcodeReaderIfNeeded(video);
       };
+
+      video.onloadedmetadata = () => {
+        const p = video.play();
+        if (p !== undefined) p.catch(() => {});
+        markReady();
+      };
+      video.oncanplay = markReady;
+
+      const pImmediate = video.play();
+      if (pImmediate !== undefined) {
+        pImmediate.then(markReady).catch(() => {});
+      }
+
+      setTimeout(() => {
+        if (stream && stream.active) markReady();
+      }, 500);
     } catch (e) {
       console.warn('Mobile camera access error:', e);
       let msg = '';
@@ -524,30 +536,40 @@ export function renderScanner(container) {
     }
   }
 
-  async function captureFrame() {
+  function captureFrame() {
     const video = container.querySelector('#scanner-video');
-    if (!video || !video.videoWidth || !video.videoHeight) return null;
+    // Ensure video is actively playing and has positive intrinsic video frame data
+    if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+      return null;
+    }
 
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    try {
+      const w = video.videoWidth;
+      const h = video.videoHeight;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, w, h);
 
-    const full = canvas.toDataURL('image/jpeg', 0.85);
-    const thumbCanvas = document.createElement('canvas');
-    const sc = Math.min(1, 180 / Math.max(canvas.width, canvas.height));
-    thumbCanvas.width = Math.round(canvas.width * sc);
-    thumbCanvas.height = Math.round(canvas.height * sc);
-    thumbCanvas.getContext('2d').drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
-    const thumb = thumbCanvas.toDataURL('image/jpeg', 0.6);
+      const full = canvas.toDataURL('image/jpeg', 0.85);
+      const thumbCanvas = document.createElement('canvas');
+      const sc = Math.min(1, 180 / Math.max(w, h));
+      thumbCanvas.width = Math.round(w * sc);
+      thumbCanvas.height = Math.round(h * sc);
+      thumbCanvas.getContext('2d').drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+      const thumb = thumbCanvas.toDataURL('image/jpeg', 0.6);
 
-    return {
-      dataUrl: full,
-      base64: full.split(',')[1],
-      mime: 'image/jpeg',
-      thumb,
-    };
+      return {
+        dataUrl: full,
+        base64: full.split(',')[1],
+        mime: 'image/jpeg',
+        thumb,
+      };
+    } catch (e) {
+      console.warn('captureFrame error:', e);
+      return null;
+    }
   }
 
   async function processFoodScan(imgObj) {
@@ -642,10 +664,10 @@ export function renderScanner(container) {
     });
 
     // 4. Shutter Button (Capture Frame)
-    container.querySelector('#btn-shutter')?.addEventListener('click', async () => {
-      const img = await captureFrame();
+    container.querySelector('#btn-shutter')?.addEventListener('click', () => {
+      const img = captureFrame();
       if (!img) {
-        // Fallback to native mobile device camera if WebRTC is not ready
+        // Fallback to native mobile device camera synchronously in user gesture
         container.querySelector('#file-input-native')?.click();
         return;
       }

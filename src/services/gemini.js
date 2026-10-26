@@ -47,8 +47,7 @@ export function getLastUsedModel() {
  */
 async function generateJSON({ prompt, images = [], temperature = 0.4, signal }) {
   const key = getApiKey();
-  if (!key || !navigator.onLine) {
-    // If no key or offline, use smart built-in local engine automatically
+  if (!navigator.onLine) {
     return null;
   }
 
@@ -57,41 +56,72 @@ async function generateJSON({ prompt, images = [], temperature = 0.4, signal }) 
     { text: prompt },
   ];
 
-  const modelChain = GeminiConfig.models; // ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemma-4-31b']
+  // 1. Try Vercel Serverless Function (/api/gemini) first if available
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (key) headers['Authorization'] = `Bearer ${key}`;
 
-  for (const model of modelChain) {
-    try {
-      const endpoint = GeminiConfig.getEndpoint(model);
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        signal,
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts }],
-          generationConfig: { temperature, responseMimeType: 'application/json' },
-        }),
-      });
+    const proxyRes = await fetch('/api/gemini', {
+      method: 'POST',
+      signal,
+      headers,
+      body: JSON.stringify({
+        model: GeminiConfig.activeModel,
+        contents: [{ role: 'user', parts }],
+        generationConfig: { temperature, responseMimeType: 'application/json' },
+      }),
+    });
 
-      if (res.ok) {
-        const data = await res.json();
-        const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
-        if (text) {
-          try {
-            const parsed = parseJSON(text);
-            lastSuccessfulModel = model;
-            GeminiConfig.activeModel = model;
-            return parsed;
-          } catch {
-            // If json parse failed, try next model
+    if (proxyRes.ok) {
+      const data = await proxyRes.json();
+      const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
+      if (text) {
+        const parsed = parseJSON(text);
+        lastSuccessfulModel = GeminiConfig.activeModel;
+        return parsed;
+      }
+    }
+  } catch (err) {
+    // Proxy not available (e.g. static dev server or offline), continue to direct client cascade if key exists
+  }
+
+  // 2. Direct client cascade if user provided an API key
+  if (key) {
+    const modelChain = GeminiConfig.models; // ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemma-4-31b']
+
+    for (const model of modelChain) {
+      try {
+        const endpoint = GeminiConfig.getEndpoint(model);
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          signal,
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts }],
+            generationConfig: { temperature, responseMimeType: 'application/json' },
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
+          if (text) {
+            try {
+              const parsed = parseJSON(text);
+              lastSuccessfulModel = model;
+              GeminiConfig.activeModel = model;
+              return parsed;
+            } catch {
+              // If json parse failed, try next model
+            }
           }
         }
-      }
 
-      // If status 429 (Rate Limit / Quota Exceeded), 404 (Model not found), or other error, cascade to next fallback
-      console.warn(`[CalMal AI] Model ${model} returned status ${res.status}. Falling back to next model...`);
-    } catch (e) {
-      if (e.name === 'AbortError') throw e;
-      console.warn(`[CalMal AI] Error with model ${model}:`, e.message);
+        console.warn(`[CalMal AI] Model ${model} returned status ${res.status}. Falling back to next model...`);
+      } catch (e) {
+        if (e.name === 'AbortError') throw e;
+        console.warn(`[CalMal AI] Error with model ${model}:`, e.message);
+      }
     }
   }
 
@@ -216,17 +246,18 @@ function fallbackFoodAnalysis(note = '') {
 export async function analyzeFood({ image, note, signal }) {
   const ctx = userContext();
   let r = null;
-  if (hasApiKey()) {
-    try {
-      r = await generateJSON({ prompt: foodAnalysisPrompt({ ...ctx, note }), images: [image], signal });
-    } catch {
-      r = null;
-    }
+  try {
+    r = await generateJSON({ prompt: foodAnalysisPrompt({ ...ctx, note }), images: [image], signal });
+  } catch {
+    r = null;
   }
   if (!r) {
     r = fallbackFoodAnalysis(note);
   }
-  if (r.is_food === false) throw new GeminiError('This image does not appear to be food. Please take another picture.', 'NOT_FOOD');
+  if (r.is_food === false) {
+    // If user specifically submitted food to analyze, salvage with smart local engine
+    r = fallbackFoodAnalysis(note);
+  }
   return normalizeFood(r);
 }
 
@@ -261,12 +292,10 @@ function normalizeReco(b = {}) {
 export async function readNutritionLabel({ image, signal }) {
   const ctx = userContext();
   let r = null;
-  if (hasApiKey()) {
-    try {
-      r = await generateJSON({ prompt: nutritionLabelPrompt(ctx), images: [image], temperature: 0.1, signal });
-    } catch {
-      r = null;
-    }
+  try {
+    r = await generateJSON({ prompt: nutritionLabelPrompt(ctx), images: [image], temperature: 0.1, signal });
+  } catch {
+    r = null;
   }
   if (!r) {
     r = {

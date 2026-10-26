@@ -31,8 +31,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { model = 'gemini-2.5-flash', contents, generationConfig, systemInstruction } = req.body || {};
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
+    const { model = 'gemini-2.0-flash', contents, generationConfig, systemInstruction } = req.body || {};
+    const modelMap = {
+      'gemini-3.5-flash-lite': 'gemini-2.0-flash',
+      'gemini-3.1-flash-lite': 'gemini-1.5-flash',
+      'gemma-4-31b': 'gemini-1.5-flash-8b',
+      'gemini-2.5-flash': 'gemini-2.0-flash',
+    };
+    const targetModel = modelMap[model] || model;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(targetModel)}:generateContent?key=${apiKey}`;
 
     const payload = { contents };
     if (generationConfig) payload.generationConfig = generationConfig;

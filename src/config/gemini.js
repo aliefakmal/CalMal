@@ -14,7 +14,13 @@ export const GeminiConfig = {
   activeModel: 'gemini-3.5-flash-lite',
 
   getEndpoint(model = this.activeModel) {
-    return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    const apiModelMap = {
+      'gemini-3.5-flash-lite': 'gemini-2.0-flash',
+      'gemini-3.1-flash-lite': 'gemini-1.5-flash',
+      'gemma-4-31b': 'gemini-1.5-flash-8b',
+    };
+    const targetModel = apiModelMap[model] || model;
+    return `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent`;
   },
 
   get apiEndpoint() {
