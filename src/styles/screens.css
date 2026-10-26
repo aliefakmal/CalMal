@@ -1,0 +1,617 @@
+/* =========================================================
+   CalMal — Screen Styles & Component Animations
+   ========================================================= */
+
+/* ---------------- Companion Avatars & Popups ---------------- */
+.avatar {
+  --sz: 48px;
+  width: var(--sz);
+  height: var(--sz);
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  position: relative;
+  flex: none;
+  overflow: visible;
+}
+.avatar svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+}
+.avatar-deku svg circle {
+  transition: stroke 0.3s;
+}
+.avatar-deku:hover svg circle {
+  stroke: #72ffbd;
+}
+.avatar-deku .bolt {
+  filter: drop-shadow(0 0 6px var(--deku-glow));
+  animation: dekuPulse 2.4s ease-in-out infinite;
+}
+.avatar-deku .crackle {
+  animation: crackle 1.6s steps(2, start) infinite;
+}
+.avatar-deku .c2 { animation-delay: 0.8s; }
+
+@keyframes dekuPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px var(--deku-glow)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 10px #72ffbd); }
+}
+@keyframes crackle {
+  0%, 100% { opacity: 0.3; }
+  25% { opacity: 1; stroke: #fff; }
+  50% { opacity: 0.1; }
+  75% { opacity: 0.9; }
+}
+
+.avatar-baku .burst {
+  transform-origin: 32px 33px;
+  animation: bakuSpin 6s linear infinite;
+  filter: drop-shadow(0 0 8px var(--baku-glow));
+}
+@keyframes bakuSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.avatar-baku .spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffb347;
+  pointer-events: none;
+  animation: sparkFlicker 1.2s infinite;
+}
+.avatar-baku .s1 { top: 10%; right: 12%; animation-delay: 0.2s; }
+.avatar-baku .s2 { bottom: 12%; left: 8%; animation-delay: 0.5s; background: #ff453a; }
+.avatar-baku .s3 { top: 6%; left: 16%; animation-delay: 0.8s; background: #fff; }
+@keyframes sparkFlicker {
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.5) translate(2px, -2px); }
+}
+
+/* Inline dialog bubble */
+.cbubble {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.1)), var(--surface);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.cbubble.compact {
+  padding: 12px 14px;
+  gap: 10px;
+}
+.cbubble::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3.5px;
+  background: var(--muted);
+}
+.cbubble-deku::before { background: var(--deku); box-shadow: 0 0 10px var(--deku-glow); }
+.cbubble-bakugou::before { background: var(--baku); box-shadow: 0 0 10px var(--baku-glow); }
+
+.cbubble-body { flex: 1; min-width: 0; }
+.cbubble-name {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cbubble-name span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cbubble-deku .cbubble-name { color: var(--deku); }
+.cbubble-bakugou .cbubble-name { color: var(--baku); }
+.cbubble-body p {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #e5e5ea;
+}
+
+/* Floating companion pop */
+.companion-pop {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--nav-h) + var(--safe-b) + 16px);
+  max-width: 480px;
+  margin: 0 auto;
+  z-index: 95;
+  background: rgba(28, 28, 30, 0.94);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+  animation: companionIn 0.45s var(--spring);
+}
+.companion-pop.out {
+  animation: companionOut 0.3s var(--ease) forwards;
+}
+.companion-pop.companion-deku { border-color: rgba(61, 220, 151, 0.3); }
+.companion-pop.companion-bakugou { border-color: rgba(255, 122, 26, 0.35); }
+.cp-avatars { display: flex; gap: -6px; }
+.cp-body { flex: 1; min-width: 0; }
+.cp-title { font-size: 14px; font-weight: 800; margin-bottom: 2px; }
+.companion-deku .cp-title { color: var(--deku); }
+.companion-bakugou .cp-title { color: var(--baku); }
+.cp-body p { font-size: 13px; line-height: 1.45; color: #f2f2f7; }
+.cp-close {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.2s;
+}
+.cp-close:hover { color: #fff; }
+
+@keyframes companionIn {
+  from { opacity: 0; transform: translateY(30px) scale(0.94); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes companionOut {
+  to { opacity: 0; transform: translateY(20px) scale(0.96); }
+}
+
+/* Fullscreen manga cut-in modal */
+.cutin {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.3s var(--ease);
+}
+.cutin.out { animation: fadeOut 0.3s var(--ease) forwards; }
+.cutin-lines {
+  position: absolute;
+  inset: 0;
+  background: repeating-radial-gradient(circle at center, transparent 0, transparent 4px, rgba(255, 255, 255, 0.03) 5px, rgba(255, 255, 255, 0.03) 8px);
+  pointer-events: none;
+}
+.cutin-inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 520px;
+  background: #000;
+  border: 2px solid #fff;
+  border-radius: 28px;
+  padding: 30px 24px;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(255, 255, 255, 0.15);
+  animation: cutinZoom 0.5s var(--spring);
+}
+@keyframes cutinZoom {
+  0% { transform: scale(0.7) rotate(-3deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.cutin-title {
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+.cutin-sub {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+}
+.cutin-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 24px 0 26px;
+  text-align: left;
+}
+.cutin-panel {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  animation: viewIn 0.4s var(--spring) both;
+}
+.cutin-deku { border-left: 4px solid var(--deku); }
+.cutin-bakugou { border-left: 4px solid var(--baku); }
+.cutin-panel b { display: block; font-size: 14px; margin-bottom: 2px; }
+.cutin-deku b { color: var(--deku); }
+.cutin-bakugou b { color: var(--baku); }
+.cutin-panel p { font-size: 13.5px; line-height: 1.4; color: #ddd; }
+.cutin-btn { width: 100%; font-size: 16px; letter-spacing: 0.05em; }
+
+/* ---------------- Portion slider box ---------------- */
+.portion-box {
+  background: #0d0d0e;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.portion-val {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* ---------------- Scanner Screen ---------------- */
+.scanner-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  max-height: 380px;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #0d0d0e;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.scanner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.scanner-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.viewfinder-box {
+  width: 72%;
+  aspect-ratio: 1;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 20px;
+  position: relative;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+}
+.viewfinder-barcode {
+  width: 85%;
+  aspect-ratio: 2.2 / 1;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  position: relative;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+.viewfinder-laser {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 10%;
+  height: 2px;
+  background: #ff453a;
+  box-shadow: 0 0 10px #ff453a;
+  animation: laserScan 2s ease-in-out infinite alternate;
+}
+@keyframes laserScan {
+  0% { top: 10%; }
+  100% { top: 90%; }
+}
+.viewfinder-label {
+  width: 80%;
+  aspect-ratio: 3 / 4;
+  border: 2px dashed rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+}
+
+.scanner-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+}
+.shutter-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #fff;
+  border: 4px solid #000;
+  outline: 3px solid #fff;
+  cursor: pointer;
+  transition: transform 0.2s var(--spring);
+}
+.shutter-btn:active { transform: scale(0.9); }
+
+.preview-thumb {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+/* ---------------- Activity / Strava Map ---------------- */
+.strava-map-container {
+  position: relative;
+  width: 100%;
+  height: 380px;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #0d0d0e;
+}
+#strava-map {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+.strava-floating-hud {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+}
+.strava-floating-hud > * { pointer-events: auto; }
+
+.strava-hud-pill {
+  background: rgba(28, 28, 30, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.strava-recenter-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(28, 28, 30, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s, background 0.15s;
+}
+.strava-recenter-btn:hover {
+  transform: scale(1.06);
+  background: #2c2c2e;
+}
+.strava-recenter-btn:active {
+  transform: scale(0.94);
+}
+
+/* Pulsing radar dot untuk lokasi langsung ala Google Maps / Strava */
+.live-gps-dot {
+  position: relative;
+  width: 18px;
+  height: 18px;
+}
+.live-gps-dot::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: -9px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(64, 156, 255, 0.35);
+  animation: radar-pulse 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+.live-gps-dot .core {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3897f0;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 10px rgba(56, 151, 240, 0.8);
+}
+
+@keyframes radar-pulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.start-pin-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: #3ddc97;
+  color: #000;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.finish-pin-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: #ff5a1a;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+/* ---------------- Badge Grid ---------------- */
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+  gap: 12px;
+}
+.badge-card {
+  background: #0d0d0e;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.badge-card.locked {
+  opacity: 0.38;
+  filter: grayscale(1);
+}
+.badge-card.unlocked {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.badge-card.unlocked:hover {
+  transform: translateY(-2px);
+  border-color: #fff;
+}
+.badge-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--surface-3);
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.badge-card.unlocked .badge-icon {
+  background: #fff;
+  color: #000;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.2);
+}
+.badge-title {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.badge-desc {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+/* ---------------- Questionnaire Stepper ---------------- */
+.stepper-progress {
+  height: 4px;
+  background: var(--surface-3);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.stepper-bar {
+  height: 100%;
+  background: #fff;
+  transition: width 0.3s var(--ease);
+}
+.mcq-option {
+  width: 100%;
+  text-align: left;
+  padding: 14px 18px;
+  background: #0d0d0e;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s var(--ease);
+}
+.mcq-option:hover {
+  border-color: #555;
+  background: var(--surface-2);
+}
+.mcq-option.selected {
+  border-color: #fff;
+  background: #fff;
+  color: #000;
+  font-weight: 700;
+}
+
+/* ---------------- Weight history chart (SVG) ---------------- */
+.weight-chart-wrap {
+  width: 100%;
+  height: 160px;
+  position: relative;
+  margin: 10px 0;
+}
+.weight-chart-wrap svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
