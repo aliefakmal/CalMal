@@ -14,9 +14,7 @@ export function renderActivity(container) {
   let markerLayer = null;
   let accuracyCircle = null;
   let tileLayer = null;
-  let trackerUnsub = null;
   let isSim = false;
-  let mapTileStyle = 'dark'; // 'dark' | 'standard'
   let inspectingActivityId = null; // ID aktiviti sejarah yang sedang dipaparkan di peta
   let hasCenteredInitialGPS = false;
 
@@ -80,13 +78,10 @@ export function renderActivity(container) {
           : ''
       }
 
-      <!-- OpenStreetMap Style Selector (Free, No API Key) -->
+      <!-- OpenStreetMap Free Live GPS Map Engine (No API Key Required) -->
       <div class="row between" style="margin-bottom:8px">
-        <span class="xs muted">OpenStreetMap Layers (Free):</span>
-        <div class="segmented" id="osm-layer-tabs" style="width:230px;height:34px;padding:2px">
-          <button type="button" data-layer="dark" class="${mapTileStyle === 'dark' ? 'active' : ''}" style="height:28px;font-size:12px">OSM Dark</button>
-          <button type="button" data-layer="standard" class="${mapTileStyle === 'standard' ? 'active' : ''}" style="height:28px;font-size:12px">OSM Standard</button>
-        </div>
+        <span class="xs muted">GPS Map Engine:</span>
+        <span class="badge ok" style="font-size:11px">${icons.pin} OpenStreetMap (Free · No API Key)</span>
       </div>
 
       <!-- Main Map & Floating Strava HUD -->
@@ -279,20 +274,11 @@ export function renderActivity(container) {
     if (!map) return;
     if (tileLayer) map.removeLayer(tileLayer);
 
-    if (mapTileStyle === 'standard') {
-      // OpenStreetMap Standard Tiles (Percuma, tanpa sebarang API key)
-      tileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
-      }).addTo(map);
-    } else {
-      // OpenStreetMap Dark Theme Tiles (CartoDB Dark Matter berkuasakan OpenStreetMap)
-      tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; CARTO',
-      }).addTo(map);
-    }
+    // OpenStreetMap Standard Tiles (100% Free, No API Key Required)
+    tileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+    }).addTo(map);
   }
 
   function updateMapGraphics(stats) {
@@ -304,8 +290,8 @@ export function renderActivity(container) {
     polylineLayer.clearLayers();
     markerLayer.clearLayers();
 
-    // Garisan warna Strava
-    const lineColor = mapTileStyle === 'standard' ? '#ff5a1a' : '#ffffff';
+    // Garisan warna Strava vibrant orange
+    const lineColor = '#ff5a1a';
 
     // 1. Lukis garisan Polyline jika ada segmen larian
     if (stats.segments && stats.segments.length) {
