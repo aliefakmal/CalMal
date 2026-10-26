@@ -21,6 +21,8 @@
   --danger: #ff453a;
   --ok: #3ddc97;
   --warn: #ffd60a;
+  --hero-accent: var(--deku);
+  --hero-glow: var(--deku-glow);
 
   --radius-sm: 10px;
   --radius: 18px;
@@ -120,59 +122,72 @@ body::before {
   to { opacity: 1; transform: none; }
 }
 
-/* ---------------- Bottom nav (mobile) ---------------- */
+/* ---------------- Floating Glassmorphic Dock (mobile) ---------------- */
 .bottom-nav {
   position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: calc(10px + var(--safe-b));
+  left: 14px;
+  right: 14px;
+  bottom: calc(16px + var(--safe-b));
   z-index: 40;
-  height: var(--nav-h);
+  height: 68px;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   align-items: center;
-  padding: 0 6px;
-  background: rgba(28, 28, 30, 0.78);
-  backdrop-filter: saturate(180%) blur(22px);
-  -webkit-backdrop-filter: saturate(180%) blur(22px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 26px;
-  box-shadow: var(--shadow);
+  padding: 0 8px;
+  background: rgba(18, 18, 21, 0.85);
+  backdrop-filter: saturate(190%) blur(24px);
+  -webkit-backdrop-filter: saturate(190%) blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 32px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), 0 0 16px var(--hero-glow);
 }
 
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px 0;
+  gap: 3px;
+  padding: 6px 0;
   color: var(--muted);
   text-decoration: none;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   transition: color 0.25s var(--ease), transform 0.25s var(--ease);
 }
-.nav-item svg { width: 23px; height: 23px; transition: transform 0.35s var(--spring); }
+.nav-item svg { width: 22px; height: 22px; transition: transform 0.35s var(--spring); }
 .nav-item:active svg { transform: scale(0.86); }
-.nav-item.active { color: var(--text); }
-.nav-item.active svg { transform: translateY(-1px); }
+.nav-item.active { color: #ffffff; }
+.nav-item.active svg { transform: translateY(-1px); stroke: var(--hero-accent); }
 
 .nav-fab {
   justify-self: center;
-  width: 58px;
-  height: 58px;
-  border-radius: 20px;
-  display: grid;
-  place-items: center;
-  background: #fff;
-  color: #000;
-  box-shadow: 0 8px 30px rgba(255, 255, 255, 0.18);
-  transform: translateY(-14px);
+  width: 62px;
+  height: 62px;
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: #ffffff;
+  color: #000000;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.25), 0 0 14px var(--hero-glow);
+  transform: translateY(-16px);
   transition: transform 0.35s var(--spring), box-shadow 0.3s;
 }
-.nav-fab svg { width: 26px; height: 26px; }
-.nav-fab:active { transform: translateY(-14px) scale(0.92); }
-.nav-fab.active { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15), 0 8px 30px rgba(255, 255, 255, 0.25); }
+.nav-fab-icon svg { width: 22px; height: 22px; stroke: #000; display: block; }
+.nav-fab-text {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #000;
+  line-height: 1;
+}
+.nav-fab:active { transform: translateY(-16px) scale(0.92); }
+.nav-fab.active {
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2), 0 8px 30px var(--hero-glow);
+}
 
 /* ---------------- Desktop ---------------- */
 @media (min-width: 960px) {

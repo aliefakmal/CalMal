@@ -615,3 +615,185 @@
   height: 100%;
   overflow: visible;
 }
+
+/* ---------------- Bento Grid Layout (v2.0) ---------------- */
+.bento-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.bento-top-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 680px) {
+  .bento-top-grid {
+    grid-template-columns: 1.15fr 1fr;
+  }
+}
+.bento-side-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bento-ring-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 20px 20px;
+}
+.macro-mini-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.macro-mini-tile {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.macro-mini-tile .m-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.macro-mini-tile .m-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  margin: 4px 0 2px;
+  display: block;
+}
+.macro-mini-tile .m-val small {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: normal;
+  margin-left: 2px;
+}
+.macro-mini-tile .m-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.macro-mini-tile .m-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s var(--ease);
+}
+.tile-p .m-bar-fill { background: #3ddc97; }
+.tile-c .m-bar-fill { background: #ffd60a; }
+.tile-f .m-bar-fill { background: #ff7a1a; }
+
+/* Water Tracker */
+.water-widget {
+  background: linear-gradient(135deg, rgba(28, 28, 30, 0.9), rgba(13, 27, 42, 0.6)) !important;
+  border-color: rgba(61, 220, 151, 0.2) !important;
+}
+.water-icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(61, 220, 151, 0.15);
+  display: grid;
+  place-items: center;
+  color: #3ddc97;
+}
+.water-icon-circle svg {
+  width: 18px;
+  height: 18px;
+}
+.water-track {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.water-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00b4d8, #3ddc97);
+  border-radius: 6px;
+  transition: width 0.4s var(--spring);
+}
+
+/* Bento Bottom Grid */
+.bento-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 800px) {
+  .bento-bottom-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Kuah / Gravy Adjuster Slider */
+.kuah-box {
+  margin: 6px 0;
+}
+.kuah-segmented button {
+  font-size: 11px;
+  font-weight: 600;
+}
+.quick-chips-box .btn-malay-chip {
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f4f4f5;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.quick-chips-box .btn-malay-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #fff;
+}
+.quick-chips-box .btn-malay-chip:active {
+  transform: scale(0.95);
+}
+
+/* Companion 5-State Extras */
+.avatar.shake {
+  animation: bakuExplodeShake 0.4s ease-in-out infinite alternate;
+}
+@keyframes bakuExplodeShake {
+  0% { transform: translate(-2px, -1px) rotate(-1deg); }
+  100% { transform: translate(2px, 1px) rotate(1deg); }
+}
+.avatar-notes {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 14px;
+  animation: noteFloat 1.2s ease-in-out infinite alternate;
+}
+@keyframes noteFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-4px) scale(1.1); }
+}
+.avatar-smoke {
+  position: absolute;
+  top: -2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  animation: smokeRise 1s infinite;
+}
+@keyframes smokeRise {
+  0% { opacity: 0.8; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-12px) scale(2.2); }
+}
+
