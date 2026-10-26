@@ -1,52 +1,70 @@
-// Skrin Papan Pemuka (pelan §3.2) — Net Calorie Balance Dashboard (Masa Nyata)
+// Modern Bento Grid Dashboard (Masa Nyata) — Net Calorie Balance, Mini-Macro Grid, Water Tracker & Companion
 import { store } from '../services/store.js';
 import { icons } from '../components/icons.js';
 import { ringSVG, macroBar, animateRings, routeThumbSVG } from '../components/ui.js';
-import { companionBubble } from '../components/companion.js';
+import { companionBubble, bindCompanionEvents } from '../components/companion.js';
 import { dashboardMessage } from '../services/companionService.js';
 import { openMealEditor } from '../components/mealEditor.js';
 import { formatPace, formatDuration } from '../utils/calc.js';
-import { esc, fmtTime } from '../utils/helpers.js';
+import { esc, fmtTime, todayKey } from '../utils/helpers.js';
 
 export function renderDashboard(container) {
   let unsub = null;
 
   function render() {
     const s = store.summary();
-    const p = store.profile || { name: 'Wira', weight: 70, targetWeight: 65 };
+    const p = store.profile || { name: 'Hero', weight: 70, targetWeight: 65, selectedCompanion: 'deku' };
     const compMsg = dashboardMessage();
+    const heroRank = store.getHeroRank();
+    const water = store.getWater();
+    const waterTarget = 2000;
+    const waterPct = Math.min(100, Math.round((water / waterTarget) * 100));
 
-    // Progress calculation for the ring
+    // Progress calculation for calorie ring
     const effectiveTarget = Math.max(1, s.target + s.kout);
     const progress = Math.min(1.2, s.kin / effectiveTarget);
     const isOver = s.kin > effectiveTarget;
 
+    // Companion 5-state calculation
+    const compState = isOver
+      ? 'over_limit'
+      : s.protein >= s.macros.protein && s.kin > 300
+      ? 'goal_hit'
+      : 'idle';
+
+    const soundKey = isOver ? 'over' : compState === 'goal_hit' ? 'goal' : 'greet';
+
     container.innerHTML = `
-      <div class="page-head">
+      <!-- Bento Header -->
+      <div class="page-head bento-header">
         <div>
-          <span class="eyebrow">Daily Dashboard</span>
-          <h1 class="page-title">Hi, ${esc(p.name)}</h1>
+          <div class="row" style="gap:8px;align-items:center;margin-bottom:2px">
+            <span class="eyebrow">Level ${heroRank.level} · ${esc(heroRank.title)}</span>
+            <span class="badge ok" style="font-size:10px;padding:2px 7px">${heroRank.pct}% EXP</span>
+          </div>
+          <h1 class="page-title">Hi, ${esc(p.name)}!</h1>
         </div>
         <div class="row" style="gap:8px">
           <a href="#/scan" class="btn btn-sm btn-primary" id="btn-quick-scan">
             ${icons.camera}
-            <span>Scan</span>
+            <span>Scan Food</span>
           </a>
         </div>
       </div>
 
-      <div class="dash-grid">
-        <!-- Left Column: Calorie Balance Ring & Macros -->
-        <div class="stack">
-          <!-- Calorie Ring Card -->
-          <div class="card center" style="padding:28px 18px 24px">
-            <div class="card-title row between" style="margin-bottom:6px">
-              <span>Daily Net Calorie Balance</span>
+      <!-- Bento Grid Layout -->
+      <div class="bento-container">
+        <!-- Bento Row 1: Calorie Balance Ring (Card 1) & Mini-Macro + Water Grid (Card 2) -->
+        <div class="bento-top-grid">
+          <!-- Card 1: Calorie Balance Ring -->
+          <div class="card center bento-card bento-ring-card">
+            <div class="card-title row between" style="width:100%;margin-bottom:4px">
+              <span>Net Calorie Balance</span>
               <span class="badge ${isOver ? 'bad' : 'ok'}">${isOver ? 'SURPLUS' : 'ON TARGET'}</span>
             </div>
 
-            <div class="ring-wrap" style="margin:16px auto 14px">
-              ${ringSVG({ size: 230, stroke: 7, progress, over: isOver })}
+            <div class="ring-wrap" style="margin:14px auto 12px">
+              ${ringSVG({ size: 210, stroke: 7, progress, over: isOver })}
               <div class="ring-center">
                 <div class="ring-big num ${isOver ? 'color-danger' : ''}" style="${isOver ? 'color:var(--danger)' : ''}">
                   ${Math.abs(s.remaining)}
@@ -58,7 +76,7 @@ export function renderDashboard(container) {
             </div>
 
             <!-- Formula: Target - In + Out = Remaining -->
-            <div class="equation">
+            <div class="equation" style="width:100%">
               <div class="eq-cell">
                 <span>Target</span>
                 <b class="num">${s.target}</b>
@@ -68,31 +86,79 @@ export function renderDashboard(container) {
                 <b class="num">${s.kin}</b>
               </div>
               <div class="eq-cell">
-                <span>Exercise (Out)</span>
+                <span>Burned</span>
                 <b class="num" style="color:var(--ok)">+${s.kout}</b>
               </div>
             </div>
           </div>
 
-          <!-- Macros Card -->
-          <div class="card">
-            <div class="card-title">
-              <span>Macronutrient Breakdown</span>
-              <span class="muted">Daily Goal</span>
+          <!-- Card 2: Macro Mini-Grid + Water Tracker Widget -->
+          <div class="bento-side-grid">
+            <!-- Macros 3-Tile Row -->
+            <div class="card bento-card" style="padding:16px">
+              <div class="card-title row between" style="margin-bottom:10px">
+                <span>Macronutrients</span>
+                <span class="xs muted">Daily Goals</span>
+              </div>
+              <div class="macro-mini-tiles">
+                <div class="macro-mini-tile tile-p">
+                  <span class="m-label">Protein</span>
+                  <b class="m-val num">${Math.round(s.protein)}<small>g</small></b>
+                  <div class="m-sub xs muted">/ ${s.macros.protein}g</div>
+                  <div class="m-bar"><div class="m-bar-fill" style="width:${Math.min(100, (s.protein / (s.macros.protein || 1)) * 100)}%"></div></div>
+                </div>
+                <div class="macro-mini-tile tile-c">
+                  <span class="m-label">Carbs</span>
+                  <b class="m-val num">${Math.round(s.carbs)}<small>g</small></b>
+                  <div class="m-sub xs muted">/ ${s.macros.carbs}g</div>
+                  <div class="m-bar"><div class="m-bar-fill" style="width:${Math.min(100, (s.carbs / (s.macros.carbs || 1)) * 100)}%"></div></div>
+                </div>
+                <div class="macro-mini-tile tile-f">
+                  <span class="m-label">Fat</span>
+                  <b class="m-val num">${Math.round(s.fat)}<small>g</small></b>
+                  <div class="m-sub xs muted">/ ${s.macros.fat}g</div>
+                  <div class="m-bar"><div class="m-bar-fill" style="width:${Math.min(100, (s.fat / (s.macros.fat || 1)) * 100)}%"></div></div>
+                </div>
+              </div>
             </div>
-            ${macroBar({ label: 'Protein', value: s.protein, target: s.macros.protein, cls: 'p' })}
-            ${macroBar({ label: 'Carbs', value: s.carbs, target: s.macros.carbs, cls: 'c' })}
-            ${macroBar({ label: 'Fat', value: s.fat, target: s.macros.fat, cls: 'f' })}
-          </div>
 
-          <!-- Deku / Bakugou Companion Message -->
-          ${companionBubble(compMsg.who, compMsg.text)}
+            <!-- Water Tracker Card -->
+            <div class="card bento-card water-widget" style="padding:16px">
+              <div class="row between" style="margin-bottom:8px">
+                <div class="row" style="gap:8px;align-items:center">
+                  <div class="water-icon-circle">${icons.droplet}</div>
+                  <div>
+                    <span class="small bold" style="color:#fff">Water Hydration</span>
+                    <div class="xs muted">${water} / ${waterTarget} ml (${waterPct}%)</div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-xs btn-primary btn-water-add" id="btn-add-water">
+                  ${icons.plus}
+                  <span>250ml</span>
+                </button>
+              </div>
+
+              <div class="water-track">
+                <div class="water-fill" style="width:${waterPct}%"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Right Column: Today's Logged Meals & Activities -->
-        <div class="stack">
+        <!-- Bento Row 2: Hero Companion Card (Card 3) -->
+        <div class="bento-companion-row">
+          ${companionBubble(p.selectedCompanion || compMsg.who, compMsg.text, {
+            compact: false,
+            state: compState,
+            soundKey: soundKey,
+            allowSwitch: true,
+          })}
+        </div>
+
+        <!-- Bento Row 3: Logged Meals & GPS Activities Grid -->
+        <div class="bento-bottom-grid">
           <!-- Meal Log Card -->
-          <div class="card">
+          <div class="card bento-card">
             <div class="card-title row between">
               <span>Today's Logged Meals</span>
               <button class="btn btn-sm btn-ghost" id="btn-manual-add">
@@ -144,7 +210,7 @@ export function renderDashboard(container) {
           </div>
 
           <!-- Activity / Strava-style Runs Card -->
-          <div class="card">
+          <div class="card bento-card">
             <div class="card-title row between">
               <span>Today's Activities & Runs</span>
               <a href="#/activity" class="btn btn-sm btn-ghost">
@@ -195,10 +261,20 @@ export function renderDashboard(container) {
     `;
 
     bindEvents();
+    bindCompanionEvents(container, () => render());
     animateRings(container);
   }
 
   function bindEvents() {
+    // Water tracker add button
+    container.querySelector('#btn-add-water')?.addEventListener('click', () => {
+      store.addWater(250);
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(20);
+      }
+      render();
+    });
+
     container.querySelector('#btn-manual-add')?.addEventListener('click', () => {
       openMealEditor({}, {
         title: 'Add Meal',

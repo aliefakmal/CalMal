@@ -31,13 +31,27 @@ function currentRoute() {
 
 function renderNav(active) {
   const order = ['home', 'activity', 'scan', 'recipes', 'profile'];
-  document.getElementById('bottom-nav').innerHTML = order
+  const nav = document.getElementById('bottom-nav');
+  nav.innerHTML = order
     .map((k) => {
       const r = ROUTES[k];
-      if (r.fab) return `<a href="#/${k}" id="nav-${k}" class="nav-fab ${active === k ? 'active' : ''}" aria-label="${r.label}">${icons.camera}</a>`;
+      if (r.fab) {
+        return `<a href="#/${k}" id="nav-${k}" class="nav-fab ${active === k ? 'active' : ''}" aria-label="Scan Food AI">
+          <span class="nav-fab-icon">${icons.camera}</span>
+          <span class="nav-fab-text">+ SCAN</span>
+        </a>`;
+      }
       return `<a href="#/${k}" id="nav-${k}" class="nav-item ${active === k ? 'active' : ''}">${r.icon}<span>${r.label}</span></a>`;
     })
     .join('');
+
+  nav.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(10);
+      }
+    });
+  });
 
   document.getElementById('sidebar').innerHTML = `
     <a class="brand" href="#/home"><img src="/icon.svg" alt="" />CalMal</a>
