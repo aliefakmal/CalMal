@@ -1,4 +1,3 @@
-// Skrin Profil & Kemajuan Berat Badan (pelan §2 & §4) — Graf Berat, Lencana & Tetapan API Gemini
 import { store } from '../services/store.js';
 import { icons } from '../components/icons.js';
 import { BADGES, onWeightLogged, requestNotificationPermission } from '../services/companionService.js';
@@ -7,7 +6,10 @@ import { testApiKey } from '../services/gemini.js';
 import { toast, confirmSheet, setLoading } from '../components/ui.js';
 import { calcBMI, bmiLabel, calcDailyTarget } from '../utils/calc.js';
 import { avatar } from '../components/companion.js';
+import { openProfileEditor } from '../components/profileEditor.js';
+import { soundboard } from '../services/audioService.js';
 import { esc, fmtDate, todayKey } from '../utils/helpers.js';
+
 
 export function renderProfile(container) {
   let profile = store.profile || {
@@ -73,10 +75,13 @@ export function renderProfile(container) {
   }
 
   function render() {
+    profile = store.profile || profile;
     const bmi = calcBMI(profile);
     const bmiCategory = bmiLabel(bmi);
     const targetKcal = calcDailyTarget(profile);
     const pendingCount = store.pendingCount();
+    const heroRank = store.getHeroRank();
+    const activeCoach = profile.selectedCompanion || 'deku';
 
     container.innerHTML = `
       <div class="page-head">
@@ -84,21 +89,53 @@ export function renderProfile(container) {
           <span class="eyebrow">Biometric Profile & Settings</span>
           <h1 class="page-title">${esc(profile.name)}</h1>
         </div>
-        <div class="row" style="gap:6px">
-          ${
-            pendingCount > 0
-              ? `<span class="badge" title="Data stored locally and ready to sync">${pendingCount} local</span>`
-              : `<span class="badge ok">Synced</span>`
-          }
+        <div class="row" style="gap:8px">
+          <button type="button" class="btn btn-sm btn-primary" id="btn-edit-profile-head">
+            ${icons.edit}
+            <span>Edit Profile</span>
+          </button>
         </div>
       </div>
 
       <div class="stack">
+        <!-- Hero Rank & License Status Card -->
+        <div class="card" style="border:1px solid var(--hero-glow);background:linear-gradient(135deg, rgba(18,18,21,0.95), rgba(28,28,30,0.85))">
+          <div class="card-title row between">
+            <div class="row" style="gap:10px;align-items:center">
+              ${avatar(activeCoach, 40)}
+              <div>
+                <b style="font-size:15px;color:#fff">${esc(heroRank.title)}</b>
+                <div class="xs muted">Coach: ${activeCoach === 'bakugou' ? 'Bakugou (Fitness)' : 'Deku (Nutrition)'}</div>
+              </div>
+            </div>
+            <span class="badge ok">Level ${heroRank.level} / 5</span>
+          </div>
+
+          <div style="margin:12px 0 6px">
+            <div class="row between" style="margin-bottom:6px">
+              <span class="small bold muted" style="text-transform:uppercase;letter-spacing:0.05em">Hero EXP Progress</span>
+              <span class="small num" style="color:var(--hero-accent)">${heroRank.currentExp} / ${heroRank.nextLevelExp} EXP (${heroRank.pct}%)</span>
+            </div>
+            <div class="macro-track" style="height:10px;background:rgba(255,255,255,0.08);border-radius:6px;overflow:hidden">
+              <div class="macro-fill" style="width:${heroRank.pct}%;background:var(--hero-accent);transition:width 0.4s var(--ease)"></div>
+            </div>
+            <div class="xs muted" style="margin-top:8px;line-height:1.4">
+              Earn EXP by logging meals (+10 EXP), hitting protein targets (+20 EXP), and running (+25 EXP).
+            </div>
+          </div>
+        </div>
+
         <!-- Current Biometrics Summary Card -->
         <div class="card">
           <div class="card-title row between">
             <span>Current Physical Status</span>
-            <span class="badge ok">${bmiCategory} (BMI ${bmi.toFixed(1)})</span>
+            <div class="row" style="gap:6px">
+              <span class="badge ok">${bmiCategory} (BMI ${bmi.toFixed(1)})</span>
+              <button type="button" class="btn btn-xs btn-ghost" id="btn-edit-profile-card">
+                ${icons.edit}
+                <span>Edit</span>
+              </button>
+            </div>
           </div>
 
           <div class="equation">
@@ -210,7 +247,7 @@ export function renderProfile(container) {
         <!-- Companion & Notification Settings Card -->
         <div class="card stack">
           <div class="card-title">
-            <span>Companion & Notification Settings</span>
+            <span>Companion & Audio Settings</span>
           </div>
 
           <label class="row between" style="padding:8px 0;cursor:pointer">
@@ -219,6 +256,16 @@ export function renderProfile(container) {
               <p class="small muted">Manga dialogue & motivational voice bubble cues on dashboard and scanner.</p>
             </div>
             <input type="checkbox" id="companion-toggle" ${settings.companions !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
+          </label>
+
+          <div class="divider"></div>
+
+          <label class="row between" style="padding:8px 0;cursor:pointer">
+            <div>
+              <b>Hero Voice & Sound Effects (SFX)</b>
+              <p class="small muted">Web Audio Japanese & English voice cues, plus heroic tone synthesizers.</p>
+            </div>
+            <input type="checkbox" id="sound-toggle" ${settings.soundEnabled !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
           </label>
 
           <div class="divider"></div>
@@ -266,6 +313,16 @@ export function renderProfile(container) {
   }
 
   function bindEvents() {
+    // Edit Profile Modal Trigger
+    const triggerEditProfile = () => {
+      openProfileEditor((updatedProfile) => {
+        profile = updatedProfile || store.profile;
+        render();
+      });
+    };
+    container.querySelector('#btn-edit-profile-head')?.addEventListener('click', triggerEditProfile);
+    container.querySelector('#btn-edit-profile-card')?.addEventListener('click', triggerEditProfile);
+
     // Record Weight
     container.querySelector('#btn-log-weight')?.addEventListener('click', () => {
       const val = Number(container.querySelector('#new-weight-input')?.value);
@@ -311,6 +368,14 @@ export function renderProfile(container) {
     container.querySelector('#companion-toggle')?.addEventListener('change', (e) => {
       store.saveSettings({ companions: e.target.checked });
       toast(`Companions ${e.target.checked ? 'enabled' : 'disabled'}.`, 'info');
+    });
+
+    // Toggle Sound SFX & Voice
+    container.querySelector('#sound-toggle')?.addEventListener('change', (e) => {
+      store.saveSettings({ soundEnabled: e.target.checked });
+      soundboard.setMute(!e.target.checked);
+      toast(`Hero SFX & Voice: ${e.target.checked ? 'Enabled' : 'Muted'}.`, 'info');
+      if (e.target.checked) soundboard.play(profile.selectedCompanion || 'deku', 'greet');
     });
 
     // Toggle Notifications
