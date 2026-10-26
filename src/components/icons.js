@@ -40,4 +40,7 @@ export const icons = {
   refresh: s('<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>'),
   bowl: s('<path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M7 21h10M12 3c0 2-2 2-2 4s2 2 2 4M16 5c0 1.5-1.5 1.5-1.5 3"/>'),
   crosshair: s('<circle cx="12" cy="12" r="7"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>'),
+  sound: s('<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>'),
+  droplet: s('<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>'),
 };
+

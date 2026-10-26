@@ -1,6 +1,6 @@
-// Storan Offline-First (pelan §3.6) — semua data disimpan lokal dahulu dengan sync_status.
 import { todayKey, uid } from '../utils/helpers.js';
 import { calcMacros } from '../utils/calc.js';
+import { scheduleCloudSync } from './supabaseClient.js';
 
 const KEY = 'calmal.v1';
 const listeners = new Set();
@@ -12,18 +12,30 @@ const defaults = () => ({
   weights: [],
   recipes: [],
   mealPlan: null,
+  water: {},
   badges: {},
   flags: {},
-  settings: { apiKey: '', notifications: false, companions: true, cameraAlwaysOn: true, cameraFacing: 'environment' },
+  settings: { apiKey: '', notifications: false, companions: true, soundEnabled: true, cameraAlwaysOn: true, cameraFacing: 'environment' },
 });
 
 let state = load();
+
+function applyHeroTheme(coach) {
+  if (typeof document === 'undefined') return;
+  const isBaku = coach === 'bakugou';
+  document.documentElement.style.setProperty('--hero-accent', isBaku ? '#f97316' : '#10b981');
+  document.documentElement.style.setProperty('--hero-glow', isBaku ? 'rgba(249, 115, 22, 0.28)' : 'rgba(16, 185, 129, 0.28)');
+}
 
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaults();
-    return { ...defaults(), ...JSON.parse(raw) };
+    const parsed = { ...defaults(), ...JSON.parse(raw) };
+    if (parsed.profile?.selectedCompanion) {
+      applyHeroTheme(parsed.profile.selectedCompanion);
+    }
+    return parsed;
   } catch {
     return defaults();
   }
@@ -33,8 +45,8 @@ function persist() {
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
   } catch (e) {
-    // Storan penuh — buang lakaran kecil makanan lama dahulu
-    console.warn('Storan penuh, membuang lakaran lama', e);
+    // Storage full — prune oldest image thumbnails
+    console.warn('Storage full, pruning old thumbnails', e);
     state.meals.slice(0, Math.floor(state.meals.length / 2)).forEach((m) => delete m.thumb);
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* noop */ }
   }
@@ -42,6 +54,7 @@ function persist() {
 
 function emit(type) {
   persist();
+  scheduleCloudSync(state);
   listeners.forEach((fn) => fn(type, state));
 }
 
@@ -49,12 +62,19 @@ export const store = {
   get state() { return state; },
   subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
 
-  // ---------- Profil ----------
+  // ---------- Profile ----------
   get profile() { return state.profile; },
   saveProfile(profile) {
     const first = !state.profile;
-    state.profile = { ...state.profile, ...profile, updatedAt: new Date().toISOString() };
-    if (first || !state.weights.length) {
+    const oldWeight = state.profile?.weight;
+    state.profile = {
+      selectedCompanion: 'deku',
+      ...state.profile,
+      ...profile,
+      updatedAt: new Date().toISOString()
+    };
+    applyHeroTheme(state.profile.selectedCompanion);
+    if (first || !state.weights.length || (oldWeight && Number(profile.weight) !== Number(oldWeight))) {
       state.weights.push({ id: uid(), date: todayKey(), weight: Number(profile.weight), sync_status: 'PENDING' });
     }
     emit('profile');
@@ -125,11 +145,59 @@ export const store = {
     emit('flags');
   },
 
-  // ---------- Tetapan ----------
-  get settings() { return state.settings; },
-  saveSettings(patch) { state.settings = { ...state.settings, ...patch }; emit('settings'); },
+  // ---------- Water Tracker ----------
+  getWater(date = todayKey()) {
+    return (state.water && state.water[date]) || 0;
+  },
+  addWater(amount = 250, date = todayKey()) {
+    state.water = state.water || {};
+    state.water[date] = Math.max(0, (state.water[date] || 0) + amount);
+    emit('water');
+    return state.water[date];
+  },
+  setWater(amount, date = todayKey()) {
+    state.water = state.water || {};
+    state.water[date] = Math.max(0, Number(amount) || 0);
+    emit('water');
+    return state.water[date];
+  },
 
-  // ---------- Ringkasan harian ----------
+  // ---------- Hero Rank & Gamification ----------
+  getHeroRank() {
+    const mealCount = state.meals.length;
+    const totalKm = state.activities.reduce((sum, a) => sum + (Number(a.distanceKm) || 0), 0);
+    const badgeCount = Object.keys(state.badges || {}).length;
+
+    // Calculate EXP: 15 per meal, 40 per km, 100 per badge
+    const exp = (mealCount * 15) + Math.round(totalKm * 40) + (badgeCount * 100);
+
+    const RANKS = [
+      { level: 1, title: 'General Studies Trainee', minExp: 0, maxExp: 250 },
+      { level: 2, title: 'Class 1-A Trainee', minExp: 250, maxExp: 750 },
+      { level: 3, title: 'Provisional Hero', minExp: 750, maxExp: 1800 },
+      { level: 4, title: 'Top 10 Pro Hero', minExp: 1800, maxExp: 3500 },
+      { level: 5, title: 'Symbol of Peace', minExp: 3500, maxExp: 10000 },
+    ];
+
+    let current = RANKS[0];
+    for (const r of RANKS) {
+      if (exp >= r.minExp) current = r;
+    }
+
+    const range = Math.max(1, current.maxExp - current.minExp);
+    const currentProgress = Math.min(range, Math.max(0, exp - current.minExp));
+    const percent = Math.min(100, Math.round((currentProgress / range) * 100));
+
+    return {
+      level: current.level,
+      title: current.title,
+      exp,
+      nextExp: current.maxExp,
+      percent,
+    };
+  },
+
+  // ---------- Daily Summary ----------
   summary(date = todayKey()) {
     const meals = this.mealsOn(date);
     const acts = this.activitiesOn(date);
@@ -137,6 +205,7 @@ export const store = {
     const macros = this.macros || { target: 2000, protein: 120, carbs: 220, fat: 65 };
     const kin = Math.round(sum(meals, 'kcal'));
     const kout = Math.round(sum(acts, 'kcal'));
+    const water = this.getWater(date);
     return {
       target: macros.target,
       macros,
@@ -146,6 +215,7 @@ export const store = {
       protein: sum(meals, 'protein'),
       carbs: sum(meals, 'carbs'),
       fat: sum(meals, 'fat'),
+      water,
       meals,
       acts,
       distance: sum(acts, 'distanceKm'),
