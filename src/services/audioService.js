@@ -1,20 +1,50 @@
-// Web Audio & Companion Soundboard Service (Deku & Bakugou SFX / Japanese Voice)
+// Web Audio & Companion Soundboard Service (Deku & Bakugou SFX / Accurate Japanese Voice)
 import { store } from './store.js';
 
 export const JAPANESE_VOICE_SCRIPTS = {
   deku: {
-    greet: 'おはよう！今日も一日、全力で頑張ろう！',
-    analyze: 'なるほど… カロリーと栄養バランスをしっかり計算するね！',
-    goal: 'やった！今日の目標達成だ！プルス・ウルトラ！',
-    over: '大丈夫！諦めないで、今夜ウォーキングしよう！',
-    run: '行こう！ワン・フォー・オール、フルカウル！',
+    greet: {
+      ja: '大丈夫！僕が来た！今日も一緒に頑張ろう！',
+      romaji: 'Daijoubu! Boku ga kita! Kyou mo issho ni gambarou!',
+    },
+    analyze: {
+      ja: 'デトロイト・スマッシュ！ノートにカロリーと栄養素をしっかり記録したよ！',
+      romaji: 'Detroit Smash! Nooto ni karorii to eiyouso o kiroku shita yo!',
+    },
+    goal: {
+      ja: '更に向こうへ！プルス・ウルトラ！目標達成、やったね！',
+      romaji: 'Sara ni mukou e! Purusu Urutora! Mokuhyou tassei, yatta ne!',
+    },
+    over: {
+      ja: 'あわわ… カロリーオーバーだよ！でも諦めちゃダメだ！一緒に消費しよう！',
+      romaji: 'Awawa... Karorii oobaa da yo! Demo akiramecha dame da! Issho ni shouhi shiyou!',
+    },
+    run: {
+      ja: '行こう！ワン・フォー・オール、フルカウル！限界を超えるんだ！',
+      romaji: 'Ikou! Wan Foo Ooru, Furu Kauru! Genkai o koerunda!',
+    },
   },
   bakugou: {
-    greet: 'おい！起きたか！サボるんじゃねえぞ！',
-    analyze: '何食おうとしてんだ？！俺がチェックしてやる！',
-    goal: 'フン、悪くねえな。明日もこの調子でいけ！',
-    over: 'おいクソ野郎！カロリーオーバーだ！今すぐ走れ！',
-    run: 'ついて来い！置いてくぞ！爆破するぞ！',
+    greet: {
+      ja: 'おい！起きたかクソ野郎！サボったら爆破すんぞ！',
+      romaji: 'Oi! Okitaka kuso yarou! Sabottara bakuha sunzo!',
+    },
+    analyze: {
+      ja: '何食おうとしてやがる！余計な脂肪つけんな、俺が見てやる！',
+      romaji: 'Nani kuou to shite yagaru! Yokei na shibou tsukenna, ore ga mite yaru!',
+    },
+    goal: {
+      ja: '死ねぇぇ！当たり前だ！俺の背中追うならこれくらい達成しろ！',
+      romaji: 'SHINEEE! Atarimae da! Ore no senaka ou nara kore kurai tassei shiro!',
+    },
+    over: {
+      ja: 'おいコラァ！！カロリーオーバーだ！今すぐ走って全部燃やせぇ！',
+      romaji: 'Oi koraaa!! Karorii oobaa da! Ima sugu hashitte zenbu moyaseee!',
+    },
+    run: {
+      ja: 'ハウザー・インパクト！ついて来い！置いてくぞ！ぶっ飛ばして走れぇ！',
+      romaji: 'Howitzer Impact! Tsuite koi! Oiteku zo! Buttobashite hashireee!',
+    },
   },
 };
 
@@ -23,6 +53,14 @@ class AudioService {
     this.cache = new Map();
     this.audioContext = null;
     this.isMuted = false;
+    this.voices = [];
+
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        this.voices = window.speechSynthesis.getVoices();
+      };
+      this.voices = window.speechSynthesis.getVoices();
+    }
   }
 
   init() {
@@ -36,86 +74,117 @@ class AudioService {
   }
 
   /**
-   * Synthesize heroic tones using Web Audio API oscillators
+   * Procedural Audio FX: Bakugou Explosions & Deku One For All electrical surges
    */
   playSyntheticHeroSFX(character, eventKey) {
     if (!this.audioContext) return;
     try {
       const ctx = this.audioContext;
       const now = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
 
       if (character === 'bakugou') {
-        // Aggressive sawtooth explosion burst
+        // 1. Procedural explosion noise burst
+        const bufferSize = Math.floor(ctx.sampleRate * 0.35);
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.12));
+        }
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1200, now);
+        filter.frequency.exponentialRampToValueAtTime(140, now + 0.32);
+
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.25, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(ctx.destination);
+        noise.start(now);
+
+        // 2. Deep sub-bass explosion impact thud
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
         osc.type = 'sawtooth';
-        if (eventKey === 'goal') {
-          osc.frequency.setValueAtTime(320, now);
-          osc.frequency.exponentialRampToValueAtTime(740, now + 0.25);
-        } else if (eventKey === 'over') {
-          osc.frequency.setValueAtTime(180, now);
-          osc.frequency.linearRampToValueAtTime(90, now + 0.35);
-        } else {
-          osc.frequency.setValueAtTime(260, now);
-          osc.frequency.exponentialRampToValueAtTime(520, now + 0.2);
-        }
-        gain.gain.setValueAtTime(0.18, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.3);
+
+        oscGain.gain.setValueAtTime(0.2, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+        osc.connect(oscGain);
+        oscGain.connect(ctx.destination);
         osc.start(now);
-        osc.stop(now + 0.35);
+        osc.stop(now + 0.3);
       } else {
-        // Deku: Energetic One For All electrical surge
-        osc.type = 'triangle';
-        if (eventKey === 'goal') {
-          osc.frequency.setValueAtTime(440, now);
-          osc.frequency.exponentialRampToValueAtTime(880, now + 0.22);
-        } else if (eventKey === 'over') {
-          osc.frequency.setValueAtTime(380, now);
-          osc.frequency.linearRampToValueAtTime(220, now + 0.3);
-        } else {
-          osc.frequency.setValueAtTime(523, now);
-          osc.frequency.exponentialRampToValueAtTime(1046, now + 0.18);
-        }
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-        osc.start(now);
-        osc.stop(now + 0.25);
+        // Deku: One For All electrical chime & triumphant harmonic arpeggio
+        const chord = eventKey === 'goal' ? [523.25, 659.25, 783.99, 1046.5] : [440, 554.37, 659.25];
+        chord.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          const startTime = now + idx * 0.05;
+          osc.frequency.setValueAtTime(freq, startTime);
+          osc.frequency.exponentialRampToValueAtTime(freq * 1.5, startTime + 0.22);
+
+          gain.gain.setValueAtTime(0.12, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + 0.25);
+        });
       }
     } catch {
-      // Audio synth fallback ignored silently
+      // Audio synth handled gracefully
     }
   }
 
   /**
-   * Speak authentic Japanese anime dialogue via Web Speech API
+   * Speak authentic Japanese anime voice dialogue via Web Speech API
+   * Falls back gracefully to phonetic Romaji if Japanese voice pack is not installed
    */
-  speakJapanese(character, japaneseText) {
+  speakJapanese(character, soundKey) {
     if (typeof window === 'undefined' || !('speechSynthesis' in window) || this.isMuted) return;
     try {
       window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(japaneseText);
-      utter.lang = 'ja-JP';
 
-      const voices = window.speechSynthesis.getVoices();
+      const scriptObj = JAPANESE_VOICE_SCRIPTS[character]?.[soundKey] || JAPANESE_VOICE_SCRIPTS[character]?.greet;
+      if (!scriptObj) return;
+
+      const voices = this.voices.length ? this.voices : window.speechSynthesis.getVoices();
       const jaVoice = voices.find((v) => v.lang.startsWith('ja') || v.lang.includes('JP'));
+
+      // If Japanese voice exists, use authentic Kanji/Kana; if not, use phonetic Romaji
+      const spokenText = jaVoice ? scriptObj.ja : scriptObj.romaji;
+      const utter = new SpeechSynthesisUtterance(spokenText);
+
       if (jaVoice) {
         utter.voice = jaVoice;
+        utter.lang = 'ja-JP';
+      } else {
+        utter.lang = 'en-US';
       }
 
       if (character === 'bakugou') {
         utter.rate = 1.15; // Aggressive, explosive pace
-        utter.pitch = 0.8; // Lower, intense Bakugou tone
+        utter.pitch = 0.8; // Lower, fiery Bakugou tone
       } else {
-        utter.rate = 1.05; // Bright, youthful pace
-        utter.pitch = 1.25; // Higher, eager Deku tone
+        utter.rate = 1.05; // Bright, eager pace
+        utter.pitch = 1.25; // Higher, heroic Deku tone
       }
 
       utter.volume = 1.0;
       window.speechSynthesis.speak(utter);
     } catch {
-      // Speech fallback handled safely
+      // Speech handled safely
     }
   }
 
@@ -133,7 +202,6 @@ class AudioService {
     }
 
     const filePath = `/assets/companions/${character}/audio/${character}_${soundKey}.mp3`;
-    const jaLine = JAPANESE_VOICE_SCRIPTS[character]?.[soundKey] || JAPANESE_VOICE_SCRIPTS[character]?.greet;
 
     try {
       let audio = this.cache.get(filePath);
@@ -145,9 +213,9 @@ class AudioService {
       audio.currentTime = 0;
       await audio.play();
     } catch {
-      // If audio file is missing or blocked by browser autoplay, use Web Audio Synth and speak in Japanese
+      // High-precision Web Audio procedural FX + Speech Synthesis
       this.playSyntheticHeroSFX(character, soundKey);
-      this.speakJapanese(character, jaLine);
+      this.speakJapanese(character, soundKey);
     }
   }
 
