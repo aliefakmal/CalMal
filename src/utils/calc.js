@@ -1,17 +1,17 @@
 // Kalkulator biometrik & aktiviti (pelan §2.1 & §3.4)
 
 export const ACTIVITY_LEVELS = [
-  { value: 1.2, label: 'Sedentari', desc: 'Kerja pejabat, hampir tiada senaman' },
-  { value: 1.375, label: 'Ringan', desc: 'Senaman ringan 1–3 hari/minggu' },
-  { value: 1.55, label: 'Sederhana', desc: 'Senaman 3–5 hari/minggu' },
-  { value: 1.725, label: 'Aktif', desc: 'Senaman berat 6–7 hari/minggu' },
-  { value: 1.9, label: 'Sangat Aktif', desc: 'Atlet / kerja fizikal berat' },
+  { value: 1.2, label: 'Sedentary', desc: 'Desk job, little to no exercise' },
+  { value: 1.375, label: 'Lightly Active', desc: 'Light exercise 1–3 days/week' },
+  { value: 1.55, label: 'Moderately Active', desc: 'Moderate exercise 3–5 days/week' },
+  { value: 1.725, label: 'Very Active', desc: 'Hard exercise 6–7 days/week' },
+  { value: 1.9, label: 'Extremely Active', desc: 'Athlete / physical labor job' },
 ];
 
 export const GOALS = [
-  { value: 'lose', label: 'Turun Berat', desc: 'Defisit 500 kcal', delta: -500 },
-  { value: 'maintain', label: 'Kekal Berat', desc: 'Sama dengan TDEE', delta: 0 },
-  { value: 'gain', label: 'Tambah Otot', desc: 'Surplus 300 kcal', delta: 300 },
+  { value: 'lose', label: 'Fat Loss', desc: '-500 kcal deficit', delta: -500 },
+  { value: 'maintain', label: 'Maintain Weight', desc: 'Equal to TDEE', delta: 0 },
+  { value: 'gain', label: 'Build Muscle', desc: '+300 kcal surplus', delta: 300 },
 ];
 
 /** Mifflin-St Jeor */
@@ -53,16 +53,16 @@ export function calcBMI({ weight, height }) {
 }
 
 export function bmiLabel(bmi) {
-  // Klasifikasi Asia (KKM)
-  if (bmi < 18.5) return 'Kurang berat';
-  if (bmi < 23) return 'Normal';
-  if (bmi < 27.5) return 'Berlebihan berat';
-  return 'Obes';
+  // Asian BMI classification (WHO/MOH)
+  if (bmi < 18.5) return 'Underweight';
+  if (bmi < 23) return 'Normal Weight';
+  if (bmi < 27.5) return 'Overweight';
+  return 'Obese';
 }
 
-/** MET dinamik mengikut kelajuan (km/j) */
+/** Dynamic MET based on speed (km/h) */
 export function metForSpeed(kmh) {
-  if (kmh < 1) return 0; // berhenti — tiada pembakaran senaman
+  if (kmh < 1) return 0; // stopped
   if (kmh < 5) return 3.5;
   if (kmh < 7.5) return 5.0;
   if (kmh < 10) return 8.3;
@@ -70,11 +70,11 @@ export function metForSpeed(kmh) {
 }
 
 export function metLabel(kmh) {
-  if (kmh < 1) return 'Berhenti';
-  if (kmh < 5) return 'Berjalan santai';
-  if (kmh < 7.5) return 'Berjalan laju';
-  if (kmh < 10) return 'Joging';
-  return 'Larian laju';
+  if (kmh < 1) return 'Idle / Stopped';
+  if (kmh < 5) return 'Casual Walk';
+  if (kmh < 7.5) return 'Brisk Walk';
+  if (kmh < 10) return 'Jogging';
+  return 'Fast Running';
 }
 
 /** Kalori Terbakar = MET × 3.5 × W / 200 × T(minit) */

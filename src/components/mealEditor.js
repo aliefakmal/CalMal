@@ -1,11 +1,11 @@
-// Butang Quick Edit (pelan §3.1) — laras porsi 0.5×–2× atau taip terus nilai kalori & makro
+// Quick Edit Modal (Plan §3.1) — Portion adjustment 0.5×–2× or manual entry of calories & macros
 import { openSheet, toast } from './ui.js';
 import { store } from '../services/store.js';
 import { onMealLogged } from '../services/companionService.js';
 import { esc, MEAL_TYPES, mealTypeNow, round1, int } from '../utils/helpers.js';
 
 /**
- * @param {object} draft  nilai makanan (name,kcal,protein,carbs,fat,weight_g,...)
+ * @param {object} draft  meal values (name, kcal, protein, carbs, fat, weight_g, ...)
  * @param {object} opts   { existingId, title, onSaved }
  */
 export function openMealEditor(draft = {}, { existingId = null, title, onSaved } = {}) {
@@ -19,45 +19,45 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
   let mult = Number(draft.portion) && existingId ? 1 : 1;
 
   const { el, close } = openSheet(`
-    <h3 class="sheet-title">${esc(title || (existingId ? 'Edit Hidangan' : 'Quick Edit'))}</h3>
-    <p class="muted small" style="margin-bottom:18px">Laraskan porsi atau betulkan anggaran AI.</p>
+    <h3 class="sheet-title">${esc(title || (existingId ? 'Edit Meal' : 'Quick Edit'))}</h3>
+    <p class="muted small" style="margin-bottom:18px">Adjust portion sizes or fine-tune AI estimates.</p>
 
     <div class="stack">
       <div class="field">
-        <label for="me-name">Nama hidangan</label>
-        <input class="input" id="me-name" value="${esc(draft.name || '')}" placeholder="cth. Nasi Lemak Ayam" />
+        <label for="me-name">Dish Name</label>
+        <input class="input" id="me-name" value="${esc(draft.name || '')}" placeholder="e.g., Nasi Lemak Chicken Breast" />
       </div>
 
       <div class="field">
-        <label>Waktu makan</label>
+        <label>Meal Time</label>
         <div class="segmented" id="me-type">
-          ${MEAL_TYPES.map((t) => `<button type="button" data-v="${t}" class="${(draft.mealType || mealTypeNow()) === t ? 'active' : ''}">${t.replace('Makan ', '').replace('Tengah Hari', 'T. Hari')}</button>`).join('')}
+          ${MEAL_TYPES.map((t) => `<button type="button" data-v="${t}" class="${(draft.mealType || mealTypeNow()) === t ? 'active' : ''}">${t}</button>`).join('')}
         </div>
       </div>
 
       <div class="portion-box">
         <div class="row between">
-          <span class="label">Saiz porsi</span>
+          <span class="label">Portion Size</span>
           <b class="num portion-val" id="me-mult">1.00×</b>
         </div>
-        <input type="range" id="me-range" min="0.25" max="2.5" step="0.05" value="1" aria-label="Pengganda porsi" />
+        <input type="range" id="me-range" min="0.25" max="2.5" step="0.05" value="1" aria-label="Portion multiplier" />
         <div class="chips" style="justify-content:space-between">
           ${[0.5, 0.75, 1, 1.5, 2].map((v) => `<button type="button" class="chip ${v === 1 ? 'active' : ''}" data-mult="${v}">${v}×</button>`).join('')}
         </div>
       </div>
 
       <div class="grid grid-2">
-        <div class="field"><label for="me-kcal">Kalori</label><div class="input-suffix"><input class="input num" id="me-kcal" type="number" inputmode="decimal" min="0" /><span>kcal</span></div></div>
-        <div class="field"><label for="me-weight">Berat</label><div class="input-suffix"><input class="input num" id="me-weight" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
+        <div class="field"><label for="me-kcal">Calories</label><div class="input-suffix"><input class="input num" id="me-kcal" type="number" inputmode="decimal" min="0" /><span>kcal</span></div></div>
+        <div class="field"><label for="me-weight">Weight</label><div class="input-suffix"><input class="input num" id="me-weight" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
         <div class="field"><label for="me-protein">Protein</label><div class="input-suffix"><input class="input num" id="me-protein" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
-        <div class="field"><label for="me-carbs">Karbohidrat</label><div class="input-suffix"><input class="input num" id="me-carbs" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
-        <div class="field"><label for="me-fat">Lemak</label><div class="input-suffix"><input class="input num" id="me-fat" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
-        <div class="field" style="justify-content:flex-end"><button type="button" class="btn btn-ghost" id="me-calc" title="Kira kalori daripada makro">Kira dari makro</button></div>
+        <div class="field"><label for="me-carbs">Carbs</label><div class="input-suffix"><input class="input num" id="me-carbs" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
+        <div class="field"><label for="me-fat">Fat</label><div class="input-suffix"><input class="input num" id="me-fat" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
+        <div class="field" style="justify-content:flex-end"><button type="button" class="btn btn-ghost" id="me-calc" title="Calculate calories from macros">Auto-sum macros</button></div>
       </div>
 
       <div class="grid grid-2" style="margin-top:6px">
-        <button class="btn btn-ghost" data-close>Batal</button>
-        <button class="btn btn-primary" id="me-save">${existingId ? 'Simpan' : 'Simpan ke Log'}</button>
+        <button class="btn btn-ghost" data-close>Cancel</button>
+        <button class="btn btn-primary" id="me-save">${existingId ? 'Save Changes' : 'Log Meal'}</button>
       </div>
     </div>
   `);
@@ -90,7 +90,7 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
   }));
 
   el.querySelector('#me-save').addEventListener('click', () => {
-    const name = el.querySelector('#me-name').value.trim() || 'Hidangan';
+    const name = el.querySelector('#me-name').value.trim() || 'Meal';
     const values = {
       name,
       mealType,
@@ -100,16 +100,17 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
       fat: round1(base.fat * mult),
       weight_g: int(base.weight_g * mult),
       portion: mult,
+      thumb: draft.thumb,
     };
     if (existingId) {
       store.updateMeal(existingId, values);
-      toast('Hidangan dikemas kini', 'success');
+      toast(`Updated "${name}"`, 'success');
     } else {
-      const meal = store.addMeal({ ...draft, ...values });
-      toast(`${name} ditambah · ${values.kcal} kcal`, 'success');
-      onMealLogged(meal);
+      const m = store.addMeal(values);
+      toast(`Logged "${name}" (${values.kcal} kcal)!`, 'success');
+      onMealLogged(m);
     }
     close(true);
-    onSaved?.();
+    onSaved?.(values);
   });
 }

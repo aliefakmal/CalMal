@@ -24,30 +24,30 @@ export function todayKey(d = new Date()) {
 }
 
 export function fmtTime(iso) {
-  return new Date(iso).toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 export function fmtDate(iso, opts = { day: 'numeric', month: 'short' }) {
-  return new Date(iso).toLocaleDateString('ms-MY', opts);
+  return new Date(iso).toLocaleDateString('en-US', opts);
 }
 
 export function greeting() {
   const h = new Date().getHours();
-  if (h < 12) return 'Selamat pagi';
-  if (h < 15) return 'Selamat tengah hari';
-  if (h < 19) return 'Selamat petang';
-  return 'Selamat malam';
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  if (h < 21) return 'Good evening';
+  return 'Good night';
 }
 
 export function mealTypeNow() {
   const h = new Date().getHours();
-  if (h >= 5 && h < 11) return 'Sarapan';
-  if (h >= 11 && h < 16) return 'Tengah Hari';
-  if (h >= 18 && h < 23) return 'Makan Malam';
-  return 'Snek';
+  if (h >= 5 && h < 11) return 'Breakfast';
+  if (h >= 11 && h < 16) return 'Lunch';
+  if (h >= 18 && h < 23) return 'Dinner';
+  return 'Snack';
 }
 
-export const MEAL_TYPES = ['Sarapan', 'Tengah Hari', 'Makan Malam', 'Snek'];
+export const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
 export const round1 = (n) => Math.round((Number(n) || 0) * 10) / 10;
 export const int = (n) => Math.round(Number(n) || 0);

@@ -1,42 +1,42 @@
-// Notifikasi pintar & pencetus kompanion (pelan §4.2)
+// Smart Notifications & Anime Companion Triggers (English)
 import { store } from './store.js';
 import { showCompanion, showCutIn } from '../components/companion.js';
 import { toast } from '../components/ui.js';
 
 export const BADGES = {
-  first_meal: { title: 'Suapan Pertama', desc: 'Log makanan pertama', who: 'deku' },
-  first_run: { title: 'Langkah Wira', desc: 'Rekod aktiviti pertama', who: 'bakugou' },
-  run_5k: { title: '5K Smash', desc: 'Tamatkan larian 5 km', who: 'deku' },
-  best_pace: { title: 'Rekod Pace Baharu', desc: 'Pace terbaik peribadi (≥1 km)', who: 'bakugou' },
-  target_day: { title: 'Sasaran Tepat', desc: 'Capai sasaran kalori tanpa terlebih', who: 'deku' },
-  protein_80: { title: 'Protein Hero', desc: 'Capai 80% sasaran protein', who: 'deku' },
-  streak_3: { title: 'Konsisten 3 Hari', desc: 'Log makanan 3 hari berturut', who: 'deku' },
-  weight_goal: { title: 'Plus Ultra!', desc: 'Capai berat badan sasaran', who: 'bakugou' },
-  scanner_pro: { title: 'Pakar Imbasan', desc: 'Guna ketiga-tiga mod imbasan', who: 'deku' },
+  first_meal: { title: 'First Bite', desc: 'Logged your first meal', who: 'deku' },
+  first_run: { title: 'Hero Step', desc: 'Recorded first running session', who: 'bakugou' },
+  run_5k: { title: '5K Smash', desc: 'Completed a 5 km run', who: 'deku' },
+  best_pace: { title: 'Pace Record', desc: 'Personal best pace (≥1 km)', who: 'bakugou' },
+  target_day: { title: 'Bullseye', desc: 'Hit exact calorie target within 10%', who: 'deku' },
+  protein_80: { title: 'Protein Hero', desc: 'Reached 80% daily protein target', who: 'deku' },
+  streak_3: { title: '3-Day Consistency', desc: 'Logged meals for 3 consecutive days', who: 'deku' },
+  weight_goal: { title: 'Plus Ultra!', desc: 'Achieved your target body weight', who: 'bakugou' },
+  scanner_pro: { title: 'Scan Master', desc: 'Used all 3 scanning modes', who: 'deku' },
 };
 
 const REMINDERS = [
   {
-    id: 'breakfast', at: [8, 0], until: [10, 30], who: 'deku', meal: 'Sarapan',
-    text: 'Selamat pagi! Jangan lupa tangkap gambar sarapan anda di CalMal supaya kita boleh rancang baki kalori hari ini!',
+    id: 'breakfast', at: [8, 0], until: [10, 30], who: 'deku', meal: 'Breakfast',
+    text: 'Good morning! Remember to snap a photo of your breakfast in CalMal so we can balance your daily calories!',
   },
   {
-    id: 'lunch', at: [13, 0], until: [15, 0], who: 'deku', meal: 'Tengah Hari',
-    text: 'Waktu makan tengah hari! Kalau makan Nasi Campur, ingat tip kita: tambah sayur dan kawal kuah!',
+    id: 'lunch', at: [13, 0], until: [15, 0], who: 'deku', meal: 'Lunch',
+    text: 'Lunchtime! Remember our dietitian rule: double the vegetables, opt for lean protein, and watch the heavy gravies!',
   },
   {
-    id: 'dinner', at: [20, 0], until: [22, 30], who: 'bakugou', meal: 'Makan Malam',
-    text: 'Oi! Kau belum log makan malam lagi! Jangan ingat kau boleh sorok Teh Tarik kau daripada aku!',
+    id: 'dinner', at: [20, 0], until: [22, 30], who: 'bakugou', meal: 'Dinner',
+    text: 'HEY! You haven’t logged dinner yet! Don’t think you can hide that sweet supper from me!',
   },
 ];
 
-const INACTIVE_TEXT = 'OI DEKU-Kaki Bangku! Hari dah nak gelap dan kau belum bakar walau 100 kcal pun melalui senaman! Kasut sukan kau dah berhabuk ke?! Keluar dan mulakan larian sekarang!';
+const INACTIVE_TEXT = 'OI SLACKER! The sun is setting and you haven’t burned even 100 kcal through exercise! Are your running shoes gathering dust?! Get outside and run right now!';
 
 const mins = (h, m) => h * 60 + m;
 
 export async function requestNotificationPermission() {
   if (!('Notification' in window)) {
-    toast('Pelayar ini tidak menyokong notifikasi.', 'error');
+    toast('This browser does not support web notifications.', 'error');
     return false;
   }
   const p = await Notification.requestPermission();
@@ -45,7 +45,6 @@ export async function requestNotificationPermission() {
 
 async function pushNotification(title, body) {
   if (!store.settings.notifications || !('Notification' in window) || Notification.permission !== 'granted') return;
-  // Jika app sedang dilihat, kompanion in-app sudah memadai
   if (document.visibilityState === 'visible') return;
   try {
     const reg = await navigator.serviceWorker?.getRegistration();
@@ -61,7 +60,7 @@ function fire(id, who, text) {
   pushNotification(who === 'bakugou' ? 'Bakugou 💥' : 'Deku ⚡', text);
 }
 
-/** Semakan berkala: peringatan waktu makan & amaran tidak aktif 5:30 petang */
+/** Periodic reminder check: meals & 5:30 PM inactivity alert */
 export function checkReminders() {
   if (!store.profile) return;
   const now = new Date();
@@ -94,16 +93,16 @@ export function startReminderLoop() {
 function unlock(id) {
   if (!store.unlockBadge(id)) return false;
   const b = BADGES[id];
-  setTimeout(() => toast(`Lencana dibuka: ${b.title} 🏅`, 'success'), 600);
+  setTimeout(() => toast(`Badge Unlocked: ${b.title} 🏅`, 'success'), 600);
   return true;
 }
 
-/** Semakan pencapaian selepas log makanan */
+/** Check achievements after meal is logged */
 export function onMealLogged(meal) {
   unlock('first_meal');
   const s = store.summary();
 
-  // Streak 3 hari
+  // 3-day streak
   const days = new Set(store.state.meals.map((x) => x.date));
   const d = new Date();
   let streak = 0;
@@ -114,33 +113,33 @@ export function onMealLogged(meal) {
   }
   if (streak >= 3) unlock('streak_3');
 
-  // Protein 80%
+  // 80% Protein
   if (s.protein >= s.macros.protein * 0.8 && !store.flag('protein80')) {
     store.setFlag('protein80');
     unlock('protein_80');
     showCompanion({
       who: 'deku',
-      text: `Plus Ultra! Anda dah capai ${Math.round((s.protein / s.macros.protein) * 100)}% sasaran protein untuk berat badan anda hari ini! Teruskan usaha!`,
+      text: `Plus Ultra! You have reached ${Math.round((s.protein / s.macros.protein) * 100)}% of your daily protein goal today! Keep up the momentum!`,
     });
     return;
   }
 
-  // Sasaran kalori dicapai tanpa terlebih (90–100%)
+  // Target calorie hit within 90-100%
   const ratio = s.kin / (s.target + s.kout);
   if (ratio >= 0.9 && ratio <= 1.0 && !store.flag('target')) {
     store.setFlag('target');
     unlock('target_day');
-    showCompanion({ who: 'both', title: 'Fist Bump! 👊', text: 'Deku: Sasaran kalori tepat! · Bakugou: Hmph, jangan berani terlebih makan lepas ni!' });
+    showCompanion({ who: 'both', title: 'Fist Bump! 👊', text: 'Deku: Perfect calorie balance today! · Bakugou: Hmph, don’t you dare overeat tomorrow!' });
     return;
   }
 
   if (ratio > 1.1 && !store.flag('over')) {
     store.setFlag('over');
-    showCompanion({ who: 'bakugou', text: `OI! Kau dah terlebih ${Math.abs(s.remaining)} kcal! Pakai kasut sekarang dan bakar balik!` });
+    showCompanion({ who: 'bakugou', text: `OI! You exceeded your target by ${Math.abs(s.remaining)} kcal! Put on your running shoes and burn it off right now!` });
   }
 }
 
-/** Semakan pencapaian selepas aktiviti tamat */
+/** Check achievements after running activity ends */
 export function onActivityFinished(act) {
   const first = unlock('first_run');
   const past = store.state.activities.filter((a) => a.id !== act.id && a.distanceKm >= 1 && a.pace > 0);
@@ -151,23 +150,23 @@ export function onActivityFinished(act) {
     if (act.distanceKm >= 5) unlock('run_5k');
     if (newBest) unlock('best_pace');
     showCutIn({
-      title: act.distanceKm >= 5 ? '5K SMASH!!' : 'REKOD BAHARU!',
+      title: act.distanceKm >= 5 ? '5K SMASH!!' : 'NEW RECORD!',
       subtitle: `${act.distanceKm.toFixed(2)} km · ${act.kcal} kcal`,
       lines: [
-        { who: 'deku', text: 'Luar biasa! Anda berjaya menamatkan larian dengan rentak yang sangat stabil! SMASH!!' },
-        { who: 'bakugou', text: 'Hmph! Boleh tahan untuk permulaan. Esok kalahkan rekod masa kau sendiri!' },
+        { who: 'deku', text: 'Incredible! You completed the run with an amazingly steady pace! SMASH!!' },
+        { who: 'bakugou', text: 'Hmph! Not bad for a warm-up. Tomorrow, beat your own record time!' },
       ],
     });
   } else if (act.kcal >= 100) {
-    showCompanion({ who: 'bakugou', text: `Hmph. ${act.kcal} kcal dibakar. Itu baru panas badan — esok lari lebih jauh!` });
+    showCompanion({ who: 'bakugou', text: `Hmph. ${act.kcal} kcal burned. That’s just a warm-up — run further tomorrow!` });
   } else if (first) {
-    showCompanion({ who: 'deku', text: 'Aktiviti pertama direkod! Setiap wira bermula dengan satu langkah!' });
+    showCompanion({ who: 'deku', text: 'First activity recorded! Every hero begins with a single bold step!' });
   } else {
-    showCompanion({ who: 'bakugou', text: 'Itu je?! Kurang 100 kcal! Jangan buat aku malu!' });
+    showCompanion({ who: 'bakugou', text: 'Is that it?! Less than 100 kcal! Don’t embarrass me!' });
   }
 }
 
-/** Semakan berat badan sasaran */
+/** Check target body weight achievement */
 export function onWeightLogged(weight) {
   const p = store.profile;
   if (!p?.targetWeight) return;
@@ -175,10 +174,10 @@ export function onWeightLogged(weight) {
   if (reached && unlock('weight_goal')) {
     showCutIn({
       title: 'PLUS ULTRA!!',
-      subtitle: `Berat sasaran ${p.targetWeight} kg dicapai!`,
+      subtitle: `Target weight of ${p.targetWeight} kg reached!`,
       lines: [
-        { who: 'deku', text: 'Anda berjaya! Semua usaha, semua log makanan, semua larian — semuanya berbaloi!' },
-        { who: 'bakugou', text: 'Tch... Okay, aku mengaku. Kau memang hebat. Sekarang tetapkan sasaran baru!' },
+        { who: 'deku', text: 'You did it! All that effort, every logged meal, every run — it was all worth it!' },
+        { who: 'bakugou', text: 'Tch... Alright, I’ll admit it. You were awesome. Now set an even higher goal!' },
       ],
     });
   }
@@ -192,16 +191,16 @@ export function onScanModeUsed(mode) {
   if (used.size >= 3) unlock('scanner_pro');
 }
 
-/** Mesej kontekstual untuk kad kompanion di papan pemuka */
+/** Contextual companion bubble for dashboard */
 export function dashboardMessage() {
   const s = store.summary();
   const h = new Date().getHours();
   const pct = s.kin / s.target;
-  if (!s.meals.length && h < 11) return { who: 'deku', text: 'Selamat pagi! Mari mulakan hari dengan sarapan berprotein. Imbas makanan anda bila sedia!' };
-  if (h >= 17 && s.kout < 100) return { who: 'bakugou', text: 'Dah petang dan kau belum bergerak?! Buka tab Aktiviti dan LARI sekarang!' };
-  if (s.remaining < 0) return { who: 'bakugou', text: `Kau terlebih ${Math.abs(s.remaining)} kcal. Bakar balik dengan larian ${Math.ceil(Math.abs(s.remaining) / 70)} km!` };
-  if (s.protein < s.macros.protein * 0.5 && h >= 14) return { who: 'deku', text: `Protein baru ${Math.round(s.protein)} g. Cuba tambah ayam, ikan, telur atau tauhu untuk hidangan seterusnya!` };
-  if (pct >= 0.9) return { who: 'deku', text: 'Hampir capai sasaran! Pilih snek ringan seperti buah jika lapar lagi.' };
-  if (s.kout >= 200) return { who: 'bakugou', text: `${s.kout} kcal dibakar hari ni. Hmph, boleh tahan. Jangan berhenti!` };
-  return { who: 'deku', text: `Baki ${s.remaining} kcal hari ini. Saya cadangkan hidangan seimbang: separuh sayur, suku protein, suku nasi!` };
+  if (!s.meals.length && h < 11) return { who: 'deku', text: 'Good morning! Let’s start the day with high-protein fuel. Scan your breakfast when you’re ready!' };
+  if (h >= 17 && s.kout < 100) return { who: 'bakugou', text: 'It’s already evening and you haven’t moved?! Open the Activity tab and RUN!' };
+  if (s.remaining < 0) return { who: 'bakugou', text: `You’re over by ${Math.abs(s.remaining)} kcal. Burn it off with a ${Math.ceil(Math.abs(s.remaining) / 70)} km run!` };
+  if (s.protein < s.macros.protein * 0.5 && h >= 14) return { who: 'deku', text: `Protein is currently at ${Math.round(s.protein)} g. Try adding chicken, fish, eggs, or tofu for your next meal!` };
+  if (pct >= 0.9) return { who: 'deku', text: 'Almost at your calorie target! Choose a light fruit snack if you feel hungry.' };
+  if (s.kout >= 200) return { who: 'bakugou', text: `${s.kout} kcal burned today! Hmph, respectable work. Don’t stop now!` };
+  return { who: 'deku', text: `You have ${s.remaining} kcal remaining today. I recommend a balanced plate: half vegetables, quarter lean protein, quarter carbs!` };
 }

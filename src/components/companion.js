@@ -4,8 +4,8 @@ import { esc } from '../utils/helpers.js';
 import { store } from '../services/store.js';
 
 export const CHARACTERS = {
-  deku: { name: 'Izuku Midoriya', short: 'Deku', role: 'Jurulatih Nutrisi' },
-  bakugou: { name: 'Katsuki Bakugou', short: 'Bakugou', role: 'Jurulatih Kecergasan' },
+  deku: { name: 'Izuku Midoriya', short: 'Deku', role: 'Nutrition Coach' },
+  bakugou: { name: 'Katsuki Bakugou', short: 'Bakugou', role: 'Fitness Coach' },
 };
 
 export function avatar(who, size = 52) {
@@ -63,7 +63,7 @@ export function showCompanion({ who = 'deku', text, title, duration = 7000 }) {
       <div class="cp-title">${esc(title || (who === 'both' ? 'Deku & Bakugou' : CHARACTERS[who].short))}</div>
       <p>${esc(text)}</p>
     </div>
-    <button class="cp-close" aria-label="Tutup">×</button>`;
+    <button class="cp-close" aria-label="Close">×</button>`;
   if (who === 'bakugou') el.insertAdjacentHTML('afterbegin', '<div class="boom"></div>');
   root.appendChild(el);
   activePanel = el;

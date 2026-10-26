@@ -114,11 +114,11 @@ export function detectLiveLocation() {
       (err) => {
         if (err.code === 1) {
           permissionStatus = 'denied';
-          session.error = 'Akses lokasi ditolak. Sila benarkan kebenaran lokasi dalam pelayar telefon anda.';
+          session.error = 'Location access denied. Please grant location permissions in your browser settings.';
         } else if (err.code === 2) {
-          session.error = 'Isyarat GPS tidak ditemui. Pastikan GPS peranti dihidupkan.';
+          session.error = 'GPS signal not found. Please ensure device GPS is turned on.';
         } else {
-          session.error = 'Masa pengesanan lokasi tamat. Cuba semula di kawasan terbuka.';
+          session.error = 'Location detection timed out. Please try again in an open outdoor area.';
         }
         emit();
         reject(err);
@@ -267,15 +267,15 @@ function onRunPosition(pos) {
 
 function onRunError(err) {
   session.error = err.code === 1
-    ? 'Akses lokasi ditolak. Sila benarkan akses GPS dalam tetapan pelayar.'
-    : 'Isyarat GPS terputus. Pastikan anda berada di luar bangunan.';
+    ? 'Location access denied. Please allow GPS access in browser settings.'
+    : 'GPS signal lost. Please ensure you are outdoors with a clear view of the sky.';
   emit();
 }
 
 function startRunWatch() {
   if (session.simulated) return startRunSim();
   if (!('geolocation' in navigator)) {
-    session.error = 'Pelayar ini tidak menyokong penjejakan GPS.';
+    session.error = 'This browser does not support GPS tracking.';
     emit();
     return;
   }
@@ -370,7 +370,7 @@ export function finish() {
   const step = Math.max(1, Math.ceil(stats.points.length / maxPts));
 
   const result = {
-    type: 'Larian/Jalan',
+    type: 'Outdoor Run / Walk',
     startedAt: session.startedAt || new Date().toISOString(),
     endedAt: new Date().toISOString(),
     durationSec: Math.round(stats.elapsedSec),

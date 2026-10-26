@@ -42,13 +42,13 @@ export function openSheet(html, { onClose, className = '' } = {}) {
   return { el: sheet, close };
 }
 
-export function confirmSheet({ title, message, confirmText = 'Ya', danger = false }) {
+export function confirmSheet({ title, message, confirmText = 'Yes', danger = false }) {
   return new Promise((resolve) => {
     const { el, close } = openSheet(
       `<h3 class="sheet-title">${esc(title)}</h3>
        <p class="muted" style="margin:6px 0 20px;line-height:1.5">${esc(message)}</p>
        <div class="grid grid-2">
-         <button class="btn btn-ghost" data-close>Batal</button>
+         <button class="btn btn-ghost" data-close>Cancel</button>
          <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" id="confirm-yes">${esc(confirmText)}</button>
        </div>`,
       { onClose: (r) => resolve(!!r) }
@@ -69,7 +69,7 @@ export function setLoading(btn, loading, label) {
   }
 }
 
-/** Cincin kemajuan monokrom nipis (pelan §3.2) */
+/** Thin monochrome progress ring */
 export function ringSVG({ size = 220, stroke = 6, progress = 0, over = false }) {
   const r = (size - stroke * 2) / 2;
   const c = 2 * Math.PI * r;
@@ -81,7 +81,7 @@ export function ringSVG({ size = 220, stroke = 6, progress = 0, over = false }) 
   </svg>`;
 }
 
-/** Jalankan animasi cincin selepas dimasukkan ke DOM */
+/** Trigger ring animations */
 export function animateRings(root = document) {
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
@@ -102,9 +102,9 @@ export function macroBar({ label, value, target, unit = 'g', cls = '' }) {
 
 export function statusBadge(status) {
   const map = {
-    GOOD: ['ok', 'SESUAI'],
-    MODERATE: ['warn', 'SEDERHANA'],
-    HIGH: ['bad', 'TINGGI'],
+    GOOD: ['ok', 'OPTIMAL'],
+    MODERATE: ['warn', 'MODERATE'],
+    HIGH: ['bad', 'HIGH CALORIE'],
   };
   const [cls, label] = map[status] || map.MODERATE;
   return `<span class="badge ${cls}">${label}</span>`;
