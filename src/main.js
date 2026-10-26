@@ -14,11 +14,11 @@ import { renderRecipes } from './screens/recipes.js';
 import { renderProfile } from './screens/profile.js';
 
 const ROUTES = {
-  home: { label: 'Utama', icon: icons.home, render: renderDashboard, title: 'Utama' },
-  activity: { label: 'Aktiviti', icon: icons.run, render: renderActivity, title: 'Aktiviti' },
-  scan: { label: 'Imbas', icon: icons.scan, render: renderScanner, title: 'Imbas', fab: true },
-  recipes: { label: 'Resipi', icon: icons.chef, render: renderRecipes, title: 'Resipi AI' },
-  profile: { label: 'Profil', icon: icons.user, render: renderProfile, title: 'Profil' },
+  home: { label: 'Dashboard', icon: icons.home, render: renderDashboard, title: 'Dashboard' },
+  activity: { label: 'Activity', icon: icons.run, render: renderActivity, title: 'Activity' },
+  scan: { label: 'Scan', icon: icons.scan, render: renderScanner, title: 'AI Food Scanner', fab: true },
+  recipes: { label: 'Recipes', icon: icons.chef, render: renderRecipes, title: 'AI Recipes' },
+  profile: { label: 'Profile', icon: icons.user, render: renderProfile, title: 'Profile' },
 };
 
 const view = document.getElementById('view');
@@ -42,9 +42,9 @@ function renderNav(active) {
   document.getElementById('sidebar').innerHTML = `
     <a class="brand" href="#/home"><img src="/icon.svg" alt="" />CalMal</a>
     ${['home', 'scan', 'activity', 'recipes', 'profile']
-      .map((k) => `<a href="#/${k}" id="side-${k}" class="side-item ${active === k ? 'active' : ''}">${k === 'scan' ? icons.camera : ROUTES[k].icon}<span>${k === 'scan' ? 'Imbas Makanan' : ROUTES[k].label}</span></a>`)
+      .map((k) => `<a href="#/${k}" id="side-${k}" class="side-item ${active === k ? 'active' : ''}">${k === 'scan' ? icons.camera : ROUTES[k].icon}<span>${k === 'scan' ? 'Scan Food' : ROUTES[k].label}</span></a>`)
       .join('')}
-    <div class="side-foot">CalMal v2.0 · Gemini 3.5 Flash Lite<br/>Data disimpan secara lokal dalam peranti anda.</div>`;
+    <div class="side-foot">CalMal v2.5 · Multi-Tier AI Cascade<br/>Local-first privacy & offline storage.</div>`;
 }
 
 function renderTopbar() {
@@ -53,8 +53,8 @@ function renderTopbar() {
   document.getElementById('topbar').innerHTML = `
     <a class="brand" href="#/home"><img src="/icon.svg" alt="" />CalMal</a>
     <div class="topbar-actions">
-      ${rec ? `<a class="pill-status rec" href="#/activity" id="rec-pill"><span class="dot"></span>Merekod</a>` : ''}
-      <span class="pill-status ${online ? '' : 'offline'}" title="${online ? 'Dalam talian' : 'Luar talian — data disimpan lokal'}">
+      ${rec ? `<a class="pill-status rec" href="#/activity" id="rec-pill"><span class="dot"></span>Recording</a>` : ''}
+      <span class="pill-status ${online ? '' : 'offline'}" title="${online ? 'Online' : 'Offline — Data saved locally'}">
         <span class="dot"></span>${online ? 'Online' : 'Offline'}
       </span>
     </div>`;

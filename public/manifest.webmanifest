@@ -1,13 +1,13 @@
 {
-  "name": "CalMal",
+  "name": "CalMal — AI Calorie & Strava GPS Tracker",
   "short_name": "CalMal",
-  "description": "Penjejak kalori AI masakan Malaysia & aktiviti ala Strava.",
+  "description": "AI food calorie scanner, Asian dietary engine & Strava-style GPS activity tracker.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#000000",
   "theme_color": "#000000",
-  "lang": "ms",
+  "lang": "en",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
