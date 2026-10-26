@@ -25,14 +25,16 @@ export function renderScanner(container) {
   let facingMode = store.settings.cameraFacing || 'environment'; // 'environment' | 'user'
 
   const QUICK_CHIPS = [
-    'half rice',
-    'less oil',
-    'extra gravy',
-    'chicken breast',
-    'less sweet',
-    'skinless',
-    'extra veggies',
-    'sambal on side',
+    'Nasi separuh (half rice)',
+    'Kurang minyak (less oil)',
+    'Kuah banjir (extra gravy)',
+    'Kuah asing (gravy on side)',
+    'Ayam dada (chicken breast)',
+    'Kurang manis (less sweet)',
+    'Tanpa kulit (skinless)',
+    'Sambal asing (sambal on side)',
+    'Telur rebus (boiled egg)',
+    'Sayur lebih (extra veggies)',
   ];
 
   function render() {
@@ -630,6 +632,7 @@ export function renderScanner(container) {
         if (selectedChips.has(val)) selectedChips.delete(val);
         else selectedChips.add(val);
         c.classList.toggle('active', selectedChips.has(val));
+        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
       });
     });
 
