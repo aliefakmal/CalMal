@@ -59,6 +59,22 @@ export function calcBMI({ weight, height }) {
   return weight / (m * m);
 }
 
+export function calc7DayMovingAverage(weightRecords = []) {
+  const sorted = [...weightRecords]
+    .filter((w) => !isNaN(Number(w.weight)) && Number(w.weight) > 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return sorted.map((item, idx) => {
+    const windowStart = Math.max(0, idx - 6);
+    const windowSlice = sorted.slice(windowStart, idx + 1);
+    const avg = windowSlice.reduce((s, x) => s + Number(x.weight), 0) / windowSlice.length;
+    return {
+      date: item.date,
+      weight: Number(item.weight),
+      avg: Math.round(avg * 10) / 10,
+    };
+  });
+}
+
 export function bmiLabel(bmi) {
   // Asian BMI classification (WHO/MOH)
   if (bmi < 18.5) return 'Underweight';

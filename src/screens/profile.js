@@ -4,7 +4,7 @@ import { BADGES, onWeightLogged, requestNotificationPermission } from '../servic
 import { GeminiConfig } from '../config/gemini.js';
 import { testApiKey } from '../services/gemini.js';
 import { toast, confirmSheet, setLoading } from '../components/ui.js';
-import { calcBMI, bmiLabel, calcDailyTarget } from '../utils/calc.js';
+import { calcBMI, bmiLabel, calcDailyTarget, calc7DayMovingAverage } from '../utils/calc.js';
 import { avatar } from '../components/companion.js';
 import { openProfileEditor } from '../components/profileEditor.js';
 import { soundboard } from '../services/audioService.js';
@@ -46,6 +46,11 @@ export function renderProfile(container) {
     const pts = list.map((item, idx) => ({ x: getX(idx), y: getY(Number(item.weight)), val: Number(item.weight), date: item.date }));
     const polylinePts = pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
 
+    // 7-Day Moving Average to smooth out daily water weight fluctuations
+    const maList = calc7DayMovingAverage(list);
+    const maPts = maList.map((m, idx) => ({ x: getX(idx), y: getY(m.avg), avg: m.avg }));
+    const maPolylinePts = maPts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
     const targetY = targetW ? getY(Number(targetW)) : null;
 
     return `
@@ -58,7 +63,13 @@ export function renderProfile(container) {
                  <text x="${w - pad}" y="${targetY - 4}" fill="var(--ok)" font-size="10" text-anchor="end" font-weight="700">Target: ${targetW}kg</text>`
               : ''
           }
-          <!-- Weight trend curve -->
+          <!-- 7-Day Moving Average trend (amber dashed) -->
+          ${
+            maPts.length >= 2
+              ? `<polyline points="${maPolylinePts}" fill="none" stroke="#f6ad55" stroke-width="2" stroke-dasharray="4 3" opacity="0.9" />`
+              : ''
+          }
+          <!-- Weight trend curve (solid white) -->
           <polyline points="${polylinePts}" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
           <!-- Points -->
           ${pts
@@ -70,6 +81,13 @@ export function renderProfile(container) {
             )
             .join('')}
         </svg>
+        <div class="row between xs muted" style="margin-top:6px;padding:0 4px">
+          <div class="row" style="gap:12px;align-items:center">
+            <span class="row" style="gap:4px;align-items:center"><span style="width:10px;height:2.5px;background:#fff;display:inline-block;border-radius:2px"></span> Daily Weight</span>
+            <span class="row" style="gap:4px;align-items:center"><span style="width:10px;height:2px;background:#f6ad55;display:inline-block;border-radius:2px"></span> 7-Day Trend (Smoothed)</span>
+          </div>
+          ${targetW ? `<span style="color:var(--ok)">Target: ${targetW}kg</span>` : ''}
+        </div>
       </div>
     `;
   }
@@ -283,6 +301,16 @@ export function renderProfile(container) {
 
           <label class="row between" style="padding:8px 0;cursor:pointer">
             <div>
+              <b>Fasting Mode / Puasa (Ramadan & Intermittent)</b>
+              <p class="small muted">Disables daytime meal alerts; reschedules hydration and reminder prompts for Sahur & Iftar.</p>
+            </div>
+            <input type="checkbox" id="fasting-toggle" ${settings.fastingMode ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
+          </label>
+
+          <div class="divider"></div>
+
+          <label class="row between" style="padding:8px 0;cursor:pointer">
+            <div>
               <b>Continuous Live Camera (Default: On)</b>
               <p class="small muted">Automatically starts camera feed immediately upon navigating to the Scan tab.</p>
             </div>
@@ -439,6 +467,12 @@ export function renderProfile(container) {
         store.saveSettings({ notifications: false });
         toast('Notifications disabled.', 'info');
       }
+    });
+
+    // Toggle Fasting / Puasa Mode
+    container.querySelector('#fasting-toggle')?.addEventListener('change', (e) => {
+      store.saveSettings({ fastingMode: e.target.checked });
+      toast(e.target.checked ? 'Fasting mode activated! Reminders adjusted for Sahur & Iftar.' : 'Fasting mode disabled.', 'info');
     });
 
     // Toggle Continuous Live Camera

@@ -6,8 +6,8 @@ const listeners = new Set();
 let runWatchId = null;
 let idleWatchId = null;
 let timer = null;
-let wakeLock = null;
 let simTimer = null;
+let wakeLock = null;
 
 // Keadaan Lokasi Langsung (sentiasa diperbaharui walaupun belum mula lari)
 let liveLocation = null; // { lat, lng, accuracy, alt, speed, timestamp }
