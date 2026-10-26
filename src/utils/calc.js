@@ -24,9 +24,16 @@ export function calcTDEE(profile) {
   return Math.round(calcBMR(profile) * Number(profile.activity || 1.2));
 }
 
+export function calcSuggestedDailyTarget(profile) {
+  const goal = GOALS.find((g) => g.value === profile?.goal) || GOALS[1];
+  return Math.max(1200, calcTDEE(profile || {}) + goal.delta);
+}
+
 export function calcDailyTarget(profile) {
-  const goal = GOALS.find((g) => g.value === profile.goal) || GOALS[1];
-  return Math.max(1200, calcTDEE(profile) + goal.delta);
+  if (profile && profile.customTarget && Number(profile.customTarget) >= 500) {
+    return Math.round(Number(profile.customTarget));
+  }
+  return calcSuggestedDailyTarget(profile);
 }
 
 /** Makro berasaskan berat badan: protein 1.6–2.2 g/kg, lemak 0.8–1.0 g/kg, baki = karbohidrat */

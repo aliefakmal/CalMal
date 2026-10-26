@@ -1,11 +1,10 @@
-// Modern Bento Grid Dashboard (Masa Nyata) — Net Calorie Balance, Mini-Macro Grid, Water Tracker & Companion
 import { store } from '../services/store.js';
 import { icons } from '../components/icons.js';
-import { ringSVG, macroBar, animateRings, routeThumbSVG } from '../components/ui.js';
+import { ringSVG, macroBar, animateRings, routeThumbSVG, openSheet, toast } from '../components/ui.js';
 import { companionBubble, bindCompanionEvents } from '../components/companion.js';
 import { dashboardMessage } from '../services/companionService.js';
 import { openMealEditor } from '../components/mealEditor.js';
-import { formatPace, formatDuration } from '../utils/calc.js';
+import { formatPace, formatDuration, calcSuggestedDailyTarget } from '../utils/calc.js';
 import { esc, fmtTime, todayKey } from '../utils/helpers.js';
 
 export function renderDashboard(container) {
@@ -60,7 +59,13 @@ export function renderDashboard(container) {
           <div class="card center bento-card bento-ring-card">
             <div class="card-title row between" style="width:100%;margin-bottom:4px">
               <span>Net Calorie Balance</span>
-              <span class="badge ${isOver ? 'bad' : 'ok'}">${isOver ? 'SURPLUS' : 'ON TARGET'}</span>
+              <div class="row" style="gap:6px;align-items:center">
+                <button type="button" class="btn btn-xs btn-ghost" id="btn-adjust-target" title="Adjust daily calorie target" style="padding:2px 8px;font-size:11px;border:1px solid var(--border-soft)">
+                  ${icons.edit}
+                  <span>Adjust</span>
+                </button>
+                <span class="badge ${isOver ? 'bad' : 'ok'}">${isOver ? 'SURPLUS' : 'ON TARGET'}</span>
+              </div>
             </div>
 
             <div class="ring-wrap" style="margin:14px auto 12px">
@@ -132,10 +137,16 @@ export function renderDashboard(container) {
                     <div class="xs muted">${water} / ${waterTarget} ml (${waterPct}%)</div>
                   </div>
                 </div>
-                <button type="button" class="btn btn-xs btn-primary btn-water-add" id="btn-add-water">
-                  ${icons.plus}
-                  <span>250ml</span>
-                </button>
+                <div class="row" style="gap:5px">
+                  <button type="button" class="btn btn-xs btn-ghost" id="btn-sub-water" title="Remove 250ml water" style="padding:3px 7px;font-size:11px;border:1px solid var(--border-soft);color:var(--text-muted)">
+                    ${icons.minus}
+                    <span>250ml</span>
+                  </button>
+                  <button type="button" class="btn btn-xs btn-primary btn-water-add" id="btn-add-water" title="Add 250ml water" style="padding:3px 7px;font-size:11px">
+                    ${icons.plus}
+                    <span>250ml</span>
+                  </button>
+                </div>
               </div>
 
               <div class="water-track">
@@ -225,7 +236,7 @@ export function renderDashboard(container) {
                   ? `<div class="empty">
                       ${icons.run}
                       <p>No activities logged today.</p>
-                      <span class="small muted">Start the Strava-style GPS tracker to burn calories and record your route!</span>
+                      <span class="small muted">Record an outdoor run or walk to track your burned calories and route.</span>
                     </div>`
                   : s.acts
                       .map(
@@ -266,11 +277,91 @@ export function renderDashboard(container) {
   }
 
   function bindEvents() {
-    // Water tracker add button
+    // Adjust Daily Calorie Target Modal
+    container.querySelector('#btn-adjust-target')?.addEventListener('click', () => {
+      const currentProfile = store.profile || {};
+      const suggestedTarget = calcSuggestedDailyTarget(currentProfile);
+      const currentTarget = s.target;
+      const isCustom = Boolean(currentProfile.customTarget && Number(currentProfile.customTarget) >= 500);
+
+      const { el: sheet, close } = openSheet(`
+        <div class="sheet-head row between" style="margin-bottom:14px">
+          <div>
+            <span class="eyebrow">Goal Calibration</span>
+            <h3 style="margin:2px 0 0;font-size:18px;font-weight:800">Adjust Calorie Target</h3>
+          </div>
+          <button type="button" class="btn btn-icon btn-ghost btn-sm" data-close aria-label="Close">
+            ${icons.close}
+          </button>
+        </div>
+
+        <div class="stack" style="gap:14px">
+          <div class="card flat" style="padding:12px;background:var(--surface-2);border-radius:12px">
+            <div class="row between small" style="margin-bottom:6px">
+              <span class="muted">Formula Recommendation:</span>
+              <b class="num">${suggestedTarget} kcal</b>
+            </div>
+            <div class="row between small">
+              <span class="muted">Active Calorie Target:</span>
+              <b class="num" style="color:var(--hero-accent)">${currentTarget} kcal ${isCustom ? '(Custom)' : '(Suggested)'}</b>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="input-custom-target">Custom Daily Calorie Target (kcal):</label>
+            <div class="input-suffix">
+              <input class="input num" id="input-custom-target" type="number" min="800" max="6000" step="50" value="${currentTarget}" placeholder="e.g. 2000" />
+              <span>kcal</span>
+            </div>
+            <span class="xs muted">You can enter your own custom calorie goal or reset back to the recommended formula value.</span>
+          </div>
+
+          <div class="stack" style="gap:8px;margin-top:6px">
+            <button type="button" class="btn btn-primary btn-block" id="btn-save-custom-target">
+              ${icons.check}
+              <span>Save Calorie Target</span>
+            </button>
+            <button type="button" class="btn btn-secondary btn-block" id="btn-reset-suggested-target">
+              ${icons.refresh}
+              <span>Reset to Suggested (${suggestedTarget} kcal)</span>
+            </button>
+          </div>
+        </div>
+      `);
+
+      sheet.querySelector('#btn-save-custom-target')?.addEventListener('click', () => {
+        const val = Number(sheet.querySelector('#input-custom-target')?.value);
+        if (!val || val < 800 || val > 6000) {
+          toast('Please enter a realistic calorie target (800 – 6000 kcal).', 'error');
+          return;
+        }
+        store.saveProfile({ customTarget: Math.round(val) });
+        toast(`Daily calorie target set to ${Math.round(val)} kcal!`, 'success');
+        close();
+        render();
+      });
+
+      sheet.querySelector('#btn-reset-suggested-target')?.addEventListener('click', () => {
+        store.saveProfile({ customTarget: null });
+        toast(`Target reset to formula recommendation (${suggestedTarget} kcal)!`, 'info');
+        close();
+        render();
+      });
+    });
+
+    // Water tracker add & subtract buttons
     container.querySelector('#btn-add-water')?.addEventListener('click', () => {
       store.addWater(250);
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
         navigator.vibrate(20);
+      }
+      render();
+    });
+
+    container.querySelector('#btn-sub-water')?.addEventListener('click', () => {
+      store.addWater(-250);
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(15);
       }
       render();
     });
