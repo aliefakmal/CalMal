@@ -1,0 +1,104 @@
+// Utiliti umum DOM, tarikh & imej
+
+export const $ = (sel, root = document) => root.querySelector(sel);
+export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+export function esc(str = '') {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+export function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+export function todayKey(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+export function fmtTime(iso) {
+  return new Date(iso).toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+export function fmtDate(iso, opts = { day: 'numeric', month: 'short' }) {
+  return new Date(iso).toLocaleDateString('ms-MY', opts);
+}
+
+export function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Selamat pagi';
+  if (h < 15) return 'Selamat tengah hari';
+  if (h < 19) return 'Selamat petang';
+  return 'Selamat malam';
+}
+
+export function mealTypeNow() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 11) return 'Sarapan';
+  if (h >= 11 && h < 16) return 'Tengah Hari';
+  if (h >= 18 && h < 23) return 'Makan Malam';
+  return 'Snek';
+}
+
+export const MEAL_TYPES = ['Sarapan', 'Tengah Hari', 'Makan Malam', 'Snek'];
+
+export const round1 = (n) => Math.round((Number(n) || 0) * 10) / 10;
+export const int = (n) => Math.round(Number(n) || 0);
+export const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
+
+/** Mampatkan fail imej → JPEG base64 (untuk Gemini) + lakaran kecil (untuk log). */
+export async function compressImage(file, maxDim = 1024, quality = 0.82) {
+  const dataUrl = await new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+  const img = await new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = dataUrl;
+  });
+  const draw = (max, q) => {
+    const scale = Math.min(1, max / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * scale);
+    c.height = Math.round(img.height * scale);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', q);
+  };
+  const full = draw(maxDim, quality);
+  const thumb = draw(180, 0.6);
+  return { dataUrl: full, base64: full.split(',')[1], mime: 'image/jpeg', thumb };
+}
+
+export function debounce(fn, ms = 300) {
+  let t;
+  return (...a) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...a), ms);
+  };
+}
+
+export function animateNumber(el, to, { duration = 900, decimals = 0 } = {}) {
+  if (!el) return;
+  const from = Number(el.dataset.v || 0);
+  el.dataset.v = to;
+  const start = performance.now();
+  const step = (t) => {
+    const p = Math.min(1, (t - start) / duration);
+    const e = 1 - Math.pow(1 - p, 3);
+    const v = from + (to - from) * e;
+    el.textContent = decimals ? v.toFixed(decimals) : Math.round(v).toLocaleString('en-US');
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
