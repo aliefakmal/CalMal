@@ -190,14 +190,15 @@ export function renderProfile(container) {
             ${Object.entries(BADGES)
               .map(([id, b]) => {
                 const unlocked = store.hasBadge(id);
+                const badgeIcon = icons[b.iconKey] || (b.who === 'bakugou' ? icons.flame : icons.bolt);
                 return `
-                  <div class="badge-card ${unlocked ? 'unlocked' : 'locked'}">
-                    <div class="badge-icon">
-                      ${b.who === 'bakugou' ? icons.flame : icons.bolt}
+                  <div class="badge-card ${unlocked ? 'unlocked' : 'locked'}" style="${unlocked ? `border-color:${b.color}55;box-shadow:0 0 14px ${b.color}20` : ''}">
+                    <div class="badge-icon" style="${unlocked ? `background:${b.color};color:#000` : `color:${b.color};background:rgba(255,255,255,0.05)`}">
+                      ${badgeIcon}
                     </div>
                     <div class="badge-title">${esc(b.title)}</div>
                     <div class="badge-desc">${esc(b.desc)}</div>
-                    ${unlocked ? `<span class="badge ok" style="font-size:9.5px;height:18px;padding:0 6px">UNLOCKED</span>` : '<span class="badge" style="font-size:9.5px;height:18px;padding:0 6px;opacity:0.6">LOCKED</span>'}
+                    ${unlocked ? `<span class="badge ok" style="font-size:9.5px;height:18px;padding:0 6px;background:${b.color}25;color:${b.color};border-color:${b.color}66">UNLOCKED</span>` : '<span class="badge" style="font-size:9.5px;height:18px;padding:0 6px;opacity:0.6">LOCKED</span>'}
                   </div>
                 `;
               })

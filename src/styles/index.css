@@ -515,14 +515,15 @@ input[type='range'] { width: 100%; accent-color: #fff; height: 28px; }
 .sheet {
   width: 100%;
   max-width: 560px;
-  max-height: 92dvh;
+  max-height: 90dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--surface);
   border: 1px solid var(--border);
   border-bottom: 0;
   border-radius: 28px 28px 0 0;
-  padding: 10px 20px calc(24px + var(--safe-b));
-  animation: sheetIn 0.45s var(--ease);
+  padding: 12px 20px calc(48px + var(--safe-b));
+  animation: sheetIn 0.35s var(--ease);
 }
 .backdrop.closing .sheet { animation: sheetOut 0.25s var(--ease) forwards; }
 .sheet-grip { width: 40px; height: 5px; border-radius: 5px; background: #48484a; margin: 4px auto 16px; }

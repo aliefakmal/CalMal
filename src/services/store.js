@@ -192,7 +192,10 @@ export const store = {
       level: current.level,
       title: current.title,
       exp,
+      currentExp: exp,
       nextExp: current.maxExp,
+      nextLevelExp: current.maxExp,
+      pct: percent,
       percent,
     };
   },

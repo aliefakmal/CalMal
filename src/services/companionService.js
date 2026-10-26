@@ -4,15 +4,15 @@ import { showCompanion, showCutIn } from '../components/companion.js';
 import { toast } from '../components/ui.js';
 
 export const BADGES = {
-  first_meal: { title: 'First Bite', desc: 'Logged your first meal', who: 'deku' },
-  first_run: { title: 'Hero Step', desc: 'Recorded first running session', who: 'bakugou' },
-  run_5k: { title: '5K Smash', desc: 'Completed a 5 km run', who: 'deku' },
-  best_pace: { title: 'Pace Record', desc: 'Personal best pace (≥1 km)', who: 'bakugou' },
-  target_day: { title: 'Bullseye', desc: 'Hit exact calorie target within 10%', who: 'deku' },
-  protein_80: { title: 'Protein Hero', desc: 'Reached 80% daily protein target', who: 'deku' },
-  streak_3: { title: '3-Day Consistency', desc: 'Logged meals for 3 consecutive days', who: 'deku' },
-  weight_goal: { title: 'Plus Ultra!', desc: 'Achieved your target body weight', who: 'bakugou' },
-  scanner_pro: { title: 'Scan Master', desc: 'Used all 3 scanning modes', who: 'deku' },
+  first_meal: { title: 'First Bite', desc: 'Logged your first meal', who: 'deku', iconKey: 'bowl', color: '#3ddc97' },
+  first_run: { title: 'Hero Step', desc: 'Recorded first running session', who: 'bakugou', iconKey: 'footprints', color: '#00b4d8' },
+  run_5k: { title: '5K Smash', desc: 'Completed a 5 km run', who: 'deku', iconKey: 'mountain', color: '#ff7a1a' },
+  best_pace: { title: 'Pace Record', desc: 'Personal best pace (≥1 km)', who: 'bakugou', iconKey: 'clock', color: '#ffd60a' },
+  target_day: { title: 'Bullseye', desc: 'Hit exact calorie target within 10%', who: 'deku', iconKey: 'crosshair', color: '#34d399' },
+  protein_80: { title: 'Protein Hero', desc: 'Reached 80% daily protein target', who: 'deku', iconKey: 'sparkles', color: '#a78bfa' },
+  streak_3: { title: '3-Day Consistency', desc: 'Logged meals for 3 consecutive days', who: 'deku', iconKey: 'flame', color: '#f97316' },
+  weight_goal: { title: 'Plus Ultra!', desc: 'Achieved your target body weight', who: 'bakugou', iconKey: 'trophy', color: '#fbbf24' },
+  scanner_pro: { title: 'Scan Master', desc: 'Used all 3 scanning modes', who: 'deku', iconKey: 'camera', color: '#38bdf8' },
 };
 
 const REMINDERS = [

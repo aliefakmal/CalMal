@@ -1,17 +1,17 @@
 // Kalkulator biometrik & aktiviti (pelan §2.1 & §3.4)
 
 export const ACTIVITY_LEVELS = [
-  { value: 1.2, label: 'Sedentary', desc: 'Desk job, little to no exercise' },
-  { value: 1.375, label: 'Lightly Active', desc: 'Light exercise 1–3 days/week' },
-  { value: 1.55, label: 'Moderately Active', desc: 'Moderate exercise 3–5 days/week' },
-  { value: 1.725, label: 'Very Active', desc: 'Hard exercise 6–7 days/week' },
-  { value: 1.9, label: 'Extremely Active', desc: 'Athlete / physical labor job' },
+  { value: 1.2, multiplier: 1.2, mult: 1.2, label: 'Sedentary', desc: 'Desk job, little to no exercise' },
+  { value: 1.375, multiplier: 1.375, mult: 1.375, label: 'Lightly Active', desc: 'Light exercise 1–3 days/week' },
+  { value: 1.55, multiplier: 1.55, mult: 1.55, label: 'Moderately Active', desc: 'Moderate exercise 3–5 days/week' },
+  { value: 1.725, multiplier: 1.725, mult: 1.725, label: 'Very Active', desc: 'Hard exercise 6–7 days/week' },
+  { value: 1.9, multiplier: 1.9, mult: 1.9, label: 'Extremely Active', desc: 'Athlete / physical labor job' },
 ];
 
 export const GOALS = [
-  { value: 'lose', label: 'Fat Loss', desc: '-500 kcal deficit', delta: -500 },
-  { value: 'maintain', label: 'Maintain Weight', desc: 'Equal to TDEE', delta: 0 },
-  { value: 'gain', label: 'Build Muscle', desc: '+300 kcal surplus', delta: 300 },
+  { value: 'lose', id: 'lose', label: 'Fat Loss', desc: '-500 kcal deficit', delta: -500 },
+  { value: 'maintain', id: 'maintain', label: 'Maintain Weight', desc: 'Equal to TDEE', delta: 0 },
+  { value: 'gain', id: 'gain', label: 'Build Muscle', desc: '+300 kcal surplus', delta: 300 },
 ];
 
 /** Mifflin-St Jeor */
