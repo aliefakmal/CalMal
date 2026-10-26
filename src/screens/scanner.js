@@ -25,14 +25,14 @@ export function renderScanner(container) {
   let facingMode = store.settings.cameraFacing || 'environment'; // 'environment' | 'user'
 
   const QUICK_CHIPS = [
-    'nasi separuh',
-    'minyak sikit',
-    'kuah banjir',
-    'ayam bahagian dada',
-    'kurang manis',
-    'tanpa kulit',
-    'sayur lebih',
-    'sambal asing',
+    'half rice',
+    'less oil',
+    'extra gravy',
+    'chicken breast',
+    'less sweet',
+    'skinless',
+    'extra veggies',
+    'sambal on side',
   ];
 
   function render() {
@@ -41,20 +41,20 @@ export function renderScanner(container) {
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="eyebrow">Pengimbas 3-dalam-1 · Kamera Sentiasa Aktif</span>
-          <h1 class="page-title">Imbas & Analisis</h1>
+          <span class="eyebrow">3-in-1 Scanner · Continuous Live Camera</span>
+          <h1 class="page-title">Scan & Analyze</h1>
         </div>
       </div>
 
-      <!-- Segmented Mod Pengimbas -->
+      <!-- Scanner Mode Segmented Tabs -->
       <div class="segmented" id="scanner-mode-tabs" style="margin-bottom:16px">
         <button type="button" data-m="food" class="${mode === 'food' ? 'active' : ''}">
           ${icons.camera}
-          <span>AI Makanan</span>
+          <span>Food AI</span>
         </button>
         <button type="button" data-m="barcode" class="${mode === 'barcode' ? 'active' : ''}">
           ${icons.barcode}
-          <span>Kod Bar</span>
+          <span>Barcode</span>
         </button>
         <button type="button" data-m="ocr" class="${mode === 'ocr' ? 'active' : ''}">
           ${icons.label}
@@ -62,81 +62,81 @@ export function renderScanner(container) {
         </button>
       </div>
 
-      <!-- Bahagian Kamera / Pratonton (Kekal dalam DOM tanpa musnah) -->
+      <!-- Camera Viewport / Preview Box -->
       <div class="card flat" style="padding:14px;background:#0d0d0e;margin-bottom:14px">
         <div class="scanner-viewport" id="viewport-box">
           <video id="scanner-video" class="scanner-video" autoplay playsinline webkit-playsinline muted></video>
-          <img id="scanner-preview-img" class="preview-thumb hidden" alt="Pratonton imej" />
+          <img id="scanner-preview-img" class="preview-thumb hidden" alt="Image preview" />
 
-          <!-- Lapisan Penunjuk Status Kamera Sentiasa Aktif -->
+          <!-- Continuous Live Camera Status HUD -->
           <div id="camera-status-hud" class="hidden" style="position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;z-index:16;pointer-events:none">
             <span class="badge ok" style="font-size:11px;padding:4px 9px;background:rgba(28,28,30,0.85);backdrop-filter:blur(8px);border:1px solid rgba(61,220,151,0.3);pointer-events:auto">
               <span class="dot" style="background:var(--ok);width:6px;height:6px"></span>
-              Kamera Aktif
+              Camera Live
             </span>
             <span id="camera-facing-badge" class="badge" style="font-size:11px;padding:4px 9px;background:rgba(28,28,30,0.85);backdrop-filter:blur(8px);pointer-events:auto">
-              ${facingMode === 'environment' ? 'Kamera Belakang' : 'Kamera Depan'}
+              ${facingMode === 'environment' ? 'Back Camera' : 'Front Camera'}
             </span>
           </div>
 
-          <!-- Lapisan Viewfinder (apabila kamera aktif) -->
+          <!-- Viewfinder Overlay -->
           <div id="camera-viewfinder" class="scanner-overlay hidden">
             <div id="viewfinder-shape" class="${mode === 'food' ? 'viewfinder-box' : mode === 'barcode' ? 'viewfinder-barcode' : 'viewfinder-label'}">
               ${mode === 'barcode' ? '<div class="viewfinder-laser"></div>' : ''}
             </div>
           </div>
 
-          <!-- Skrin Permintaan / Ralat Kebenaran Kamera Mobile -->
+          <!-- Mobile Camera Permission / Error Fallback Overlay -->
           <div id="camera-perm-overlay" class="camera-permission-overlay hidden" style="position:absolute;inset:0;background:rgba(13,13,14,0.96);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;text-align:center;z-index:22">
             <div style="width:52px;height:52px;border-radius:16px;background:var(--surface-3);display:grid;place-items:center;color:#fff;margin-bottom:12px">
               ${icons.camera}
             </div>
-            <b style="font-size:16px;color:#fff;margin-bottom:4px">Kamera Mobile</b>
+            <b style="font-size:16px;color:#fff;margin-bottom:4px">Camera Access</b>
             <p id="camera-perm-msg" class="small muted" style="line-height:1.45;margin-bottom:16px;max-width:300px">
-              Sila benarkan akses kamera pelayar untuk mengimbas makanan secara automatik.
+              Please allow browser camera access to scan food and barcodes automatically.
             </p>
             <div class="stack" style="gap:8px;width:100%;max-width:280px">
               <button type="button" class="btn btn-primary btn-sm btn-block" id="btn-request-cam-perm">
                 ${icons.camera}
-                <span>Benarkan Akses Kamera</span>
+                <span>Enable Camera Access</span>
               </button>
               <button type="button" class="btn btn-secondary btn-sm btn-block" id="btn-open-native-cam">
                 ${icons.image}
-                <span>Buka Kamera Telefon Pintar</span>
+                <span>Open Device Camera</span>
               </button>
             </div>
           </div>
 
-          <!-- Spinner Analisis AI -->
+          <!-- AI Analysis Spinner -->
           <div id="camera-spinner" class="hidden" style="position:absolute;inset:0;background:rgba(0,0,0,0.75);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:20">
             <div class="spinner" style="width:36px;height:36px;border-width:3.5px"></div>
-            <b style="color:#fff;font-size:15px">Gemini 3.5 Flash Lite menganalisis...</b>
-            <span class="small muted">Mengenal pasti masakan & nutrisi tempatan</span>
+            <b style="color:#fff;font-size:15px">Gemini 3.5 Flash Lite analyzing...</b>
+            <span class="small muted">Identifying dishes, portions & nutrition</span>
           </div>
         </div>
 
-        <!-- Kawalan Shutter, Muat Naik Galeri & Tukar Kamera -->
+        <!-- Shutter, Gallery Upload & Camera Switch Controls -->
         <div class="scanner-controls">
           <input type="file" id="file-input" accept="image/*" class="hidden" />
           <input type="file" id="file-input-native" accept="image/*" capture="environment" class="hidden" />
 
-          <button type="button" class="btn btn-icon btn-ghost" id="btn-upload-gallery" title="Pilih dari Galeri" aria-label="Pilih imej dari galeri">
+          <button type="button" class="btn btn-icon btn-ghost" id="btn-upload-gallery" title="Upload from Gallery" aria-label="Upload from gallery">
             ${icons.image}
           </button>
 
-          <button type="button" class="shutter-btn" id="btn-shutter" title="Tangkap Gambar" aria-label="Tangkap gambar"></button>
+          <button type="button" class="shutter-btn" id="btn-shutter" title="Capture Photo" aria-label="Capture photo"></button>
 
-          <button type="button" class="btn btn-icon btn-ghost" id="btn-switch-cam" title="Tukar Kamera Depan / Belakang" aria-label="Tukar kamera depan/belakang">
+          <button type="button" class="btn btn-icon btn-ghost" id="btn-switch-cam" title="Switch Front / Back Camera" aria-label="Switch camera">
             ${icons.refresh}
           </button>
         </div>
       </div>
 
-      <!-- Quick Context Chips (Mod AI Makanan) -->
+      <!-- Quick Context Chips (Food AI Mode) -->
       <div id="food-chips-section" class="card stack ${mode === 'food' ? '' : 'hidden'}" style="margin-bottom:14px">
         <div class="card-title">
-          <span>Nota Konteks Pantas (Portion Fine-Tuning)</span>
-          <span class="xs muted">Pilihan</span>
+          <span>Quick Context Notes (Portion Fine-Tuning)</span>
+          <span class="xs muted">Optional</span>
         </div>
         <div class="chips" id="quick-chips-box">
           ${QUICK_CHIPS.map(
@@ -144,19 +144,19 @@ export function renderScanner(container) {
               `<button type="button" class="chip ${selectedChips.has(c) ? 'active' : ''}" data-chip="${c}">+ ${c}</button>`
           ).join('')}
         </div>
-        <input class="input" id="custom-context-input" value="${esc(customContextNote)}" placeholder="cth. Ayam bahagian dada, nasi separuh, sambal asing..." />
+        <input class="input" id="custom-context-input" value="${esc(customContextNote)}" placeholder="e.g. Chicken breast, half rice, sauce on side..." />
       </div>
 
-      <!-- Carian Manual Kod Bar -->
+      <!-- Manual Barcode Search -->
       <div id="barcode-manual-section" class="card stack ${mode === 'barcode' ? '' : 'hidden'}" style="margin-bottom:14px">
-        <div class="card-title"><span>Carian Manual Kod Bar</span></div>
+        <div class="card-title"><span>Manual Barcode Search</span></div>
         <div class="row">
-          <input class="input num" id="manual-barcode-input" placeholder="Masukkan nombor kod bar (cth. 9556001...)" />
-          <button type="button" class="btn btn-secondary" id="btn-lookup-barcode">Cari</button>
+          <input class="input num" id="manual-barcode-input" placeholder="Enter barcode number (e.g. 9556001...)" />
+          <button type="button" class="btn btn-secondary" id="btn-lookup-barcode">Search</button>
         </div>
       </div>
 
-      <!-- Keputusan Analisis AI / Produk -->
+      <!-- Analysis Results -->
       <div id="results-container">
         ${renderResultHTML()}
       </div>
@@ -176,7 +176,7 @@ export function renderScanner(container) {
     const facingBadge = container.querySelector('#camera-facing-badge');
 
     if (facingBadge) {
-      facingBadge.textContent = facingMode === 'environment' ? 'Kamera Belakang' : 'Kamera Depan';
+      facingBadge.textContent = facingMode === 'environment' ? 'Back Camera' : 'Front Camera';
     }
 
     if (state === 'active') {
@@ -187,7 +187,7 @@ export function renderScanner(container) {
       hud?.classList.add('hidden');
       vf?.classList.add('hidden');
       perm?.classList.remove('hidden');
-      if (msgEl) msgEl.textContent = errorMsg || 'Sila benarkan akses kamera untuk imbasan automatik.';
+      if (msgEl) msgEl.textContent = errorMsg || 'Please allow camera access for automatic scanning.';
     } else {
       hud?.classList.add('hidden');
       vf?.classList.add('hidden');
@@ -225,7 +225,7 @@ export function renderScanner(container) {
         <div class="card stack fade-up" style="margin-top:14px">
           <div class="card-title row between">
             <div>
-              <span class="eyebrow" style="display:block;margin-bottom:2px">Hasil Analisis AI</span>
+              <span class="eyebrow" style="display:block;margin-bottom:2px">AI Analysis Result</span>
               <h2 style="font-size:22px;font-weight:800">${esc(r.name)}</h2>
             </div>
             ${statusBadge(r.recommendation.status)}
@@ -233,32 +233,32 @@ export function renderScanner(container) {
 
           <div class="equation">
             <div class="eq-cell">
-              <span>Kalori</span>
+              <span>Calories</span>
               <b class="num">${r.kcal}</b>
               <span class="xs muted">kcal</span>
             </div>
             <div class="eq-cell">
-              <span>Berat Anggaran</span>
+              <span>Est. Weight</span>
               <b class="num">${r.weight_g}</b>
-              <span class="xs muted">gram</span>
+              <span class="xs muted">grams</span>
             </div>
             <div class="eq-cell">
               <span>Protein</span>
               <b class="num">${round1(r.protein)}</b>
-              <span class="xs muted">gram</span>
+              <span class="xs muted">grams</span>
             </div>
           </div>
 
           <div class="grid grid-2" style="font-size:13px;padding:8px 0">
-            <div>Karbohidrat: <b>${round1(r.carbs)}g</b></div>
-            <div>Lemak: <b>${round1(r.fat)}g</b></div>
+            <div>Carbohydrates: <b>${round1(r.carbs)}g</b></div>
+            <div>Fat: <b>${round1(r.fat)}g</b></div>
           </div>
 
           ${
             r.items && r.items.length
               ? `<div class="divider"></div>
                  <div class="stack" style="gap:8px">
-                   <span class="small bold muted">Pecahan Hidangan:</span>
+                   <span class="small bold muted">Dish Breakdown:</span>
                    ${r.items
                      .map(
                        (it) => `
@@ -274,7 +274,7 @@ export function renderScanner(container) {
 
           ${
             r.recommendation.adjustment
-              ? `<p class="small muted" style="margin:4px 0;line-height:1.4"><b>Cadangan Porsi:</b> ${esc(r.recommendation.adjustment)}</p>`
+              ? `<p class="small muted" style="margin:4px 0;line-height:1.4"><b>Portion Recommendation:</b> ${esc(r.recommendation.adjustment)}</p>`
               : ''
           }
 
@@ -284,11 +284,11 @@ export function renderScanner(container) {
           <div class="grid grid-2" style="margin-top:10px">
             <button type="button" class="btn btn-secondary" id="btn-quick-edit">
               ${icons.edit}
-              <span>Laras Porsi</span>
+              <span>Adjust Portion</span>
             </button>
             <button type="button" class="btn btn-primary" id="btn-save-log">
               ${icons.check}
-              <span>Simpan ke Log</span>
+              <span>Save to Log</span>
             </button>
           </div>
         </div>
@@ -301,7 +301,7 @@ export function renderScanner(container) {
         <div class="card stack fade-up" style="margin-top:14px">
           <div class="card-title row between">
             <div>
-              <span class="eyebrow">${esc(p.brand || 'Produk')}</span>
+              <span class="eyebrow">${esc(p.brand || 'Product')}</span>
               <h2 style="font-size:20px;font-weight:800">${esc(p.name)}</h2>
             </div>
             <span class="badge ok">Open Food Facts</span>
@@ -318,13 +318,13 @@ export function renderScanner(container) {
               <b class="num">${round1(p.per100.protein)}g</b>
             </div>
             <div class="eq-cell">
-              <span>Karbo / Lemak</span>
+              <span>Carbs / Fat</span>
               <b class="num">${round1(p.per100.carbs)} / ${round1(p.per100.fat)}g</b>
             </div>
           </div>
 
           <div class="field" style="margin-top:8px">
-            <label for="barcode-grams-input">Saiz hidangan yang anda makan (gram):</label>
+            <label for="barcode-grams-input">Portion size consumed (grams):</label>
             <div class="input-suffix">
               <input class="input num" id="barcode-grams-input" type="number" value="${p.servingSize || 100}" />
               <span>g</span>
@@ -333,7 +333,7 @@ export function renderScanner(container) {
 
           <button type="button" class="btn btn-primary btn-block" id="btn-save-barcode">
             ${icons.plus}
-            <span>Simpan ke Log Makanan</span>
+            <span>Save to Food Log</span>
           </button>
         </div>
       `;
@@ -345,7 +345,7 @@ export function renderScanner(container) {
         <div class="card stack fade-up" style="margin-top:14px">
           <div class="card-title row between">
             <div>
-              <span class="eyebrow">OCR Label Nutrisi</span>
+              <span class="eyebrow">Nutrition Label OCR</span>
               <h2 style="font-size:20px;font-weight:800">${esc(r.name)}</h2>
             </div>
             ${statusBadge(r.recommendation.status)}
@@ -353,7 +353,7 @@ export function renderScanner(container) {
 
           <div class="equation">
             <div class="eq-cell">
-              <span>Per Hidangan</span>
+              <span>Per Serving</span>
               <b class="num">${r.perServing.kcal || r.per100.kcal}</b>
               <span class="xs muted">kcal</span>
             </div>
@@ -362,7 +362,7 @@ export function renderScanner(container) {
               <b class="num">${round1(r.perServing.protein || r.per100.protein)}g</b>
             </div>
             <div class="eq-cell">
-              <span>Gula / Natrium</span>
+              <span>Sugar / Sodium</span>
               <b class="num">${round1(r.perServing.sugar || 0)}g / ${int(r.perServing.sodium || 0)}mg</b>
             </div>
           </div>
@@ -373,11 +373,11 @@ export function renderScanner(container) {
           <div class="grid grid-2" style="margin-top:8px">
             <button type="button" class="btn btn-secondary" id="btn-ocr-edit">
               ${icons.edit}
-              <span>Laras Porsi</span>
+              <span>Adjust Portion</span>
             </button>
             <button type="button" class="btn btn-primary" id="btn-ocr-save">
               ${icons.check}
-              <span>Simpan ke Log</span>
+              <span>Save to Log</span>
             </button>
           </div>
         </div>
@@ -395,22 +395,22 @@ export function renderScanner(container) {
     }
   }
 
-  // ----------------- Pengurusan Kamera WebRTC & Mobile -----------------
+  // ----------------- WebRTC & Mobile Camera Management -----------------
   async function startCamera() {
     const video = container.querySelector('#scanner-video');
     if (!video) return;
 
-    // Semakan Konteks Selamat (HTTPS / Localhost)
+    // Secure context check (HTTPS / Localhost)
     const isSecure = window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       const err = !isSecure
-        ? 'Pelayar menyekat kamera kerana pautan menggunakan HTTP biasa. Sila buka kamera telefon menggunakan butang di bawah atau gunakan sambungan HTTPS (cth. di Vercel).'
-        : 'Peranti atau pelayar ini tidak menyokong siaran langsung WebRTC. Sila gunakan kamera telefon pintar di bawah.';
+        ? 'Browser blocked camera because connection is unencrypted HTTP. Open device camera below or use HTTPS (e.g. on Vercel).'
+        : 'This device or browser does not support WebRTC streaming. Please use the device camera button below.';
       setCameraUIState('error', err);
       return;
     }
 
-    // Jika stream sedia ada sedang berjalan elok, kekalkan
+    // Keep existing active stream if healthy
     if (stream && stream.active && video.srcObject === stream) {
       setCameraUIState('active');
       setupBarcodeReaderIfNeeded(video);
@@ -419,7 +419,7 @@ export function renderScanner(container) {
 
     stopCamera();
 
-    // Persediaan atribut wajib iOS Safari & Android WebKit
+    // Required attributes for iOS Safari & Android WebKit
     video.setAttribute('autoplay', '');
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', '');
@@ -430,7 +430,7 @@ export function renderScanner(container) {
     try {
       setCameraUIState('starting');
 
-      // Strategi Fallback Bertingkat (Mencegah OverconstrainedError pada pelbagai jenis telefon)
+      // Multi-tier Fallback Strategy (prevents OverconstrainedError across phones)
       let mediaStream = null;
       try {
         mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -461,25 +461,25 @@ export function renderScanner(container) {
       video.onloadedmetadata = () => {
         const p = video.play();
         if (p !== undefined) {
-          p.catch((e) => console.warn('video.play() tertangguh:', e));
+          p.catch((e) => console.warn('video.play() deferred:', e));
         }
         setCameraUIState('active');
         setupBarcodeReaderIfNeeded(video);
       };
     } catch (e) {
-      console.warn('Ralat capaian kamera mobile:', e);
+      console.warn('Mobile camera access error:', e);
       let msg = '';
       if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
-        msg = 'Kebenaran kamera disekat oleh pelayar. Tekan "Benarkan Akses Kamera" atau buka tetapan laman pelayar telefon anda dan pilih Allow.';
+        msg = 'Camera permission was denied. Tap "Enable Camera Access" or allow camera in browser site settings.';
         setCameraUIState('denied', msg);
       } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
-        msg = 'Tiada perkakasan kamera ditemui pada peranti ini.';
+        msg = 'No camera hardware found on this device.';
         setCameraUIState('error', msg);
       } else if (e.name === 'NotReadableError' || e.name === 'TrackStartError') {
-        msg = 'Kamera sedang digunakan oleh aplikasi lain. Sila tutup aplikasi kamera lain dan tekan cuba lagi.';
+        msg = 'Camera is currently in use by another app. Please close other camera apps and retry.';
         setCameraUIState('error', msg);
       } else {
-        msg = e.message || 'Kamera tidak dapat dimulakan. Anda boleh menggunakan kamera telefon terus di bawah.';
+        msg = e.message || 'Could not start camera. You can use your device camera directly below.';
         setCameraUIState('error', msg);
       }
     }
@@ -495,7 +495,7 @@ export function renderScanner(container) {
     }
 
     if (!video || !video.srcObject) return;
-    if (zxingReader) return; // sudah aktif
+    if (zxingReader) return; // already active
 
     try {
       zxingReader = new BrowserMultiFormatReader();
@@ -507,7 +507,7 @@ export function renderScanner(container) {
         }
       });
     } catch (e) {
-      console.warn('Gagal memulakan pengimbas kod bar:', e);
+      console.warn('Failed to start barcode reader:', e);
     }
   }
 
@@ -555,11 +555,11 @@ export function renderScanner(container) {
       const res = await analyzeFood({ image: imgObj, note: allNotes });
       analysisResult = res;
       capturedImage = imgObj;
-      toast(`AI mengecam: ${res.name}`, 'success');
+      toast(`AI recognized: ${res.name}`, 'success');
       updateResultsUI();
       container.querySelector('#results-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (err) {
-      toast(err.message || 'Gagal menganalisis makanan.', 'error');
+      toast(err.message || 'Failed to analyze food.', 'error');
     } finally {
       setAnalyzing(false);
     }
@@ -571,30 +571,30 @@ export function renderScanner(container) {
       const res = await readNutritionLabel({ image: imgObj });
       analysisResult = res;
       capturedImage = imgObj;
-      toast(`Label dibaca: ${res.name}`, 'success');
+      toast(`Label scanned: ${res.name}`, 'success');
       updateResultsUI();
       container.querySelector('#results-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (err) {
-      toast(err.message || 'Gagal membaca label pemakanan.', 'error');
+      toast(err.message || 'Failed to read nutrition label.', 'error');
     } finally {
       setAnalyzing(false);
     }
   }
 
   async function handleBarcodeFound(code) {
-    toast(`Kod bar dikesan: ${code}`, 'info');
+    toast(`Barcode detected: ${code}`, 'info');
     try {
       const prod = await lookupBarcode(code);
       analysisResult = prod;
       updateResultsUI();
-      toast(`Produk dijumpai: ${prod.name}`, 'success');
+      toast(`Product found: ${prod.name}`, 'success');
     } catch (err) {
-      toast(err.message || 'Produk tidak ditemui.', 'error');
+      toast(err.message || 'Product not found.', 'error');
     }
   }
 
   function bindEvents() {
-    // 1. Tukar Tab Mod (Kekalkan stream kamera tanpa restart hardware)
+    // 1. Switch Mode Tabs
     container.querySelectorAll('#scanner-mode-tabs button').forEach((b) => {
       b.addEventListener('click', () => {
         mode = b.dataset.m;
@@ -607,7 +607,7 @@ export function renderScanner(container) {
 
         updateViewfinder();
 
-        // Tunjukkan bahagian berkaitan
+        // Show/hide relevant sections
         container.querySelector('#food-chips-section')?.classList.toggle('hidden', mode !== 'food');
         container.querySelector('#barcode-manual-section')?.classList.toggle('hidden', mode !== 'barcode');
 
@@ -633,41 +633,41 @@ export function renderScanner(container) {
       });
     });
 
-    // 3. Nota teks
+    // 3. Text Notes
     container.querySelector('#custom-context-input')?.addEventListener('input', (e) => {
       customContextNote = e.target.value;
     });
 
-    // 4. Butang Shutter (Tangkap Gambar)
+    // 4. Shutter Button (Capture Frame)
     container.querySelector('#btn-shutter')?.addEventListener('click', async () => {
       const img = await captureFrame();
       if (!img) {
-        // Jika kamera WebRTC belum bersedia atau disekat, buka kamera peranti mobile secara terus
+        // Fallback to native mobile device camera if WebRTC is not ready
         container.querySelector('#file-input-native')?.click();
         return;
       }
       if (mode === 'food') processFoodScan(img);
       else if (mode === 'ocr') processOcrScan(img);
       else if (mode === 'barcode') {
-        toast('Arahkan kod bar ke garisan merah untuk imbasan automatik.', 'info');
+        toast('Aim barcode at the red guideline for auto-scan.', 'info');
       }
     });
 
-    // 5. Tukar Kamera Depan / Belakang
+    // 5. Switch Front / Back Camera
     container.querySelector('#btn-switch-cam')?.addEventListener('click', async () => {
       facingMode = facingMode === 'environment' ? 'user' : 'environment';
       store.saveSettings({ cameraFacing: facingMode });
-      toast(`Kamera ditukar: ${facingMode === 'environment' ? 'Kamera Belakang' : 'Kamera Depan'}`, 'info');
+      toast(`Camera switched: ${facingMode === 'environment' ? 'Back Camera' : 'Front Camera'}`, 'info');
       stopCamera();
       await startCamera();
     });
 
-    // 6. Minta Kebenaran Kamera Semula
+    // 6. Request Camera Permission Again
     container.querySelector('#btn-request-cam-perm')?.addEventListener('click', async () => {
       await startCamera();
     });
 
-    // 7. Buka Kamera Telefon Pintar Asli (Fallback yang 100% berfungsi walaupun tanpa HTTPS)
+    // 7. Open Native Smartphone Camera
     const nativeCamInput = container.querySelector('#file-input-native');
     container.querySelector('#btn-open-native-cam')?.addEventListener('click', () => {
       nativeCamInput?.click();
@@ -681,11 +681,11 @@ export function renderScanner(container) {
         if (mode === 'food') processFoodScan(img);
         else if (mode === 'ocr') processOcrScan(img);
       } catch (err) {
-        toast('Gagal memproses gambar kamera.', 'error');
+        toast('Failed to process camera image.', 'error');
       }
     });
 
-    // 8. Muat Naik Galeri
+    // 8. Upload from Gallery
     const fileInput = container.querySelector('#file-input');
     container.querySelector('#btn-upload-gallery')?.addEventListener('click', () => {
       fileInput?.click();
@@ -699,11 +699,11 @@ export function renderScanner(container) {
         if (mode === 'food') processFoodScan(img);
         else if (mode === 'ocr') processOcrScan(img);
       } catch (err) {
-        toast('Gagal memproses fail imej.', 'error');
+        toast('Failed to process image file.', 'error');
       }
     });
 
-    // 9. Carian Manual Kod Bar
+    // 9. Manual Barcode Lookup
     container.querySelector('#btn-lookup-barcode')?.addEventListener('click', () => {
       const code = container.querySelector('#manual-barcode-input')?.value.trim();
       if (code) handleBarcodeFound(code);
@@ -713,7 +713,7 @@ export function renderScanner(container) {
   }
 
   function bindResultEvents() {
-    // Quick Edit & Simpan Log AI Makanan
+    // Quick Edit & Save Food AI Log
     container.querySelector('#btn-quick-edit')?.addEventListener('click', () => {
       if (!analysisResult) return;
       openMealEditor(
@@ -727,7 +727,7 @@ export function renderScanner(container) {
           thumb: capturedImage?.thumb,
         },
         {
-          title: 'Quick Edit Hidangan',
+          title: 'Quick Edit Meal',
           onSaved: () => {
             analysisResult = null;
             updateResultsUI();
@@ -747,13 +747,13 @@ export function renderScanner(container) {
         weight_g: analysisResult.weight_g,
         thumb: capturedImage?.thumb,
       });
-      toast(`${analysisResult.name} berjaya disimpan ke log!`, 'success');
+      toast(`${analysisResult.name} saved to log!`, 'success');
       onMealLogged(meal);
       analysisResult = null;
       updateResultsUI();
     });
 
-    // Simpan Kod Bar
+    // Save Barcode Log
     container.querySelector('#btn-save-barcode')?.addEventListener('click', () => {
       if (!analysisResult) return;
       const grams = Number(container.querySelector('#barcode-grams-input')?.value) || 100;
@@ -767,13 +767,13 @@ export function renderScanner(container) {
         weight_g: grams,
         thumb: analysisResult.image || '',
       });
-      toast(`${analysisResult.name} disimpan!`, 'success');
+      toast(`${analysisResult.name} saved!`, 'success');
       onMealLogged(meal);
       analysisResult = null;
       updateResultsUI();
     });
 
-    // OCR Simpan / Edit
+    // OCR Save / Edit
     container.querySelector('#btn-ocr-save')?.addEventListener('click', () => {
       if (!analysisResult) return;
       const d = analysisResult.perServing.kcal ? analysisResult.perServing : analysisResult.per100;
@@ -786,7 +786,7 @@ export function renderScanner(container) {
         weight_g: analysisResult.servingSize || 100,
         thumb: capturedImage?.thumb,
       });
-      toast(`${analysisResult.name} disimpan!`, 'success');
+      toast(`${analysisResult.name} saved!`, 'success');
       onMealLogged(meal);
       analysisResult = null;
       updateResultsUI();
@@ -806,7 +806,7 @@ export function renderScanner(container) {
           thumb: capturedImage?.thumb,
         },
         {
-          title: 'Laras Porsi Label',
+          title: 'Adjust Label Portion',
           onSaved: () => {
             analysisResult = null;
             updateResultsUI();

@@ -29,36 +29,36 @@ export function renderActivity(container) {
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="eyebrow">Penjejak Aktiviti Strava · OpenStreetMap</span>
-          <h1 class="page-title">Larian & Laluan</h1>
+          <span class="eyebrow">Strava-Style Activity Tracker · OpenStreetMap</span>
+          <h1 class="page-title">Runs & Routes</h1>
         </div>
         <div class="row" style="gap:8px;flex-wrap:wrap">
-          <span class="badge ok" title="Peta sumber terbuka — 100% percuma tanpa sebarang API key">${icons.pin} OpenStreetMap</span>
+          <span class="badge ok" title="Open source maps — 100% free with no API key required">${icons.pin} OpenStreetMap</span>
           ${
             stats.status === 'idle'
               ? `<label class="chip ${isSim ? 'active' : ''}" id="sim-toggle-btn" style="cursor:pointer">
                   <input type="checkbox" id="sim-checkbox" class="hidden" ${isSim ? 'checked' : ''} />
-                  <span>Mod Simulasi</span>
+                  <span>Simulation Mode</span>
                 </label>`
               : ''
           }
         </div>
       </div>
 
-      <!-- Kad Permintaan Kebenaran Lokasi (Jika belum dibenarkan atau ditolak) -->
+      <!-- Location Permission Request Card -->
       ${
         perm === 'denied'
           ? `<div class="card" style="border-left:4px solid var(--danger);margin-bottom:12px;background:#150a0a">
               <div class="row between" style="gap:10px">
                 <div style="flex:1">
-                  <b style="color:var(--danger)">Akses Lokasi Ditolak</b>
+                  <b style="color:var(--danger)">Location Access Denied</b>
                   <p class="small muted" style="margin-top:2px;line-height:1.4">
-                    Pelayar menyekat akses GPS. Sila benarkan kebenaran lokasi pada ikon mangga/tetapan pelayar untuk mengesan laluan larian anda.
+                    Browser blocked GPS access. Please allow location permissions in your browser site settings to track your running routes.
                   </p>
                 </div>
                 <button type="button" class="btn btn-sm btn-secondary" id="btn-request-location-manual">
                   ${icons.crosshair}
-                  <span>Cuba Lagi</span>
+                  <span>Retry</span>
                 </button>
               </div>
             </div>`
@@ -66,124 +66,124 @@ export function renderActivity(container) {
           ? `<div class="card" style="border-left:4px solid var(--deku);margin-bottom:12px">
               <div class="row between" style="gap:10px">
                 <div style="flex:1">
-                  <b>Kesan Lokasi GPS Semasa</b>
+                  <b>Detect Live GPS Location</b>
                   <p class="small muted" style="margin-top:2px;line-height:1.4">
-                    Tekan butang ini untuk membenarkan akses lokasi dan mengesan kedudukan anda di atas peta.
+                    Tap to enable location access and pinpoint your real-time position on the map.
                   </p>
                 </div>
                 <button type="button" class="btn btn-sm btn-primary" id="btn-request-location-manual">
                   ${icons.crosshair}
-                  <span>Kesan Lokasi Saya</span>
+                  <span>Detect My Location</span>
                 </button>
               </div>
             </div>`
           : ''
       }
 
-      <!-- Pemilih Gaya OpenStreetMap (Tanpa API Key) -->
+      <!-- OpenStreetMap Style Selector (Free, No API Key) -->
       <div class="row between" style="margin-bottom:8px">
-        <span class="xs muted">Lapisan Peta OpenStreetMap (Percuma):</span>
+        <span class="xs muted">OpenStreetMap Layers (Free):</span>
         <div class="segmented" id="osm-layer-tabs" style="width:230px;height:34px;padding:2px">
-          <button type="button" data-layer="dark" class="${mapTileStyle === 'dark' ? 'active' : ''}" style="height:28px;font-size:12px">OSM Gelap</button>
+          <button type="button" data-layer="dark" class="${mapTileStyle === 'dark' ? 'active' : ''}" style="height:28px;font-size:12px">OSM Dark</button>
           <button type="button" data-layer="standard" class="${mapTileStyle === 'standard' ? 'active' : ''}" style="height:28px;font-size:12px">OSM Standard</button>
         </div>
       </div>
 
-      <!-- Kad Utama: Peta OpenStreetMap & HUD Terapung Ala Strava -->
+      <!-- Main Map & Floating Strava HUD -->
       <div class="strava-map-container" style="margin-bottom:16px">
         <div id="strava-map"></div>
 
-        <!-- Floating Recenter Button (Lokasi Saya) -->
-        <button type="button" class="strava-recenter-btn" id="btn-recenter-map" title="Pusatkan ke lokasi semasa saya" aria-label="Pusatkan peta ke lokasi GPS">
+        <!-- Floating Recenter Button -->
+        <button type="button" class="strava-recenter-btn" id="btn-recenter-map" title="Recenter to my current location" aria-label="Recenter map to GPS location">
           ${icons.crosshair}
         </button>
 
-        <!-- Floating HUD Atas Peta -->
+        <!-- Floating HUD Overlay -->
         <div class="strava-floating-hud">
           <div class="strava-hud-pill">
             <span class="badge ${stats.status === 'running' ? 'live' : stats.status === 'paused' ? 'warn' : 'ok'}">
-              ${stats.status === 'running' ? 'MEREKOD' : stats.status === 'paused' ? 'DIJEDA' : 'SEDIA'}
+              ${stats.status === 'running' ? 'RECORDING' : stats.status === 'paused' ? 'PAUSED' : 'READY'}
             </span>
-            <span class="num">${stats.status === 'running' ? metLabel(stats.speedKmh) : liveLoc ? `GPS ±${liveLoc.accuracy}m` : 'Mencari GPS...'}</span>
+            <span class="num">${stats.status === 'running' ? metLabel(stats.speedKmh) : liveLoc ? `GPS ±${liveLoc.accuracy}m` : 'Acquiring GPS...'}</span>
           </div>
           <div class="strava-hud-pill num">
-            ${stats.speedKmh.toFixed(1)} km/j
+            ${stats.speedKmh.toFixed(1)} km/h
           </div>
         </div>
       </div>
 
-      <!-- Metrik Strava Utama (4 Kolum) -->
+      <!-- Primary Strava Metrics (4 Columns) -->
       <div class="grid grid-2 md-grid-4" style="margin-bottom:16px">
         <div class="stat">
-          <span>Jarak Larian</span>
+          <span>Distance</span>
           <b class="num" id="hud-dist">${stats.distanceKm.toFixed(2)}<small>km</small></b>
         </div>
         <div class="stat">
-          <span>Masa Berlalu</span>
+          <span>Elapsed Time</span>
           <b class="num" id="hud-time">${formatDuration(stats.elapsedSec)}</b>
         </div>
         <div class="stat">
-          <span>Pace Purata</span>
+          <span>Avg Pace</span>
           <b class="num" id="hud-pace">${formatPace(stats.pace)}<small>/km</small></b>
         </div>
         <div class="stat">
-          <span>Bakar MET</span>
+          <span>MET Burn</span>
           <b class="num" id="hud-kcal" style="color:var(--ok)">${Math.round(stats.kcal)}<small>kcal</small></b>
         </div>
       </div>
 
       <div class="grid grid-2" style="margin-bottom:16px">
         <div class="stat">
-          <span>Elevasi (Mendaki)</span>
+          <span>Elevation Gain</span>
           <b class="num" id="hud-elev">+${Math.round(stats.elevGain)}<small>m</small></b>
         </div>
         <div class="stat">
-          <span>Langkah Anggaran</span>
+          <span>Est. Steps</span>
           <b class="num" id="hud-steps">${stats.steps}<small>step</small></b>
         </div>
       </div>
 
-      <!-- Butang Kawalan Aktiviti -->
+      <!-- Activity Control Buttons -->
       <div class="card flat" style="padding:14px;background:#0d0d0e;margin-bottom:20px">
         ${
           stats.status === 'idle'
             ? `<button type="button" class="btn btn-primary btn-lg btn-block" id="btn-start-run">
                 ${icons.play}
-                <span>Mula Sesi Larian</span>
+                <span>Start Run Session</span>
               </button>`
             : stats.status === 'running'
             ? `<div class="grid grid-2">
                 <button type="button" class="btn btn-secondary btn-lg" id="btn-pause-run">
                   ${icons.pause}
-                  <span>Jeda</span>
+                  <span>Pause</span>
                 </button>
                 <button type="button" class="btn btn-primary btn-lg" id="btn-finish-run">
                   ${icons.stop}
-                  <span>Tamat & Simpan</span>
+                  <span>Finish & Save</span>
                 </button>
               </div>`
             : `<div class="grid grid-3">
                 <button type="button" class="btn btn-secondary" id="btn-resume-run">
                   ${icons.play}
-                  <span>Sambung</span>
+                  <span>Resume</span>
                 </button>
                 <button type="button" class="btn btn-primary" id="btn-finish-run">
                   ${icons.check}
-                  <span>Tamat</span>
+                  <span>Finish</span>
                 </button>
                 <button type="button" class="btn btn-danger" id="btn-discard-run">
                   ${icons.trash}
-                  <span>Batal</span>
+                  <span>Discard</span>
                 </button>
               </div>`
         }
       </div>
 
-      <!-- Sejarah Aktiviti Lepas (Disimpan dalam Sistem) -->
+      <!-- Past Activity History -->
       <div class="card">
         <div class="card-title row between">
-          <span>Sejarah Larian Anda</span>
-          <span class="muted">${history.length} sesi tersimpan</span>
+          <span>Your Run History</span>
+          <span class="muted">${history.length} sessions saved</span>
         </div>
 
         <div class="list">
@@ -191,18 +191,18 @@ export function renderActivity(container) {
             history.length === 0
               ? `<div class="empty">
                   ${icons.run}
-                  <p>Tiada rekod larian tersimpan dalam sistem.</p>
-                  <span class="small muted">Tekan "Mula Sesi Larian" untuk merekod jarak, masa, pace dan laluan GPS anda!</span>
+                  <p>No running records saved yet.</p>
+                  <span class="small muted">Tap "Start Run Session" to track your distance, time, pace, and live GPS route!</span>
                 </div>`
               : history
                   .map(
                     (act) => `
-                <div class="list-item" data-id="${act.id}" style="cursor:pointer;${inspectingActivityId === act.id ? 'border:1px solid #3897f0;background:#141b24' : ''}" title="Tekan untuk lihat laluan di peta">
+                <div class="list-item" data-id="${act.id}" style="cursor:pointer;${inspectingActivityId === act.id ? 'border:1px solid #3897f0;background:#141b24' : ''}" title="Tap to preview route on map">
                   <div class="thumb" style="width:80px;height:54px;background:#0d0d0e;border:1px solid var(--border);padding:3px;border-radius:6px">
                     ${routeThumbSVG(act.segments, { w: 80, h: 54, stroke: 2.2 })}
                   </div>
                   <div class="li-main">
-                    <div class="li-title">${esc(act.type || 'Larian')} ${act.simulated ? '<span class="badge">Simulasi</span>' : ''}</div>
+                    <div class="li-title">${esc(act.type || 'Run')} ${act.simulated ? '<span class="badge">Simulated</span>' : ''}</div>
                     <div class="li-sub">
                       <span class="num">${act.distanceKm.toFixed(2)} km</span> · 
                       <span class="num">${formatDuration(act.durationSec)}</span> · 
@@ -213,7 +213,7 @@ export function renderActivity(container) {
                     <b class="num" style="color:var(--ok)">-${act.kcal} <span class="xs muted">kcal</span></b>
                     <small>${fmtTime(act.startedAt)}</small>
                   </div>
-                  <button class="btn btn-icon btn-ghost btn-sm del-history-btn" data-id="${act.id}" title="Padam rekod" aria-label="Padam rekod" style="color:var(--danger)">
+                  <button class="btn btn-icon btn-ghost btn-sm del-history-btn" data-id="${act.id}" title="Delete record" aria-label="Delete record" style="color:var(--danger)">
                     ${icons.trash}
                   </button>
                 </div>`
@@ -323,11 +323,11 @@ export function renderActivity(container) {
       });
     }
 
-    // 2. Lukis penanda Mula jika sudah ada titik pertama
+    // 2. Start marker if points exist
     if (stats.points && stats.points.length > 0) {
       const firstPt = stats.points[0];
       const startIcon = L.divIcon({
-        html: '<div class="start-pin-marker">M</div>',
+        html: '<div class="start-pin-marker">S</div>',
         className: '',
         iconSize: [26, 26],
         iconAnchor: [13, 13],
@@ -335,13 +335,13 @@ export function renderActivity(container) {
       L.marker([firstPt.lat, firstPt.lng], { icon: startIcon }).addTo(markerLayer);
     }
 
-    // 3. Titik Lokasi Semasa Pengguna (Live GPS Pulsing Dot)
+    // 3. User Current Position (Live GPS Pulsing Dot)
     const curPos = stats.points.length
       ? stats.points[stats.points.length - 1]
       : stats.liveLocation;
 
     if (curPos) {
-      // Penanda denyutan langsung radar ala Strava / Google Maps
+      // Strava/Google Maps radar pulsing marker
       const liveIcon = L.divIcon({
         html: '<div class="live-gps-dot"><div class="core"></div></div>',
         className: '',
@@ -350,7 +350,7 @@ export function renderActivity(container) {
       });
       L.marker([curPos.lat, curPos.lng], { icon: liveIcon, zIndexOffset: 1000 }).addTo(markerLayer);
 
-      // Lingkaran ketepatan GPS (accuracy circle)
+      // GPS accuracy circle
       if (curPos.accuracy && curPos.accuracy > 0 && curPos.accuracy < 200) {
         L.circle([curPos.lat, curPos.lng], {
           radius: curPos.accuracy,
@@ -361,13 +361,13 @@ export function renderActivity(container) {
         }).addTo(markerLayer);
       }
 
-      // Pusat automatik sekali semasa pengesanan pertama
+      // Initial auto-center on first fix
       if (!hasCenteredInitialGPS && stats.status === 'idle') {
         hasCenteredInitialGPS = true;
         map.setView([curPos.lat, curPos.lng], 16, { animate: true });
       }
 
-      // Pan peta mengikut pergerakan semasa sesi larian aktif
+      // Smooth pan following runner during active session
       if (stats.status === 'running') {
         map.panTo([curPos.lat, curPos.lng], { animate: true, duration: 0.6 });
       }
@@ -397,34 +397,34 @@ export function renderActivity(container) {
     });
 
     if (allCoords.length > 0) {
-      // Penanda Mula
+      // Start Marker
       const startPt = allCoords[0];
       const startIcon = L.divIcon({
-        html: '<div class="start-pin-marker">M</div>',
+        html: '<div class="start-pin-marker">S</div>',
         className: '',
         iconSize: [26, 26],
         iconAnchor: [13, 13],
       });
       L.marker(startPt, { icon: startIcon }).addTo(markerLayer);
 
-      // Penanda Tamat
+      // Finish Marker
       const endPt = allCoords[allCoords.length - 1];
       const endIcon = L.divIcon({
-        html: '<div class="finish-pin-marker">T</div>',
+        html: '<div class="finish-pin-marker">F</div>',
         className: '',
         iconSize: [26, 26],
         iconAnchor: [13, 13],
       });
       L.marker(endPt, { icon: endIcon }).addTo(markerLayer);
 
-      // Zum peta supaya muat keseluruhan laluan
+      // Fit map bounds to entire route
       const bounds = L.latLngBounds(allCoords);
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 17 });
     }
   }
 
   function bindEvents() {
-    // Tukar gaya lapisan peta OpenStreetMap
+    // Switch OpenStreetMap Layer Style
     container.querySelectorAll('#osm-layer-tabs button').forEach((btn) => {
       btn.addEventListener('click', () => {
         mapTileStyle = btn.dataset.layer;
@@ -436,125 +436,124 @@ export function renderActivity(container) {
         } else {
           updateMapGraphics(tracker.getStats());
         }
-        toast(`Peta ditukar: OpenStreetMap ${mapTileStyle === 'standard' ? 'Standard' : 'Gelap'}`, 'info');
+        toast(`Map layer switched: OpenStreetMap ${mapTileStyle === 'standard' ? 'Standard' : 'Dark'}`, 'info');
       });
     });
 
-    // Butang Minta Kebenaran Lokasi Manual
+    // Manual Location Permission Button
     container.querySelector('#btn-request-location-manual')?.addEventListener('click', async () => {
       try {
-        toast('Mengesan kedudukan GPS anda...', 'info');
+        toast('Detecting your GPS location...', 'info');
         const pos = await tracker.detectLiveLocation();
-        toast(`Lokasi dikesan: ±${pos.accuracy}m ketepatan.`, 'success');
+        toast(`Location detected: ±${pos.accuracy}m accuracy.`, 'success');
         if (map) {
           map.setView([pos.lat, pos.lng], 16, { animate: true });
         }
         render();
       } catch (err) {
-        toast(err.message || 'Gagal mengesan lokasi GPS.', 'error');
+        toast(err.message || 'Failed to detect GPS location.', 'error');
         render();
       }
     });
 
-    // Butang Floating Recenter Map (Lokasi Saya)
+    // Floating Recenter Map Button
     container.querySelector('#btn-recenter-map')?.addEventListener('click', async () => {
       const stats = tracker.getStats();
       let pos = stats.liveLocation;
       if (!pos) {
         try {
-          toast('Mengesan GPS...', 'info');
+          toast('Detecting GPS...', 'info');
           pos = await tracker.detectLiveLocation();
         } catch (e) {
-          toast('GPS tidak aktif. Sila benarkan kebenaran lokasi.', 'error');
+          toast('GPS inactive. Please enable location permission.', 'error');
           return;
         }
       }
       if (pos && map) {
-        inspectingActivityId = null; // batalkan mod arkib jika ada
+        inspectingActivityId = null;
         map.setView([pos.lat, pos.lng], 16, { animate: true });
         updateMapGraphics(tracker.getStats());
-        toast('Peta dipusatkan ke kedudukan anda.', 'info');
+        toast('Map recentered to your position.', 'info');
       }
     });
 
-    // Toggle Simulasi
+    // Toggle Simulation
     container.querySelector('#sim-checkbox')?.addEventListener('change', (e) => {
       isSim = e.target.checked;
       render();
     });
 
-    // Mula Sesi Larian
+    // Start Run Session
     container.querySelector('#btn-start-run')?.addEventListener('click', async () => {
       inspectingActivityId = null;
-      // Jika peranti belum ada lokasi dan bukan simulasi, minta lokasi
       if (!isSim && !tracker.getLiveLocation()) {
         try {
           await tracker.detectLiveLocation();
         } catch {
-          // teruskan jika pengguna tetap ingin mula
+          // continue anyway
         }
       }
       tracker.start({ simulate: isSim });
-      toast('Sesi larian bermula! Penjejakan Strava aktif.', 'success');
+      toast('Run session started! Strava tracking active.', 'success');
       render();
     });
 
-    // Jeda Sesi Larian
+    // Pause Run Session
     container.querySelector('#btn-pause-run')?.addEventListener('click', () => {
       tracker.pause();
       render();
     });
 
-    // Sambung Sesi Larian
+    // Resume Run Session
     container.querySelector('#btn-resume-run')?.addEventListener('click', () => {
       tracker.resume();
       render();
     });
 
-    // Tamat & Simpan Sesi Larian
+    // Finish & Save Run Session
     container.querySelector('#btn-finish-run')?.addEventListener('click', async () => {
       const ok = await confirmSheet({
-        title: 'Tamatkan Sesi Larian?',
-        message: 'Laluan, jarak, pace dan kalori dibakar akan disimpan ke dalam sistem dan ditolak daripada baki kalori harian anda.',
-        confirmText: 'Tamat & Simpan',
+        title: 'Finish Run Session?',
+        message: 'Your route, distance, pace, and calories burned will be saved and credited to your daily calorie balance.',
+        confirmText: 'Finish & Save',
       });
       if (ok) {
         const result = tracker.finish();
         const saved = store.addActivity(result);
-        toast(`Larian berjaya disimpan: ${result.distanceKm.toFixed(2)} km · Pace ${formatPace(result.pace)}/km · ${result.kcal} kcal dibakar!`, 'success');
+        toast(`Run saved: ${result.distanceKm.toFixed(2)} km · Pace ${formatPace(result.pace)}/km · ${result.kcal} kcal burned!`, 'success');
         onActivityFinished(saved);
         render();
       }
     });
 
-    // Batal Sesi Larian
+    // Discard Run Session
     container.querySelector('#btn-discard-run')?.addEventListener('click', async () => {
       const ok = await confirmSheet({
-        title: 'Batal Sesi Larian?',
-        message: 'Semua rekod jarak dan laluan larian ini akan dibuang.',
-        confirmText: 'Batal & Buang',
+        title: 'Discard Run Session?',
+        message: 'All distance and route records for this session will be discarded.',
+        confirmText: 'Discard Session',
         danger: true,
       });
       if (ok) {
         tracker.discard();
-        toast('Sesi larian dibatalkan.', 'info');
+        toast('Run session discarded.', 'info');
         render();
       }
     });
 
-    // Padam Rekod Aktiviti Sejarah
+    // Delete History Activity Record
     container.querySelectorAll('.del-history-btn').forEach((b) => {
       b.addEventListener('click', (e) => {
         e.stopPropagation();
         const id = b.dataset.id;
         if (inspectingActivityId === id) inspectingActivityId = null;
         store.deleteActivity(id);
-        toast('Rekod larian dipadam.', 'info');
+        toast('Run record deleted.', 'info');
         render();
       });
     });
 
-    // Tekan item aktiviti sejarah untuk memaparkan laluannya di atas peta
+    // Click history item to preview route on map
     container.querySelectorAll('.list-item[data-id]').forEach((item) => {
       item.addEventListener('click', () => {
         const id = item.dataset.id;
@@ -566,8 +565,7 @@ export function renderActivity(container) {
             el.style.border = el.dataset.id === id ? '1px solid #3897f0' : '';
             el.style.background = el.dataset.id === id ? '#141b24' : '';
           });
-          toast(`Memaparkan laluan: ${act.distanceKm.toFixed(2)} km (${fmtTime(act.startedAt)})`, 'info');
-          // Skrol ke peta secara lancar jika di skrin telefon
+          toast(`Showing route: ${act.distanceKm.toFixed(2)} km (${fmtTime(act.startedAt)})`, 'info');
           container.querySelector('.strava-map-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       });

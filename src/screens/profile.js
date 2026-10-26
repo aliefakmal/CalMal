@@ -26,7 +26,7 @@ export function renderProfile(container) {
 
   function renderWeightChart(list, targetW) {
     if (list.length < 2) {
-      return `<div class="empty small"><p>Perlukan sekurang-kurangnya 2 rekod berat badan untuk graf.</p></div>`;
+      return `<div class="empty small"><p>Need at least 2 weight records to render chart.</p></div>`;
     }
 
     const w = 480;
@@ -49,16 +49,16 @@ export function renderProfile(container) {
     return `
       <div class="weight-chart-wrap">
         <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-          <!-- Garis sasaran -->
+          <!-- Target guideline -->
           ${
             targetY != null
               ? `<line x1="${pad}" y1="${targetY}" x2="${w - pad}" y2="${targetY}" stroke="var(--ok)" stroke-width="1.5" stroke-dasharray="4 4" />
-                 <text x="${w - pad}" y="${targetY - 4}" fill="var(--ok)" font-size="10" text-anchor="end" font-weight="700">Sasaran: ${targetW}kg</text>`
+                 <text x="${w - pad}" y="${targetY - 4}" fill="var(--ok)" font-size="10" text-anchor="end" font-weight="700">Target: ${targetW}kg</text>`
               : ''
           }
-          <!-- Garis lengkung berat -->
+          <!-- Weight trend curve -->
           <polyline points="${polylinePts}" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-          <!-- Titik bulatan -->
+          <!-- Points -->
           ${pts
             .map(
               (p) => `
@@ -81,55 +81,55 @@ export function renderProfile(container) {
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="eyebrow">Profil Biometrik & Tetapan</span>
+          <span class="eyebrow">Biometric Profile & Settings</span>
           <h1 class="page-title">${esc(profile.name)}</h1>
         </div>
         <div class="row" style="gap:6px">
           ${
             pendingCount > 0
-              ? `<span class="badge" title="Data tersimpan lokal dan sedia disegerakkan">${pendingCount} lokal</span>`
-              : `<span class="badge ok">Terselaras</span>`
+              ? `<span class="badge" title="Data stored locally and ready to sync">${pendingCount} local</span>`
+              : `<span class="badge ok">Synced</span>`
           }
         </div>
       </div>
 
       <div class="stack">
-        <!-- Kad Ringkasan Biometrik Semasa -->
+        <!-- Current Biometrics Summary Card -->
         <div class="card">
           <div class="card-title row between">
-            <span>Status Fizikal Semasa</span>
+            <span>Current Physical Status</span>
             <span class="badge ok">${bmiCategory} (BMI ${bmi.toFixed(1)})</span>
           </div>
 
           <div class="equation">
             <div class="eq-cell">
-              <span>Berat Semasa</span>
+              <span>Current Weight</span>
               <b class="num">${profile.weight}<small style="font-size:12px;color:var(--muted)">kg</small></b>
             </div>
             <div class="eq-cell">
-              <span>Sasaran</span>
+              <span>Target Weight</span>
               <b class="num">${profile.targetWeight || '–'}<small style="font-size:12px;color:var(--muted)">kg</small></b>
             </div>
             <div class="eq-cell">
-              <span>Sasaran Tenaga</span>
+              <span>Calorie Target</span>
               <b class="num">${targetKcal}<small style="font-size:12px;color:var(--muted)">kcal</small></b>
             </div>
           </div>
 
-          <!-- Graf Kemajuan Berat Badan -->
+          <!-- Weight Progress Chart -->
           <div style="margin-top:16px">
             <div class="row between" style="margin-bottom:4px">
-              <span class="small bold muted" style="text-transform:uppercase;letter-spacing:0.06em">Kemajuan Berat Badan</span>
-              <span class="xs muted">${weights.length} rekod</span>
+              <span class="small bold muted" style="text-transform:uppercase;letter-spacing:0.06em">Weight Progress</span>
+              <span class="xs muted">${weights.length} records</span>
             </div>
             ${renderWeightChart(weights, profile.targetWeight)}
           </div>
 
-          <!-- Input Log Berat Harian -->
+          <!-- Daily Weight Log Input -->
           <div class="divider"></div>
           <div class="row" style="align-items:flex-end;gap:10px">
             <div class="field" style="flex:1">
-              <label for="new-weight-input">Timbang Berat Hari Ini:</label>
+              <label for="new-weight-input">Log Today's Weight:</label>
               <div class="input-suffix">
                 <input class="input num" id="new-weight-input" type="number" step="0.1" value="${profile.weight}" />
                 <span>kg</span>
@@ -137,16 +137,16 @@ export function renderProfile(container) {
             </div>
             <button type="button" class="btn btn-primary" id="btn-log-weight">
               ${icons.scale}
-              <span>Catat Berat</span>
+              <span>Record Weight</span>
             </button>
           </div>
         </div>
 
-        <!-- Kad Koleksi Lencana Bakugou & Deku -->
+        <!-- Hero Badges Card -->
         <div class="card">
           <div class="card-title row between">
-            <span>Koleksi Lencana Hero</span>
-            <span class="muted">${Object.keys(store.state.badges).length} / ${Object.keys(BADGES).length} dibuka</span>
+            <span>Hero Badge Collection</span>
+            <span class="muted">${Object.keys(store.state.badges).length} / ${Object.keys(BADGES).length} unlocked</span>
           </div>
 
           <div class="badge-grid">
@@ -160,7 +160,7 @@ export function renderProfile(container) {
                     </div>
                     <div class="badge-title">${esc(b.title)}</div>
                     <div class="badge-desc">${esc(b.desc)}</div>
-                    ${unlocked ? `<span class="badge ok" style="font-size:9.5px;height:18px;padding:0 6px">BUKA</span>` : '<span class="badge" style="font-size:9.5px;height:18px;padding:0 6px;opacity:0.6">KUNCI</span>'}
+                    ${unlocked ? `<span class="badge ok" style="font-size:9.5px;height:18px;padding:0 6px">UNLOCKED</span>` : '<span class="badge" style="font-size:9.5px;height:18px;padding:0 6px;opacity:0.6">LOCKED</span>'}
                   </div>
                 `;
               })
@@ -168,55 +168,55 @@ export function renderProfile(container) {
           </div>
         </div>
 
-        <!-- Kad Info Peta OpenStreetMap -->
+        <!-- OpenStreetMap Info Card -->
         <div class="card stack">
           <div class="card-title row between">
-            <span>Peta & Penjejak Laluan</span>
+            <span>Map & Route Tracker</span>
             <span class="badge ok">${icons.pin} OpenStreetMap</span>
           </div>
           <p class="small muted" style="line-height:1.45">
-            Peta aktiviti larian dan penjejakan GPS ala Strava menggunakan data <b>OpenStreetMap (OSM)</b>. Tiada kunci API diperlukan — berfungsi terus daripada GPS peranti anda.
+            Live run tracking and Strava-style GPS maps use <b>OpenStreetMap (OSM)</b>. No API key required — works straight from your device GPS.
           </p>
         </div>
 
-        <!-- Kad Tetapan Model Gemini 3.5 Flash Lite (Pilihan Lanjutan) -->
+        <!-- Gemini Multi-Model Cascade Card -->
         <div class="card stack">
           <div class="card-title row between">
-            <span>Integrasi Gemini AI</span>
-            <span class="badge ok">${GeminiConfig.modelName}</span>
+            <span>AI Engine & Fallback Cascade</span>
+            <span class="badge ok">Gemini 3.5 → 3.1 → Gemma 4</span>
           </div>
 
           <p class="small muted" style="line-height:1.45">
-            Sistem CalMal kini dilengkapi enjin AI pemakanan tempatan sedia ada. Anda juga boleh memasukkan kunci API <b>Gemini 3.5 Flash Lite</b> peribadi anda di bawah jika ingin sambungan terus ke pelayan awan Google Gemini.
+            CalMal features an intelligent multi-tier AI cascading engine: <b>Gemini 3.5 Flash Lite</b> (primary) → <b>Gemini 3.1 Flash Lite</b> (fallback 1) → <b>Gemma 4 31B</b> (fallback 2) → <b>Smart Asian Dietary Engine</b> (offline fallback). An API key is completely optional — you can provide your Google Gemini API key below to unlock cloud capabilities.
           </p>
 
           <div class="field">
-            <label for="api-key-input">Kunci API Gemini (Pilihan):</label>
-            <input class="input" id="api-key-input" type="password" value="${esc(settings.apiKey || '')}" placeholder="AIzaSy... (Pilihan)" autocomplete="off" />
+            <label for="api-key-input">Gemini API Key (Optional):</label>
+            <input class="input" id="api-key-input" type="password" value="${esc(settings.apiKey || '')}" placeholder="AIzaSy... (Optional)" autocomplete="off" />
           </div>
 
           <div class="row" style="gap:10px">
             <button type="button" class="btn btn-secondary btn-sm" id="btn-save-key">
               ${icons.check}
-              <span>Simpan Kunci</span>
+              <span>Save Key</span>
             </button>
             <button type="button" class="btn btn-ghost btn-sm" id="btn-test-key">
               ${icons.refresh}
-              <span>Uji Sambungan</span>
+              <span>Test Connection</span>
             </button>
           </div>
         </div>
 
-        <!-- Kad Pilihan Notifikasi & Kompanion Anime -->
+        <!-- Companion & Notification Settings Card -->
         <div class="card stack">
           <div class="card-title">
-            <span>Pilihan Kompanion & Notifikasi</span>
+            <span>Companion & Notification Settings</span>
           </div>
 
           <label class="row between" style="padding:8px 0;cursor:pointer">
             <div>
-              <b>Kompanion Deku & Bakugou</b>
-              <p class="small muted">Animasi komik & tip motivasi bersuara di papan pemuka dan imbasan.</p>
+              <b>Deku & Bakugou Companions</b>
+              <p class="small muted">Manga dialogue & motivational voice bubble cues on dashboard and scanner.</p>
             </div>
             <input type="checkbox" id="companion-toggle" ${settings.companions !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
           </label>
@@ -225,8 +225,8 @@ export function renderProfile(container) {
 
           <label class="row between" style="padding:8px 0;cursor:pointer">
             <div>
-              <b>Peringatan Pintar Harian</b>
-              <p class="small muted">Notifikasi makan (8:00am, 1:00pm, 8:00pm) dan amaran larian 5:30 petang.</p>
+              <b>Daily Smart Reminders</b>
+              <p class="small muted">Meal reminders (8:00 AM, 1:00 PM, 8:00 PM) and evening run alerts (5:30 PM).</p>
             </div>
             <input type="checkbox" id="notif-toggle" ${settings.notifications ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
           </label>
@@ -235,27 +235,27 @@ export function renderProfile(container) {
 
           <label class="row between" style="padding:8px 0;cursor:pointer">
             <div>
-              <b>Kamera Sentiasa Aktif (Lalai: Hidup)</b>
-              <p class="small muted">Memulakan siaran kamera telefon secara automatik serta-merta apabila membuka tab Imbas.</p>
+              <b>Continuous Live Camera (Default: On)</b>
+              <p class="small muted">Automatically starts camera feed immediately upon navigating to the Scan tab.</p>
             </div>
             <input type="checkbox" id="camera-always-toggle" ${settings.cameraAlwaysOn !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
           </label>
         </div>
 
-        <!-- Kad Pengurusan Data -->
+        <!-- Data Management Card -->
         <div class="card stack">
           <div class="card-title">
-            <span>Pengurusan Data</span>
+            <span>Data Management</span>
           </div>
 
           <div class="row wrap" style="gap:10px">
             <button type="button" class="btn btn-secondary btn-sm" id="btn-export-data">
               ${icons.download}
-              <span>Eksport Data (JSON)</span>
+              <span>Export Data (JSON)</span>
             </button>
             <button type="button" class="btn btn-danger btn-sm" id="btn-reset-app">
               ${icons.trash}
-              <span>Reset Semua Data</span>
+              <span>Reset All Data</span>
             </button>
           </div>
         </div>
@@ -266,77 +266,77 @@ export function renderProfile(container) {
   }
 
   function bindEvents() {
-    // Catat Berat
+    // Record Weight
     container.querySelector('#btn-log-weight')?.addEventListener('click', () => {
       const val = Number(container.querySelector('#new-weight-input')?.value);
       if (!val || val < 30 || val > 300) {
-        toast('Sila masukkan nilai berat yang sah.', 'error');
+        toast('Please enter a valid weight value.', 'error');
         return;
       }
       store.logWeight(val);
-      toast(`Berat ${val} kg berjaya dicatat!`, 'success');
+      toast(`Weight ${val} kg recorded!`, 'success');
       onWeightLogged(val);
       render();
     });
 
-    // Simpan Kunci API
+    // Save API Key
     container.querySelector('#btn-save-key')?.addEventListener('click', () => {
       const key = container.querySelector('#api-key-input')?.value.trim();
       store.saveSettings({ apiKey: key });
-      toast('Kunci API disimpan!', 'success');
+      toast('API key saved!', 'success');
     });
 
-    // Uji Kunci API
+    // Test API Key
     const testBtn = container.querySelector('#btn-test-key');
     testBtn?.addEventListener('click', async () => {
       const key = container.querySelector('#api-key-input')?.value.trim();
       if (!key) {
-        toast('Sila masukkan kunci API sebelum menguji.', 'error');
+        toast('Please enter an API key before testing.', 'error');
         return;
       }
       store.saveSettings({ apiKey: key });
-      setLoading(testBtn, true, 'Menguji...');
+      setLoading(testBtn, true, 'Testing...');
       try {
         const ok = await testApiKey();
-        if (ok) toast('Kunci API Gemini 3.5 Flash Lite sah & aktif! 🎉', 'success');
-        else toast('Ujian gagal. Semak semula kunci anda.', 'error');
+        if (ok) toast('Gemini AI connection verified & active! 🎉', 'success');
+        else toast('Connection failed. Check your API key.', 'error');
       } catch (err) {
-        toast(err.message || 'Ralat sambungan API.', 'error');
+        toast(err.message || 'API connection error.', 'error');
       } finally {
         setLoading(testBtn, false);
       }
     });
 
-    // Toggle Kompanion
+    // Toggle Companions
     container.querySelector('#companion-toggle')?.addEventListener('change', (e) => {
       store.saveSettings({ companions: e.target.checked });
-      toast(`Kompanion ${e.target.checked ? 'diaktifkan' : 'dimatikan'}.`, 'info');
+      toast(`Companions ${e.target.checked ? 'enabled' : 'disabled'}.`, 'info');
     });
 
-    // Toggle Notifikasi
+    // Toggle Notifications
     container.querySelector('#notif-toggle')?.addEventListener('change', async (e) => {
       if (e.target.checked) {
         const granted = await requestNotificationPermission();
         if (granted) {
           store.saveSettings({ notifications: true });
-          toast('Notifikasi pintar diaktifkan!', 'success');
+          toast('Smart notifications enabled!', 'success');
         } else {
           e.target.checked = false;
           store.saveSettings({ notifications: false });
         }
       } else {
         store.saveSettings({ notifications: false });
-        toast('Notifikasi dimatikan.', 'info');
+        toast('Notifications disabled.', 'info');
       }
     });
 
-    // Toggle Kamera Sentiasa Aktif
+    // Toggle Continuous Live Camera
     container.querySelector('#camera-always-toggle')?.addEventListener('change', (e) => {
       store.saveSettings({ cameraAlwaysOn: e.target.checked });
-      toast(`Kamera sentiasa aktif: ${e.target.checked ? 'Dihidupkan' : 'Dimatikan'}.`, 'info');
+      toast(`Continuous live camera: ${e.target.checked ? 'Enabled' : 'Disabled'}.`, 'info');
     });
 
-    // Eksport Data JSON
+    // Export Data JSON
     container.querySelector('#btn-export-data')?.addEventListener('click', () => {
       const json = store.exportJSON();
       const blob = new Blob([json], { type: 'application/json' });
@@ -346,15 +346,15 @@ export function renderProfile(container) {
       a.download = `calmal_backup_${todayKey()}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      toast('Data berjaya dieksport!', 'success');
+      toast('Data exported successfully!', 'success');
     });
 
     // Reset Data
     container.querySelector('#btn-reset-app')?.addEventListener('click', async () => {
       const ok = await confirmSheet({
-        title: 'Reset Semua Data Aplikasi?',
-        message: 'Tindakan ini akan memadam semua profil, rekod makanan, larian dan lencana secara kekal.',
-        confirmText: 'Padam Semua',
+        title: 'Reset All Application Data?',
+        message: 'This will permanently delete your profile, meal logs, runs, and badges.',
+        confirmText: 'Delete All',
         danger: true,
       });
       if (ok) {

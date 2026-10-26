@@ -24,8 +24,8 @@ export function renderRecipes(container) {
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="eyebrow">Dapur AI Malaysia</span>
-          <h1 class="page-title">Resipi & Pelan Makan</h1>
+          <span class="eyebrow">AI Nutrition & Culinary Kitchen</span>
+          <h1 class="page-title">Recipes & Meal Plans</h1>
         </div>
       </div>
 
@@ -33,18 +33,17 @@ export function renderRecipes(container) {
       <div class="segmented" id="recipe-tabs" style="margin-bottom:16px">
         <button type="button" data-t="recipe" class="${tab === 'recipe' ? 'active' : ''}">
           ${icons.chef}
-          <span>Cipta Resipi</span>
+          <span>Recipe Generator</span>
         </button>
         <button type="button" data-t="planner" class="${tab === 'planner' ? 'active' : ''}">
           ${icons.sparkles}
-          <span>Pelan 7 Hari</span>
+          <span>7-Day Plan</span>
         </button>
         <button type="button" data-t="saved" class="${tab === 'saved' ? 'active' : ''}">
           ${icons.bowl}
-          <span>Tersimpan (${store.state.recipes.length})</span>
+          <span>Saved (${store.state.recipes.length})</span>
         </button>
       </div>
-
 
       ${tab === 'recipe' ? renderRecipeGenerator() : tab === 'planner' ? renderMealPlanner() : renderSavedRecipes()}
     `;
@@ -57,25 +56,25 @@ export function renderRecipes(container) {
       <div class="stack">
         <div class="card stack">
           <div class="card-title">
-            <span>Penapis Diet</span>
-            <span class="xs muted">Wajib Halal</span>
+            <span>Dietary Filter</span>
+            <span class="xs muted">Halal / Health Focus</span>
           </div>
           <div class="chips" id="diet-chips">
             ${DIET_FILTERS.map((d) => `<button type="button" class="chip ${selectedDiet === d ? 'active' : ''}" data-d="${d}">${d}</button>`).join('')}
           </div>
 
           <div class="field" style="margin-top:4px">
-            <label for="recipe-input">Permintaan / Bahan Anda</label>
-            <textarea class="textarea" id="recipe-input" placeholder="cth. Saya ada dada ayam, bayam dan santan kotak. Cadangkan resipi sihat ala kampung...">${esc(recipeTextRequest)}</textarea>
+            <label for="recipe-input">Your Request / Ingredients</label>
+            <textarea class="textarea" id="recipe-input" placeholder="e.g. I have chicken breast, spinach and light coconut milk. Suggest a healthy, high-protein meal...">${esc(recipeTextRequest)}</textarea>
           </div>
 
           <div class="row between" style="align-items:center">
             <input type="file" id="recipe-img-file" accept="image/*" class="hidden" />
             <button type="button" class="btn btn-sm btn-ghost" id="btn-add-ing-img">
               ${icons.camera}
-              <span>${ingredientImage ? 'Tukar Gambar Bahan' : 'Gambar Peti Sejuk / Bahan'}</span>
+              <span>${ingredientImage ? 'Change Ingredient Photo' : 'Fridge / Ingredients Photo'}</span>
             </button>
-            ${ingredientImage ? '<span class="badge ok">1 gambar dipilih</span>' : ''}
+            ${ingredientImage ? '<span class="badge ok">1 photo attached</span>' : ''}
           </div>
 
           ${
@@ -89,7 +88,7 @@ export function renderRecipes(container) {
 
           <button type="button" class="btn btn-primary btn-block" id="btn-gen-recipe" style="margin-top:6px" ${isGenerating ? 'disabled' : ''}>
             ${isGenerating ? '<span class="spinner"></span>' : icons.sparkles}
-            <span>${isGenerating ? 'Gemini Sedang Memasak Resipi...' : 'Jana Resipi Bersama AI'}</span>
+            <span>${isGenerating ? 'Gemini is Crafting Recipe...' : 'Generate Recipe with AI'}</span>
           </button>
         </div>
 
@@ -112,10 +111,10 @@ export function renderRecipes(container) {
 
         <p class="small muted" style="line-height:1.45">${esc(r.description || '')}</p>
 
-        <!-- Nutrisi Pie / Metrik -->
+        <!-- Nutrition Metrics -->
         <div class="equation">
           <div class="eq-cell">
-            <span>Tenaga</span>
+            <span>Calories</span>
             <b class="num">${n.calories_kcal || 0}</b>
             <span class="xs muted">kcal</span>
           </div>
@@ -125,7 +124,7 @@ export function renderRecipes(container) {
             <span class="xs muted">g</span>
           </div>
           <div class="eq-cell">
-            <span>Karbo / Lemak</span>
+            <span>Carbs / Fat</span>
             <b class="num">${round1(n.carbs_g || 0)}/${round1(n.fat_g || 0)}</b>
             <span class="xs muted">g</span>
           </div>
@@ -134,29 +133,29 @@ export function renderRecipes(container) {
         <div class="divider"></div>
 
         <div>
-          <b class="small" style="text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Bahan-Bahan:</b>
+          <b class="small" style="text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Ingredients:</b>
           <ul style="padding-left:20px;margin:8px 0;line-height:1.6;font-size:14px">
             ${(r.ingredients || []).map((ing) => `<li>${esc(ing)}</li>`).join('')}
           </ul>
         </div>
 
         <div>
-          <b class="small" style="text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Langkah Memasak:</b>
+          <b class="small" style="text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Cooking Instructions:</b>
           <ol style="padding-left:20px;margin:8px 0;line-height:1.6;font-size:14px">
             ${(r.steps || []).map((st) => `<li>${esc(st)}</li>`).join('')}
           </ol>
         </div>
 
-        ${r.tips ? `<div class="card flat" style="background:#0d0d0e;border:1px solid var(--border);padding:12px;font-size:13px"><b style="color:var(--deku)">Tip Chef:</b> ${esc(r.tips)}</div>` : ''}
+        ${r.tips ? `<div class="card flat" style="background:#0d0d0e;border:1px solid var(--border);padding:12px;font-size:13px"><b style="color:var(--deku)">Chef Tip:</b> ${esc(r.tips)}</div>` : ''}
 
         <div class="grid grid-2" style="margin-top:8px">
           <button type="button" class="btn btn-secondary" id="btn-save-recipe">
             ${icons.plus}
-            <span>Simpan Resipi</span>
+            <span>Save Recipe</span>
           </button>
           <button type="button" class="btn btn-primary" id="btn-log-recipe-meal">
             ${icons.check}
-            <span>Makan Hidangan Ini</span>
+            <span>Log This Meal</span>
           </button>
         </div>
       </div>
@@ -175,7 +174,7 @@ export function renderRecipes(container) {
       <div class="stack">
         <div class="card stack">
           <div class="row between">
-            <span class="eyebrow">Soalan ${currentStep + 1} daripada ${PLANNER_QUESTIONS.length}</span>
+            <span class="eyebrow">Question ${currentStep + 1} of ${PLANNER_QUESTIONS.length}</span>
             <span class="small bold muted">${pct}%</span>
           </div>
           <div class="stepper-progress">
@@ -199,16 +198,16 @@ export function renderRecipes(container) {
           <div class="row between" style="margin-top:14px">
             <button type="button" class="btn btn-ghost btn-sm" id="btn-step-prev" ${currentStep === 0 ? 'disabled' : ''}>
               ${icons.chevronLeft}
-              <span>Sebelum</span>
+              <span>Previous</span>
             </button>
             ${
               currentStep === PLANNER_QUESTIONS.length - 1
                 ? `<button type="button" class="btn btn-primary" id="btn-submit-planner" ${!mcqAnswers[q.id] || isGeneratingPlan ? 'disabled' : ''}>
                     ${isGeneratingPlan ? '<span class="spinner"></span>' : icons.sparkles}
-                    <span>${isGeneratingPlan ? 'Menjana Pelan 7 Hari...' : 'Cipta Pelan 7 Hari'}</span>
+                    <span>${isGeneratingPlan ? 'Generating 7-Day Plan...' : 'Generate 7-Day Plan'}</span>
                   </button>`
                 : `<button type="button" class="btn btn-secondary btn-sm" id="btn-step-next" ${!mcqAnswers[q.id] ? 'disabled' : ''}>
-                    <span>Seterusnya</span>
+                    <span>Next</span>
                     ${icons.chevronRight}
                   </button>`
             }
@@ -224,15 +223,15 @@ export function renderRecipes(container) {
         <div class="card stack">
           <div class="card-title row between">
             <div>
-              <span class="eyebrow">Pelan Makanan 7 Hari</span>
-              <h2 style="font-size:22px;font-weight:800">Jadual Lengkap</h2>
+              <span class="eyebrow">7-Day Nutrition Plan</span>
+              <h2 style="font-size:22px;font-weight:800">Complete Schedule</h2>
             </div>
             <div class="row" style="gap:6px">
-              <button type="button" class="btn btn-sm btn-ghost" id="btn-print-plan" title="Cetak / Eksport PDF">
+              <button type="button" class="btn btn-sm btn-ghost" id="btn-print-plan" title="Print / Export PDF">
                 ${icons.printer}
-                <span>Cetak / PDF</span>
+                <span>Print / PDF</span>
               </button>
-              <button type="button" class="btn btn-sm btn-ghost" id="btn-reset-plan" title="Jana Pelan Baru">
+              <button type="button" class="btn btn-sm btn-ghost" id="btn-reset-plan" title="Generate New Plan">
                 ${icons.refresh}
               </button>
             </div>
@@ -269,7 +268,7 @@ export function renderRecipes(container) {
             plan.shopping_tips && plan.shopping_tips.length
               ? `<div class="divider"></div>
                  <div class="small">
-                   <b class="muted" style="text-transform:uppercase">Tip Pembelian Bahan:</b>
+                   <b class="muted" style="text-transform:uppercase">Grocery Shopping Tips:</b>
                    <ul style="padding-left:18px;margin:6px 0;line-height:1.5">
                      ${plan.shopping_tips.map((t) => `<li>${esc(t)}</li>`).join('')}
                    </ul>
@@ -287,8 +286,8 @@ export function renderRecipes(container) {
       <div class="stack">
         <div class="card">
           <div class="card-title">
-            <span>Koleksi Resipi Anda</span>
-            <span class="muted">${list.length} resipi</span>
+            <span>Your Recipe Collection</span>
+            <span class="muted">${list.length} recipes</span>
           </div>
 
           <div class="list">
@@ -296,8 +295,8 @@ export function renderRecipes(container) {
               list.length === 0
                 ? `<div class="empty">
                     ${icons.chef}
-                    <p>Belum ada resipi yang disimpan.</p>
-                    <span class="small muted">Jana resipi sihat di tab "Cipta Resipi" dan simpan ke sini!</span>
+                    <p>No saved recipes yet.</p>
+                    <span class="small muted">Generate healthy recipes in the "Recipe Generator" tab and save them here!</span>
                   </div>`
                 : list
                     .map(
@@ -313,10 +312,10 @@ export function renderRecipes(container) {
                       </div>
                     </div>
                     <div class="row" style="gap:4px">
-                      <button class="btn btn-icon btn-ghost btn-sm view-saved-btn" data-id="${r.id}" title="Lihat">
+                      <button class="btn btn-icon btn-ghost btn-sm view-saved-btn" data-id="${r.id}" title="View">
                         ${icons.chevronRight}
                       </button>
-                      <button class="btn btn-icon btn-ghost btn-sm del-saved-btn" data-id="${r.id}" title="Padam" style="color:var(--danger)">
+                      <button class="btn btn-icon btn-ghost btn-sm del-saved-btn" data-id="${r.id}" title="Delete" style="color:var(--danger)">
                         ${icons.trash}
                       </button>
                     </div>
@@ -359,7 +358,7 @@ export function renderRecipes(container) {
           ingredientImage = await compressImage(file);
           render();
         } catch {
-          toast('Gagal memproses gambar.', 'error');
+          toast('Failed to process image.', 'error');
         }
       });
 
@@ -368,31 +367,31 @@ export function renderRecipes(container) {
         render();
       });
 
-      // Demo Resipi Tempatan (tanpa perlu API key)
+      // Demo Recipe (no API key required)
       container.querySelector('#btn-demo-recipe')?.addEventListener('click', () => {
         currentRecipe = {
-          title: 'Sup Ayam Halia Kampung Rendah Lemak',
-          description: 'Sup ayam berkuah jernih dengan aroma halia tua, serai dan daun sup segar — hidangan pemulihan tenaga wira yang tinggi protein.',
+          title: 'Low-Fat Ginger Chicken Soup',
+          description: 'A comforting, clear broth chicken soup infused with fresh ginger, lemongrass, and celery herbs — an optimal high-protein recovery meal.',
           prep_time_min: 10,
           cook_time_min: 20,
           servings: 1,
           ingredients: [
-            '220 g dada ayam tanpa kulit (dipotong dadu)',
-            '3 cm halia tua (dihiris nipis)',
-            '1 batang serai (diketuk)',
-            '2 ulas bawang putih & 1 biji bawang merah (dihiris)',
-            '1 biji lobak merah kecil (dipotong bulat)',
-            '500 ml air atau stok ayam rendah garam',
-            'Sedikit garam bukit & lada hitam tumbuk',
-            'Daun sup dan bawang goreng untuk hiasan',
+            '220g skinless chicken breast (diced)',
+            '3cm fresh ginger root (thinly sliced)',
+            '1 stalk lemongrass (bruised)',
+            '2 cloves garlic & 1 shallot (sliced)',
+            '1 small carrot (sliced)',
+            '500ml water or low-sodium chicken stock',
+            'Pinch of sea salt & crushed black pepper',
+            'Fresh cilantro and scallions for garnish',
           ],
           steps: [
-            '1. Tumis hirisan bawang putih, bawang merah dan halia dengan 1 sudu kecil minyak zaitun sehingga wangi.',
-            '2. Masukkan serai dan ketulan dada ayam, kacau sehingga permukaan ayam bertukar putih.',
-            '3. Tuangkan 500 ml air dan biarkan mendidih dengan api sederhana.',
-            '4. Masukkan lobak merah dan renehkan selama 10 minit sehingga empuk.',
-            '5. Perasakan dengan secubit garam bukit dan lada hitam.',
-            '6. Angkat dan taburkan daun sup segar sebelum dihidangkan panas-panas.',
+            '1. Sauté sliced garlic, shallots, and ginger with 1 tsp olive oil until fragrant.',
+            '2. Add lemongrass and diced chicken breast; stir-fry until outer surface turns white.',
+            '3. Pour in 500ml water and bring to a simmer over medium heat.',
+            '4. Add sliced carrots and simmer gently for 10 minutes until tender.',
+            '5. Season with a pinch of sea salt and freshly cracked black pepper.',
+            '6. Remove from heat, garnish with fresh herbs, and serve hot.',
           ],
           nutrition: {
             calories_kcal: 380,
@@ -400,9 +399,9 @@ export function renderRecipes(container) {
             carbs_g: 14,
             fat_g: 8,
           },
-          tips: 'Gunakan halia bentong untuk aroma lebih pedas menyegarkan dan melancarkan pencernaan selepas bersenam.',
+          tips: 'Ginger improves post-workout digestion and promotes rapid muscle recovery.',
         };
-        toast('Demo resipi dimuatkan!', 'success');
+        toast('Demo recipe loaded!', 'success');
         render();
       });
 
@@ -417,9 +416,9 @@ export function renderRecipes(container) {
             image: ingredientImage,
           });
           currentRecipe = res;
-          toast(`Resipi siap: ${res.title}!`, 'success');
+          toast(`Recipe ready: ${res.title}!`, 'success');
         } catch (err) {
-          toast(err.message || 'Gagal menjana resipi.', 'error');
+          toast(err.message || 'Failed to generate recipe.', 'error');
         } finally {
           isGenerating = false;
           render();
@@ -429,7 +428,7 @@ export function renderRecipes(container) {
       container.querySelector('#btn-save-recipe')?.addEventListener('click', () => {
         if (!currentRecipe) return;
         store.saveRecipe(currentRecipe);
-        toast(`Resipi "${currentRecipe.title}" disimpan ke koleksi!`, 'success');
+        toast(`Recipe "${currentRecipe.title}" saved to collection!`, 'success');
       });
 
       container.querySelector('#btn-log-recipe-meal')?.addEventListener('click', () => {
@@ -443,7 +442,7 @@ export function renderRecipes(container) {
           fat: n.fat_g || 15,
           weight_g: 350,
         });
-        toast(`Hidangan "${currentRecipe.title}" ditambah ke log hari ini!`, 'success');
+        toast(`Meal "${currentRecipe.title}" logged for today!`, 'success');
       });
     }
 
@@ -480,9 +479,9 @@ export function renderRecipes(container) {
           });
           currentMealPlan = res;
           store.saveMealPlan(res);
-          toast('Pelan makan 7 hari berjaya dicipta!', 'success');
+          toast('7-day meal plan created successfully!', 'success');
         } catch (err) {
-          toast(err.message || 'Gagal menjana pelan makan.', 'error');
+          toast(err.message || 'Failed to generate meal plan.', 'error');
         } finally {
           isGeneratingPlan = false;
           render();

@@ -24,25 +24,25 @@ export function renderDashboard(container) {
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="eyebrow">Papan Pemuka Harian</span>
-          <h1 class="page-title">Hai, ${esc(p.name)}</h1>
+          <span class="eyebrow">Daily Dashboard</span>
+          <h1 class="page-title">Hi, ${esc(p.name)}</h1>
         </div>
         <div class="row" style="gap:8px">
           <a href="#/scan" class="btn btn-sm btn-primary" id="btn-quick-scan">
             ${icons.camera}
-            <span>Imbas</span>
+            <span>Scan</span>
           </a>
         </div>
       </div>
 
       <div class="dash-grid">
-        <!-- Kolum Kiri: Cincin Baki Kalori & Makronutrien -->
+        <!-- Left Column: Calorie Balance Ring & Macros -->
         <div class="stack">
-          <!-- Kad Cincin Monokrom -->
+          <!-- Calorie Ring Card -->
           <div class="card center" style="padding:28px 18px 24px">
             <div class="card-title row between" style="margin-bottom:6px">
-              <span>Baki Kalori Bersih</span>
-              <span class="badge ${isOver ? 'bad' : 'ok'}">${isOver ? 'TERLEBIH' : 'DALAM SASARAN'}</span>
+              <span>Daily Net Calorie Balance</span>
+              <span class="badge ${isOver ? 'bad' : 'ok'}">${isOver ? 'SURPLUS' : 'ON TARGET'}</span>
             </div>
 
             <div class="ring-wrap" style="margin:16px auto 14px">
@@ -52,52 +52,52 @@ export function renderDashboard(container) {
                   ${Math.abs(s.remaining)}
                 </div>
                 <div class="ring-label">
-                  ${isOver ? 'kcal terlebih' : 'kcal berbaki'}
+                  ${isOver ? 'kcal over' : 'kcal remaining'}
                 </div>
               </div>
             </div>
 
-            <!-- Formula Masa Nyata: Sasaran - Masuk + Keluar = Baki -->
+            <!-- Formula: Target - In + Out = Remaining -->
             <div class="equation">
               <div class="eq-cell">
-                <span>Sasaran</span>
+                <span>Target</span>
                 <b class="num">${s.target}</b>
               </div>
               <div class="eq-cell">
-                <span>Makanan (In)</span>
+                <span>Food (In)</span>
                 <b class="num">${s.kin}</b>
               </div>
               <div class="eq-cell">
-                <span>Senaman (Out)</span>
+                <span>Exercise (Out)</span>
                 <b class="num" style="color:var(--ok)">+${s.kout}</b>
               </div>
             </div>
           </div>
 
-          <!-- Kad Makronutrien Minimalis -->
+          <!-- Macros Card -->
           <div class="card">
             <div class="card-title">
-              <span>Pecahan Makronutrien</span>
-              <span class="muted">Harian</span>
+              <span>Macronutrient Breakdown</span>
+              <span class="muted">Daily Goal</span>
             </div>
             ${macroBar({ label: 'Protein', value: s.protein, target: s.macros.protein, cls: 'p' })}
-            ${macroBar({ label: 'Karbohidrat', value: s.carbs, target: s.macros.carbs, cls: 'c' })}
-            ${macroBar({ label: 'Lemak', value: s.fat, target: s.macros.fat, cls: 'f' })}
+            ${macroBar({ label: 'Carbs', value: s.carbs, target: s.macros.carbs, cls: 'c' })}
+            ${macroBar({ label: 'Fat', value: s.fat, target: s.macros.fat, cls: 'f' })}
           </div>
 
-          <!-- Kompanion Mesej Deku / Bakugou -->
+          <!-- Deku / Bakugou Companion Message -->
           ${companionBubble(compMsg.who, compMsg.text)}
         </div>
 
-        <!-- Kolum Kanan: Log Makanan Hari Ini & Aktiviti -->
+        <!-- Right Column: Today's Logged Meals & Activities -->
         <div class="stack">
-          <!-- Kad Log Makanan -->
+          <!-- Meal Log Card -->
           <div class="card">
             <div class="card-title row between">
-              <span>Log Makanan Hari Ini</span>
+              <span>Today's Logged Meals</span>
               <button class="btn btn-sm btn-ghost" id="btn-manual-add">
                 ${icons.plus}
-                <span>Tambah Manual</span>
+                <span>Add Manually</span>
               </button>
             </div>
 
@@ -106,8 +106,8 @@ export function renderDashboard(container) {
                 s.meals.length === 0
                   ? `<div class="empty">
                       ${icons.bowl}
-                      <p>Belum ada makanan direkodkan hari ini.</p>
-                      <span class="small muted">Tangkap gambar makanan anda untuk dianalisis oleh Gemini AI!</span>
+                      <p>No meals logged yet today.</p>
+                      <span class="small muted">Snap a photo of your meal or food label for instant AI analysis!</span>
                     </div>`
                   : s.meals
                       .map(
@@ -119,8 +119,8 @@ export function renderDashboard(container) {
                       <div class="li-main">
                         <div class="li-title">${esc(m.name)}</div>
                         <div class="li-sub">
-                          <span class="badge" style="height:18px;font-size:10px;padding:0 6px">${m.mealType || 'Makan'}</span>
-                          <span>· P: ${Math.round(m.protein || 0)}g · K: ${Math.round(m.carbs || 0)}g · L: ${Math.round(m.fat || 0)}g</span>
+                          <span class="badge" style="height:18px;font-size:10px;padding:0 6px">${m.mealType || 'Meal'}</span>
+                          <span>· P: ${Math.round(m.protein || 0)}g · C: ${Math.round(m.carbs || 0)}g · F: ${Math.round(m.fat || 0)}g</span>
                         </div>
                       </div>
                       <div class="li-end">
@@ -128,10 +128,10 @@ export function renderDashboard(container) {
                         <small>${fmtTime(m.time || m.date)}</small>
                       </div>
                       <div class="row" style="gap:4px;margin-left:6px">
-                        <button class="btn btn-icon btn-ghost btn-sm edit-meal-btn" data-id="${m.id}" title="Edit" aria-label="Edit hidangan">
+                        <button class="btn btn-icon btn-ghost btn-sm edit-meal-btn" data-id="${m.id}" title="Edit" aria-label="Edit meal">
                           ${icons.edit}
                         </button>
-                        <button class="btn btn-icon btn-ghost btn-sm del-meal-btn" data-id="${m.id}" title="Padam" aria-label="Padam hidangan" style="color:var(--danger)">
+                        <button class="btn btn-icon btn-ghost btn-sm del-meal-btn" data-id="${m.id}" title="Delete" aria-label="Delete meal" style="color:var(--danger)">
                           ${icons.trash}
                         </button>
                       </div>
@@ -143,13 +143,13 @@ export function renderDashboard(container) {
             </div>
           </div>
 
-          <!-- Kad Aktiviti / Larian Ala Strava Hari Ini -->
+          <!-- Activity / Strava-style Runs Card -->
           <div class="card">
             <div class="card-title row between">
-              <span>Aktiviti Fizikal Hari Ini</span>
+              <span>Today's Activities & Runs</span>
               <a href="#/activity" class="btn btn-sm btn-ghost">
                 ${icons.run}
-                <span>Mula Larian</span>
+                <span>Start Run</span>
               </a>
             </div>
 
@@ -158,8 +158,8 @@ export function renderDashboard(container) {
                 s.acts.length === 0
                   ? `<div class="empty">
                       ${icons.run}
-                      <p>Tiada aktiviti fizikal direkodkan hari ini.</p>
-                      <span class="small muted">Mulakan penjejak GPS ala Strava untuk membakar kalori!</span>
+                      <p>No activities logged today.</p>
+                      <span class="small muted">Start the Strava-style GPS tracker to burn calories and record your route!</span>
                     </div>`
                   : s.acts
                       .map(
@@ -169,7 +169,7 @@ export function renderDashboard(container) {
                         ${routeThumbSVG(a.segments, { w: 72, h: 48, stroke: 2 })}
                       </div>
                       <div class="li-main">
-                        <div class="li-title">${esc(a.type || 'Larian GPS')}</div>
+                        <div class="li-title">${esc(a.type || 'GPS Run')}</div>
                         <div class="li-sub">
                           <span class="num">${a.distanceKm.toFixed(2)} km</span> · 
                           <span class="num">${formatDuration(a.durationSec)}</span> · 
@@ -180,7 +180,7 @@ export function renderDashboard(container) {
                         <b class="num" style="color:var(--ok)">-${a.kcal} <span class="xs muted">kcal</span></b>
                         <small>${fmtTime(a.startedAt)}</small>
                       </div>
-                      <button class="btn btn-icon btn-ghost btn-sm del-act-btn" data-id="${a.id}" title="Padam" aria-label="Padam aktiviti" style="color:var(--danger)">
+                      <button class="btn btn-icon btn-ghost btn-sm del-act-btn" data-id="${a.id}" title="Delete" aria-label="Delete activity" style="color:var(--danger)">
                         ${icons.trash}
                       </button>
                     </div>
@@ -201,7 +201,7 @@ export function renderDashboard(container) {
   function bindEvents() {
     container.querySelector('#btn-manual-add')?.addEventListener('click', () => {
       openMealEditor({}, {
-        title: 'Tambah Hidangan',
+        title: 'Add Meal',
         onSaved: () => render(),
       });
     });
@@ -213,7 +213,7 @@ export function renderDashboard(container) {
         if (meal) {
           openMealEditor(meal, {
             existingId: id,
-            title: 'Edit Hidangan',
+            title: 'Edit Meal',
             onSaved: () => render(),
           });
         }
