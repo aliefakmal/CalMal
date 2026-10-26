@@ -74,8 +74,12 @@ export const store = {
       updatedAt: new Date().toISOString()
     };
     applyHeroTheme(state.profile.selectedCompanion);
-    if (first || !state.weights.length || (oldWeight && Number(profile.weight) !== Number(oldWeight))) {
-      state.weights.push({ id: uid(), date: todayKey(), weight: Number(profile.weight), sync_status: 'PENDING' });
+    state.weights = (state.weights || []).filter((w) => !isNaN(Number(w.weight)));
+    if (first || !state.weights.length || (profile?.weight != null && Number(profile.weight) !== Number(oldWeight))) {
+      const wVal = Number(state.profile.weight || 70);
+      if (!isNaN(wVal)) {
+        state.weights.push({ id: uid(), date: todayKey(), weight: wVal, sync_status: 'PENDING' });
+      }
     }
     emit('profile');
   },
@@ -160,6 +164,50 @@ export const store = {
     state.water[date] = Math.max(0, Number(amount) || 0);
     emit('water');
     return state.water[date];
+  },
+  getWaterTarget() {
+    return Number(state.profile?.waterTarget) || 2000;
+  },
+  setWaterTarget(target) {
+    this.saveProfile({ waterTarget: Math.max(500, Number(target) || 2000) });
+  },
+  copyYesterdayMeals() {
+    const yest = new Date(Date.now() - 864e5);
+    const yestKey = todayKey(yest);
+    const yesterdayMeals = this.mealsOn(yestKey);
+    if (!yesterdayMeals.length) return 0;
+    yesterdayMeals.forEach((m) => {
+      this.addMeal({
+        name: m.name,
+        kcal: m.kcal,
+        protein: m.protein,
+        carbs: m.carbs,
+        fat: m.fat,
+        weight_g: m.weight_g,
+        mealType: m.mealType,
+        thumb: m.thumb,
+      });
+    });
+    return yesterdayMeals.length;
+  },
+  weeklySummary() {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 864e5);
+      const k = todayKey(d);
+      const meals = this.mealsOn(k);
+      const acts = this.activitiesOn(k);
+      const sum = (arr, key) => arr.reduce((acc, x) => acc + (Number(x[key]) || 0), 0);
+      const target = this.macros?.target || 2000;
+      const kin = Math.round(sum(meals, 'kcal'));
+      const kout = Math.round(sum(acts, 'kcal'));
+      days.push({ date: k, kin, kout, target, net: kin - kout, balance: target - kin + kout });
+    }
+    const totalTarget = days.reduce((acc, d) => acc + d.target, 0);
+    const totalIn = days.reduce((acc, d) => acc + d.kin, 0);
+    const totalOut = days.reduce((acc, d) => acc + d.kout, 0);
+    const bankRemaining = totalTarget - totalIn + totalOut;
+    return { days, totalTarget, totalIn, totalOut, bankRemaining };
   },
 
   // ---------- Hero Rank & Gamification ----------
