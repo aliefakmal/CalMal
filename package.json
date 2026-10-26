@@ -1,0 +1,19 @@
+{
+  "name": "calmal",
+  "private": true,
+  "version": "2.0.0",
+  "description": "CalMal - AI Calorie Estimator & Strava-Style Activity Tracker for Malaysia.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host"
+  },
+  "dependencies": {
+    "@zxing/browser": "^0.2.1",
+    "leaflet": "^1.9.4"
+  },
+  "devDependencies": {
+    "vite": "^8.3.5"
+  }
+}
