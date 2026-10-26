@@ -307,6 +307,51 @@ export function renderProfile(container) {
             </button>
           </div>
         </div>
+
+        <!-- Sources & Attributions Card -->
+        <div class="card stack">
+          <div class="card-title row between">
+            <span>Sources & Attributions</span>
+            <span class="badge ok">Verified</span>
+          </div>
+          <div class="stack" style="gap:10px;font-size:13px">
+            <div class="row between" style="padding:6px 0;border-bottom:1px solid var(--border-soft)">
+              <div>
+                <b style="color:#fff">OpenStreetMap</b>
+                <div class="xs muted">Live cartography and map tiles</div>
+              </div>
+              <span class="xs muted">ODbL Contributor</span>
+            </div>
+            <div class="row between" style="padding:6px 0;border-bottom:1px solid var(--border-soft)">
+              <div>
+                <b style="color:#fff">Google Gemini & Gemma AI</b>
+                <div class="xs muted">Multimodal nutritional vision cascade</div>
+              </div>
+              <span class="xs muted">Google Cloud</span>
+            </div>
+            <div class="row between" style="padding:6px 0;border-bottom:1px solid var(--border-soft)">
+              <div>
+                <b style="color:#fff">Open Food Facts</b>
+                <div class="xs muted">Global barcode & packaged food database</div>
+              </div>
+              <span class="xs muted">Open Database</span>
+            </div>
+            <div class="row between" style="padding:6px 0;border-bottom:1px solid var(--border-soft)">
+              <div>
+                <b style="color:#fff">WHO & MOH Malaysia</b>
+                <div class="xs muted">Asian BMI classifications & Mifflin-St Jeor BMR</div>
+              </div>
+              <span class="xs muted">Public Health</span>
+            </div>
+            <div class="row between" style="padding:6px 0">
+              <div>
+                <b style="color:#fff">Compendium of Physical Activities</b>
+                <div class="xs muted">Velocity-adjusted MET metabolic expenditure</div>
+              </div>
+              <span class="xs muted">Ainsworth et al.</span>
+            </div>
+          </div>
+        </div>
       </div>
     `;
 

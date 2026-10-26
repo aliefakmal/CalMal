@@ -3,7 +3,7 @@ import L from 'leaflet';
 import * as tracker from '../services/gpsTracker.js';
 import { store } from '../services/store.js';
 import { icons } from '../components/icons.js';
-import { toast, confirmSheet, routeThumbSVG } from '../components/ui.js';
+import { toast, confirmSheet, routeThumbSVG, openSheet } from '../components/ui.js';
 import { formatPace, formatDuration, metLabel, metForSpeed } from '../utils/calc.js';
 import { onActivityFinished } from '../services/companionService.js';
 import { esc, fmtTime } from '../utils/helpers.js';
@@ -27,11 +27,10 @@ export function renderActivity(container) {
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="eyebrow">Strava-Style Activity Tracker · OpenStreetMap</span>
-          <h1 class="page-title">Runs & Routes</h1>
+          <span class="eyebrow">Outdoor GPS</span>
+          <h1 class="page-title">Activity</h1>
         </div>
         <div class="row" style="gap:8px;flex-wrap:wrap">
-          <span class="badge ok" title="Open source maps — 100% free with no API key required">${icons.pin} OpenStreetMap</span>
           ${
             stats.status === 'idle'
               ? `<label class="chip ${isSim ? 'active' : ''}" id="sim-toggle-btn" style="cursor:pointer">
@@ -51,7 +50,7 @@ export function renderActivity(container) {
                 <div style="flex:1">
                   <b style="color:var(--danger)">Location Access Denied</b>
                   <p class="small muted" style="margin-top:2px;line-height:1.4">
-                    Browser blocked GPS access. Please allow location permissions in your browser site settings to track your running routes.
+                    Browser blocked GPS access. Please allow location permissions in your browser site settings.
                   </p>
                 </div>
                 <button type="button" class="btn btn-sm btn-secondary" id="btn-request-location-manual">
@@ -66,23 +65,17 @@ export function renderActivity(container) {
                 <div style="flex:1">
                   <b>Detect Live GPS Location</b>
                   <p class="small muted" style="margin-top:2px;line-height:1.4">
-                    Tap to enable location access and pinpoint your real-time position on the map.
+                    Enable location access to pinpoint your position on the map.
                   </p>
                 </div>
                 <button type="button" class="btn btn-sm btn-primary" id="btn-request-location-manual">
                   ${icons.crosshair}
-                  <span>Detect My Location</span>
+                  <span>Detect Location</span>
                 </button>
               </div>
             </div>`
           : ''
       }
-
-      <!-- OpenStreetMap Free Live GPS Map Engine (No API Key Required) -->
-      <div class="row between" style="margin-bottom:8px">
-        <span class="xs muted">GPS Map Engine:</span>
-        <span class="badge ok" style="font-size:11px">${icons.pin} OpenStreetMap (Free · No API Key)</span>
-      </div>
 
       <!-- Main Map & Floating Strava HUD -->
       <div class="strava-map-container" style="margin-bottom:16px">
@@ -216,6 +209,12 @@ export function renderActivity(container) {
                   .join('')
           }
         </div>
+      </div>
+
+      <div class="center" style="margin-top:14px">
+        <button type="button" class="btn btn-ghost btn-xs" id="btn-show-activity-sources" style="color:var(--text-muted);font-size:11px">
+          Sources & Attributions
+        </button>
       </div>
     `;
 
@@ -555,6 +554,44 @@ export function renderActivity(container) {
           container.querySelector('.strava-map-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       });
+    });
+
+    // Sources Modal Trigger
+    container.querySelector('#btn-show-activity-sources')?.addEventListener('click', () => {
+      openSheet(`
+        <div class="sheet-head row between" style="margin-bottom:12px">
+          <div>
+            <span class="eyebrow">References & Methodology</span>
+            <h3 style="margin:2px 0 0;font-size:18px;font-weight:800">Activity Sources</h3>
+          </div>
+          <button type="button" class="btn btn-icon btn-ghost btn-sm" data-close aria-label="Close">
+            ${icons.close}
+          </button>
+        </div>
+
+        <div class="stack" style="gap:12px;font-size:13px">
+          <div class="card flat" style="padding:12px;background:var(--surface-2);border-radius:10px">
+            <b style="color:#fff">OpenStreetMap (OSM)</b>
+            <p class="small muted" style="margin-top:4px;line-height:1.4">
+              Map cartography and vector geometries are provided by OpenStreetMap contributors under the Open Database License (ODbL).
+            </p>
+          </div>
+
+          <div class="card flat" style="padding:12px;background:var(--surface-2);border-radius:10px">
+            <b style="color:#fff">Compendium of Physical Activities</b>
+            <p class="small muted" style="margin-top:4px;line-height:1.4">
+              Calorie expenditure is calculated using Metabolic Equivalent of Task (MET) based on velocity: Walking (3.5 MET), Brisk Walk (5.0 MET), Jogging (8.3 MET), and Fast Running (11.0 MET). Formula: MET × 3.5 × Weight (kg) / 200 × Minutes.
+            </p>
+          </div>
+
+          <div class="card flat" style="padding:12px;background:var(--surface-2);border-radius:10px">
+            <b style="color:#fff">Haversine Geodesic Distance</b>
+            <p class="small muted" style="margin-top:4px;line-height:1.4">
+              Pace and route distance are determined using the great-circle Haversine formula across successive high-accuracy GPS coordinates.
+            </p>
+          </div>
+        </div>
+      `);
     });
   }
 
