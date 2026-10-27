@@ -105,7 +105,7 @@
   font-size: 13px;
   font-weight: 800;
   letter-spacing: -0.01em;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -119,10 +119,36 @@
 }
 .cbubble-deku .cbubble-name { color: var(--deku); }
 .cbubble-bakugou .cbubble-name { color: var(--baku); }
-.cbubble-body p {
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: #e5e5ea;
+.cbubble-text-wrap {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.cbubble-ja-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--hero-accent);
+  margin-bottom: 3px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cbubble-ja {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cbubble-body p,
+.cbubble-text {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #f2f2f7;
+  word-break: break-word;
 }
 
 /* Floating companion pop */
@@ -621,21 +647,37 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 .bento-top-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 @media (min-width: 680px) {
   .bento-top-grid {
-    grid-template-columns: 1.15fr 1fr;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   }
 }
 .bento-side-grid {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.bento-companion-row {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 .bento-ring-card {
   display: flex;
@@ -643,11 +685,16 @@
   align-items: center;
   justify-content: space-between;
   padding: 24px 20px 20px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .macro-mini-tiles {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
 .macro-mini-tile {
   background: rgba(0, 0, 0, 0.4);
@@ -655,6 +702,7 @@
   border-radius: 12px;
   padding: 10px 8px;
   text-align: center;
+  min-width: 0;
 }
 .macro-mini-tile .m-label {
   display: block;
@@ -697,6 +745,9 @@
 .water-widget {
   background: linear-gradient(135deg, rgba(28, 28, 30, 0.9), rgba(13, 27, 42, 0.6)) !important;
   border-color: rgba(61, 220, 151, 0.2) !important;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .water-icon-circle {
   width: 32px;
@@ -724,16 +775,27 @@
   transition: width 0.4s var(--spring);
 }
 
-/* Bento Bottom Grid */
+/* Bento Bottom Grid — Anti-Overextension on Mobile */
 .bento-bottom-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 @media (min-width: 800px) {
   .bento-bottom-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
+}
+.bento-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* Kuah / Gravy Adjuster Slider */

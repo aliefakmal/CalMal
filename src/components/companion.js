@@ -63,31 +63,44 @@ export function avatar(who, size = 52, state = 'idle') {
 }
 
 /**
- * Interactive companion bubble with Voice SFX button and optional coach switch
+ * Interactive companion bubble with Voice SFX button, Reload button, and coach switch
  */
-export function companionBubble(who, text, { compact = false, state = 'idle', soundKey = 'greet', allowSwitch = true } = {}) {
+export function companionBubble(who, text, { compact = false, state = 'idle', soundKey = 'greet', allowSwitch = true, ja = '', activeLine = null } = {}) {
   const c = CHARACTERS[who] || CHARACTERS.deku;
   const isBaku = who === 'bakugou';
 
+  if (!activeLine) {
+    activeLine = store.getCompanionActiveLine?.(who) || null;
+  }
+  const jaText = ja || activeLine?.ja || '';
+  const isMs = store.settings?.language === 'ms';
+  const subtitle = activeLine ? (isMs ? (activeLine.ms || activeLine.en) : (activeLine.en || activeLine.ms)) : text;
+
   return `<div class="cbubble cbubble-${who} ${compact ? 'compact' : ''}" data-who="${who}" data-sound="${soundKey}">
     ${avatar(who, compact ? 40 : 48, state)}
-    <div class="cbubble-body">
+    <div class="cbubble-body" style="cursor:pointer" title="Tap to reload anime voice line">
       <div class="cbubble-name row between">
         <span>${c.short} <small style="opacity:0.75;font-weight:normal">(${c.role})</small></span>
-        <div class="row" style="gap:4px">
-          <button type="button" class="btn-voice-trigger btn btn-icon btn-ghost btn-xs" title="Play Voice SFX" aria-label="Play Voice SFX" style="width:26px;height:26px;padding:0">
+        <div class="row" style="gap:4px;align-items:center">
+          <button type="button" class="btn-voice-trigger btn btn-icon btn-ghost btn-xs" title="Play Authentic Anime Voice" aria-label="Play Voice SFX" style="width:28px;height:28px;padding:0;touch-action:manipulation">
             ${icons.sound || '🔊'}
+          </button>
+          <button type="button" class="btn-voice-reload btn btn-icon btn-ghost btn-xs" title="Reload Voice Line & Quote" aria-label="Reload Voice Line" style="width:28px;height:28px;padding:0;touch-action:manipulation">
+            ${icons.refresh}
           </button>
           ${
             allowSwitch
-              ? `<button type="button" class="btn-coach-switch btn btn-icon btn-ghost btn-xs" title="Switch Coach (${isBaku ? 'Deku' : 'Bakugou'})" aria-label="Switch Coach" style="width:26px;height:26px;padding:0">
-                  ${icons.refresh}
+              ? `<button type="button" class="btn-coach-switch btn btn-ghost btn-xs" title="Switch Coach to ${isBaku ? 'Deku' : 'Bakugou'}" aria-label="Switch Coach" style="padding:2px 8px;font-size:10px;height:24px;border:1px solid var(--border-soft);touch-action:manipulation">
+                  ⇄ ${isBaku ? 'Deku' : 'Bakugo'}
                 </button>`
               : ''
           }
         </div>
       </div>
-      <p class="cbubble-text">${esc(text)}</p>
+      <div class="cbubble-text-wrap">
+        ${jaText ? `<div class="cbubble-ja-row" style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--hero-accent);margin-bottom:3px;font-weight:600"><span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);letter-spacing:0.04em">JP</span><span class="cbubble-ja">${esc(jaText)}</span></div>` : ''}
+        <p class="cbubble-text">${esc(subtitle)}</p>
+      </div>
     </div>
   </div>`;
 }
@@ -98,33 +111,66 @@ export function companionBubble(who, text, { compact = false, state = 'idle', so
 export function bindCompanionEvents(container, onCoachSwitch) {
   container.querySelectorAll('.cbubble').forEach((el) => {
     const who = el.dataset.who || 'deku';
-    const textEl = el.querySelector('.cbubble-text');
+    const textWrap = el.querySelector('.cbubble-text-wrap') || el.querySelector('.cbubble-text');
 
-    el.querySelector('.btn-voice-trigger')?.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const res = await soundboard.play(who, 'shuffle');
-      if (res?.line && textEl) {
-        const isEn = store.settings?.language !== 'ms';
-        const lineText = isEn ? res.line.en : res.line.ms;
-        textEl.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
-        textEl.style.opacity = '0';
-        textEl.style.transform = 'translateY(-2px)';
-        setTimeout(() => {
-          textEl.innerHTML = `<span style="display:block;font-size:11px;opacity:0.8;margin-bottom:2px">${esc(res.line.ja)}</span>${esc(lineText)}`;
-          textEl.style.opacity = '1';
-          textEl.style.transform = 'translateY(0)';
-        }, 150);
+    function updateBubbleText(lineObj) {
+      if (!lineObj || !textWrap) return;
+      const isEn = store.settings?.language !== 'ms';
+      const lineText = isEn ? lineObj.en : lineObj.ms;
+      textWrap.style.transition = 'opacity 0.12s ease, transform 0.12s ease';
+      textWrap.style.opacity = '0';
+      textWrap.style.transform = 'translateY(-2px)';
+      setTimeout(() => {
+        textWrap.innerHTML = `
+          <div class="cbubble-ja-row" style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--hero-accent);margin-bottom:3px;font-weight:600">
+            <span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);letter-spacing:0.04em">JP</span>
+            <span class="cbubble-ja">${esc(lineObj.ja)}</span>
+          </div>
+          <p class="cbubble-text">${esc(lineText)}</p>
+        `;
+        textWrap.style.opacity = '1';
+        textWrap.style.transform = 'translateY(0)';
+      }, 120);
+    }
+
+    function triggerShuffle() {
+      const picked = soundboard.pickNextLine(who);
+      if (picked?.line) {
+        updateBubbleText(picked.line);
+        soundboard.playLineAudio(who, picked.line).catch(() => {});
       }
+    }
+
+    // 1. Click on Sound icon -> instant reload quote + play audio
+    el.querySelector('.btn-voice-trigger')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      triggerShuffle();
     });
 
-    el.querySelector('.btn-coach-switch')?.addEventListener('click', async (e) => {
+    // 2. Click on Reload icon -> instant reload quote + play audio
+    el.querySelector('.btn-voice-reload')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      triggerShuffle();
+    });
+
+    // 3. Click on the bubble body -> instant reload quote + play audio
+    el.querySelector('.cbubble-body')?.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      triggerShuffle();
+    });
+
+    // 4. Switch coach
+    el.querySelector('.btn-coach-switch')?.addEventListener('click', (e) => {
       e.stopPropagation();
       const nextCoach = who === 'bakugou' ? 'deku' : 'bakugou';
       if (store.profile) {
         store.saveProfile({ selectedCompanion: nextCoach });
-        store.applyHeroTheme(nextCoach);
       }
-      await soundboard.play(nextCoach, 'shuffle');
+      store.applyHeroTheme(nextCoach);
+      const picked = soundboard.pickNextLine(nextCoach);
+      if (picked?.line) {
+        soundboard.playLineAudio(nextCoach, picked.line).catch(() => {});
+      }
       onCoachSwitch?.(nextCoach);
     });
   });

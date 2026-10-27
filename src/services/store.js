@@ -15,12 +15,13 @@ const defaults = () => ({
   water: {},
   badges: {},
   flags: {},
+  companionLines: { deku: null, bakugou: null },
   settings: { apiKey: '', notifications: false, companions: true, soundEnabled: true, cameraAlwaysOn: true, cameraFacing: 'environment' },
 });
 
 let state = load();
 
-function applyHeroTheme(coach) {
+export function applyHeroTheme(coach) {
   if (typeof document === 'undefined') return;
   const isBaku = coach === 'bakugou';
   document.documentElement.style.setProperty('--hero-accent', isBaku ? '#f97316' : '#10b981');
@@ -90,6 +91,21 @@ export const store = {
     emit('profile');
   },
   get macros() { return state.profile ? calcMacros(state.profile) : null; },
+  applyHeroTheme(coach) {
+    applyHeroTheme(coach);
+  },
+
+  // ---------- Companion Active Voice Line ----------
+  getCompanionActiveLine(who) {
+    const charKey = (who === 'baku' || who === 'bakugo') ? 'bakugou' : (who || 'deku');
+    return state.companionLines?.[charKey] || null;
+  },
+  setCompanionActiveLine(who, line) {
+    const charKey = (who === 'baku' || who === 'bakugo') ? 'bakugou' : (who || 'deku');
+    state.companionLines = state.companionLines || {};
+    state.companionLines[charKey] = line;
+    persist();
+  },
 
   // ---------- Settings ----------
   get settings() {

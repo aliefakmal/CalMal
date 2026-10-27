@@ -191,16 +191,51 @@ export function onScanModeUsed(mode) {
   if (used.size >= 3) unlock('scanner_pro');
 }
 
+import { soundboard } from './audioService.js';
+
 /** Contextual companion bubble for dashboard */
-export function dashboardMessage() {
+export function dashboardMessage(requestedCoach) {
+  const p = store.profile || {};
+  const activeCoach = requestedCoach || p.selectedCompanion || 'deku';
+  const charKey = (activeCoach === 'baku' || activeCoach === 'bakugo') ? 'bakugou' : activeCoach;
+
+  // 1. Check if user already has an active shuffled voice line in store
+  let activeLine = store.getCompanionActiveLine?.(charKey);
+  if (!activeLine && soundboard?.pickNextLine) {
+    const picked = soundboard.pickNextLine(charKey);
+    activeLine = picked?.line || null;
+  }
+
+  if (activeLine) {
+    const isMs = store.settings?.language === 'ms';
+    const trans = isMs ? (activeLine.ms || activeLine.en) : (activeLine.en || activeLine.ms);
+    return {
+      who: charKey,
+      line: activeLine,
+      ja: activeLine.ja,
+      romaji: activeLine.romaji,
+      text: trans,
+      isVoiceLine: true,
+    };
+  }
+
+  // Fallback to contextual message strictly matching the chosen hero
   const s = store.summary();
   const h = new Date().getHours();
-  const pct = s.kin / s.target;
-  if (!s.meals.length && h < 11) return { who: 'deku', text: 'Good morning! Let’s start the day with high-protein fuel. Scan your breakfast when you’re ready!' };
-  if (h >= 17 && s.kout < 100) return { who: 'bakugou', text: 'It’s already evening and you haven’t moved?! Open the Activity tab and RUN!' };
-  if (s.remaining < 0) return { who: 'bakugou', text: `You’re over by ${Math.abs(s.remaining)} kcal. Burn it off with a ${Math.ceil(Math.abs(s.remaining) / 70)} km run!` };
-  if (s.protein < s.macros.protein * 0.5 && h >= 14) return { who: 'deku', text: `Protein is currently at ${Math.round(s.protein)} g. Try adding chicken, fish, eggs, or tofu for your next meal!` };
-  if (pct >= 0.9) return { who: 'deku', text: 'Almost at your calorie target! Choose a light fruit snack if you feel hungry.' };
-  if (s.kout >= 200) return { who: 'bakugou', text: `${s.kout} kcal burned today! Hmph, respectable work. Don’t stop now!` };
-  return { who: 'deku', text: `You have ${s.remaining} kcal remaining today. I recommend a balanced plate: half vegetables, quarter lean protein, quarter carbs!` };
+  const pct = s.kin / (s.target || 2000);
+
+  if (charKey === 'bakugou') {
+    if (s.remaining < 0) return { who: 'bakugou', text: `OI! You’re over by ${Math.abs(s.remaining)} kcal! Put on your shoes and burn it off!` };
+    if (h >= 17 && s.kout < 100) return { who: 'bakugou', text: 'It’s already evening and you haven’t moved?! Open the Activity tab and RUN!' };
+    if (s.kout >= 200) return { who: 'bakugou', text: `${s.kout} kcal burned today! Hmph, respectable work. Don’t stop now!` };
+    return { who: 'bakugou', text: 'Oi! Don’t slack off today! Give 100% effort to your training and meals!' };
+  } else {
+    // Deku
+    if (!s.meals.length && h < 11) return { who: 'deku', text: 'Good morning! Let’s start the day with high-protein fuel. Scan your breakfast when you’re ready!' };
+    if (s.remaining < 0) return { who: 'deku', text: `We are ${Math.abs(s.remaining)} kcal over target today. Let's do a light workout or walk to balance it out! Plus Ultra!` };
+    if (h >= 17 && s.kout < 100) return { who: 'deku', text: 'Good evening! Even a 20-minute jog or walk will help us reach our fitness goal! Plus Ultra!' };
+    if (s.protein < s.macros.protein * 0.5 && h >= 14) return { who: 'deku', text: `Protein is currently at ${Math.round(s.protein)} g. Try adding chicken, eggs, or tofu for your next meal!` };
+    if (pct >= 0.9) return { who: 'deku', text: 'Almost at your calorie target! Choose a light fruit snack if you feel hungry.' };
+    return { who: 'deku', text: `You have ${s.remaining} kcal remaining today. A balanced plate with lean protein and veggies will keep you energized!` };
+  }
 }

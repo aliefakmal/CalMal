@@ -278,17 +278,14 @@ class AudioService {
   }
 
   /**
-   * Shuffle and play a random line for a character, avoiding consecutive repeats
+   * Synchronously pick the next line for a character, save to store, and return it.
+   * This guarantees 0ms delay for UI updates!
    */
-  async playShuffled(character = 'deku') {
-    if (store.settings?.soundEnabled === false || this.isMuted) return null;
-    this.init();
-
+  pickNextLine(character = 'deku') {
     const charKey = (character === 'baku' || character === 'bakugo') ? 'bakugou' : character;
     const pool = VOICE_SHUFFLE_CATALOG[charKey] || VOICE_SHUFFLE_CATALOG.deku;
-    if (!pool.length) return null;
+    if (!pool || !pool.length) return null;
 
-    // Pick a random line different from the previous one
     let nextIdx = Math.floor(Math.random() * pool.length);
     if (pool.length > 1 && nextIdx === this.lastShuffledIndex[charKey]) {
       nextIdx = (nextIdx + 1 + Math.floor(Math.random() * (pool.length - 1))) % pool.length;
@@ -296,18 +293,32 @@ class AudioService {
     this.lastShuffledIndex[charKey] = nextIdx;
     const pickedLine = pool[nextIdx];
 
-    // Trigger haptic feedback
+    // Persist to store so dashboard and other screens stay in sync
+    store.setCompanionActiveLine?.(charKey, pickedLine);
+
+    return { character: charKey, line: pickedLine, index: nextIdx };
+  }
+
+  /**
+   * Play the audio for a specific line in background (non-blocking)
+   */
+  async playLineAudio(character = 'deku', lineObj) {
+    if (store.settings?.soundEnabled === false || this.isMuted) return;
+    this.init();
+    const charKey = (character === 'baku' || character === 'bakugo') ? 'bakugou' : character;
+    const line = lineObj || VOICE_SHUFFLE_CATALOG[charKey]?.[0];
+    if (!line) return;
+
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       if (charKey === 'bakugou') navigator.vibrate([40, 25, 70]);
       else navigator.vibrate(20);
     }
 
     const version = 'v=4';
-    const primaryPath = `/assets/companions/${charKey}/audio/${pickedLine.file}?${version}`;
-    const rawPrimaryPath = `/assets/companions/${charKey}/audio/${pickedLine.file}`;
+    const primaryPath = `/assets/companions/${charKey}/audio/${line.file}?${version}`;
+    const rawPrimaryPath = `/assets/companions/${charKey}/audio/${line.file}`;
     const fallbackPath = `/assets/companions/${charKey}/audio/${charKey}_voice.mp3?${version}`;
 
-    // 1. Try HTMLAudioElement
     for (const p of [primaryPath, rawPrimaryPath, fallbackPath]) {
       try {
         let audio = this.cache.get(p);
@@ -318,13 +329,13 @@ class AudioService {
         }
         audio.currentTime = 0;
         await audio.play();
-        return { success: true, character: charKey, line: pickedLine, index: nextIdx };
+        return;
       } catch {
-        // Continue to Web Audio fetch fallback
+        // try next
       }
     }
 
-    // 2. Web Audio API Direct Buffer Playback (Bypasses any media tag issues)
+    // Direct Web Audio fallback
     try {
       if (this.audioContext) {
         const resp = await fetch(primaryPath);
@@ -335,17 +346,28 @@ class AudioService {
           srcNode.buffer = audioBuf;
           srcNode.connect(this.audioContext.destination);
           srcNode.start(0);
-          return { success: true, character: charKey, line: pickedLine, index: nextIdx };
+          return;
         }
       }
     } catch {
-      // Continue to synth fallback
+      // fallback
     }
 
-    // 3. Procedural Hero SFX + Japanese-only speech synthesis
     this.playSyntheticHeroSFX(charKey, 'greet');
     this.speakJapanese(charKey, 'greet');
-    return { success: true, character: charKey, line: pickedLine, index: nextIdx };
+  }
+
+  /**
+   * Shuffle and play a random line for a character, avoiding consecutive repeats
+   */
+  async playShuffled(character = 'deku') {
+    const picked = this.pickNextLine(character);
+    if (!picked) return null;
+
+    // Trigger audio in background without blocking UI
+    this.playLineAudio(picked.character, picked.line).catch(() => {});
+
+    return { success: true, character: picked.character, line: picked.line, index: picked.index };
   }
 
   /**

@@ -14,7 +14,8 @@ export function renderDashboard(container) {
   function render() {
     const s = store.summary();
     const p = store.profile || { name: 'Hero', weight: 70, targetWeight: 65, selectedCompanion: 'deku' };
-    const compMsg = dashboardMessage();
+    const currentCoach = p.selectedCompanion || 'deku';
+    const compMsg = dashboardMessage(currentCoach);
     const heroRank = store.getHeroRank();
     const water = store.getWater();
     const waterTarget = store.getWaterTarget();
@@ -169,11 +170,13 @@ export function renderDashboard(container) {
 
         <!-- Bento Row 2: Hero Companion Card (Card 3) -->
         <div class="bento-companion-row">
-          ${companionBubble(p.selectedCompanion || compMsg.who, compMsg.text, {
+          ${companionBubble(currentCoach, compMsg.text, {
             compact: false,
             state: compState,
             soundKey: soundKey,
             allowSwitch: true,
+            ja: compMsg.ja,
+            activeLine: compMsg.line,
           })}
         </div>
 
@@ -223,21 +226,21 @@ export function renderDashboard(container) {
                         ${m.thumb ? '' : icons.bowl}
                       </div>
                       <div class="li-main">
-                        <div class="li-title">${esc(m.name)}</div>
+                        <div class="li-title" title="${esc(m.name)}">${esc(m.name)}</div>
                         <div class="li-sub">
-                          <span class="badge" style="height:18px;font-size:10px;padding:0 6px">${m.mealType || 'Meal'}</span>
-                          <span>· P: ${Math.round(m.protein || 0)}g · C: ${Math.round(m.carbs || 0)}g · F: ${Math.round(m.fat || 0)}g</span>
+                          <span class="badge" style="height:17px;font-size:9.5px;padding:0 5px">${esc(m.mealType || 'Meal')}</span>
+                          <span class="li-macros">P:${Math.round(m.protein || 0)}g · C:${Math.round(m.carbs || 0)}g · F:${Math.round(m.fat || 0)}g</span>
                         </div>
                       </div>
                       <div class="li-end">
                         <b class="num">${m.kcal} <span class="xs muted">kcal</span></b>
                         <small>${fmtTime(m.time || m.date)}</small>
                       </div>
-                      <div class="row" style="gap:4px;margin-left:6px">
-                        <button class="btn btn-icon btn-ghost btn-sm edit-meal-btn" data-id="${m.id}" title="${t('edit')}" aria-label="Edit meal">
+                      <div class="li-actions">
+                        <button type="button" class="btn btn-icon btn-ghost btn-sm edit-meal-btn" data-id="${m.id}" title="${t('edit')}" aria-label="Edit meal">
                           ${icons.edit}
                         </button>
-                        <button class="btn btn-icon btn-ghost btn-sm del-meal-btn" data-id="${m.id}" title="${t('delete')}" aria-label="Delete meal" style="color:var(--danger)">
+                        <button type="button" class="btn btn-icon btn-ghost btn-sm del-meal-btn" data-id="${m.id}" title="${t('delete')}" aria-label="Delete meal" style="color:var(--danger)">
                           ${icons.trash}
                         </button>
                       </div>
@@ -271,8 +274,8 @@ export function renderDashboard(container) {
                       .map(
                         (a) => `
                     <div class="list-item" data-id="${a.id}">
-                      <div class="thumb" style="width:72px;background:#0d0d0e;border:1px solid var(--border);padding:2px">
-                        ${routeThumbSVG(a.segments, { w: 72, h: 48, stroke: 2 })}
+                      <div class="thumb" style="width:52px;height:44px;background:#0d0d0e;border:1px solid var(--border);padding:2px;flex:0 0 52px">
+                        ${routeThumbSVG(a.segments, { w: 52, h: 40, stroke: 2 })}
                       </div>
                       <div class="li-main">
                         <div class="li-title">${esc(a.type || 'GPS Run')}</div>
@@ -286,9 +289,11 @@ export function renderDashboard(container) {
                         <b class="num" style="color:var(--ok)">-${a.kcal} <span class="xs muted">kcal</span></b>
                         <small>${fmtTime(a.startedAt)}</small>
                       </div>
-                      <button class="btn btn-icon btn-ghost btn-sm del-act-btn" data-id="${a.id}" title="Delete" aria-label="Delete activity" style="color:var(--danger)">
-                        ${icons.trash}
-                      </button>
+                      <div class="li-actions">
+                        <button type="button" class="btn btn-icon btn-ghost btn-sm del-act-btn" data-id="${a.id}" title="Delete" aria-label="Delete activity" style="color:var(--danger)">
+                          ${icons.trash}
+                        </button>
+                      </div>
                     </div>
                   `
                       )
@@ -301,7 +306,7 @@ export function renderDashboard(container) {
     `;
 
     bindEvents();
-    bindCompanionEvents(container, () => render());
+    bindCompanionEvents(container, () => scheduleRender());
     animateRings(container);
   }
 
@@ -384,7 +389,6 @@ export function renderDashboard(container) {
         store.addWater(amt);
         toast(`${amt > 0 ? '+' : ''}${amt} ml updated!`, 'info');
         close();
-        render();
       });
     });
 
@@ -394,7 +398,6 @@ export function renderDashboard(container) {
       store.addWater(val);
       toast(`+${val} ml water recorded!`, 'success');
       close();
-      render();
     });
 
     sheet.querySelector('#btn-custom-sub-water')?.addEventListener('click', () => {
@@ -403,7 +406,6 @@ export function renderDashboard(container) {
       store.addWater(-val);
       toast(`-${val} ml water deducted!`, 'info');
       close();
-      render();
     });
 
     sheet.querySelector('#btn-custom-set-water')?.addEventListener('click', () => {
@@ -412,7 +414,6 @@ export function renderDashboard(container) {
       store.setWater(val);
       toast(`Total water set to ${val} ml!`, 'success');
       close();
-      render();
     });
 
     sheet.querySelector('#btn-save-water-goal')?.addEventListener('click', () => {
@@ -421,7 +422,6 @@ export function renderDashboard(container) {
       store.setWaterTarget(val);
       toast(`Daily water target updated to ${val} ml!`, 'success');
       close();
-      render();
     });
   }
 
@@ -488,14 +488,12 @@ export function renderDashboard(container) {
         store.saveProfile({ customTarget: Math.round(val) });
         toast(`Daily calorie target set to ${Math.round(val)} kcal!`, 'success');
         close();
-        render();
       });
 
       sheet.querySelector('#btn-reset-suggested-target')?.addEventListener('click', () => {
         store.saveProfile({ customTarget: null });
         toast(`Target reset to formula recommendation (${suggestedTarget} kcal)!`, 'info');
         close();
-        render();
       });
     });
 
@@ -514,13 +512,11 @@ export function renderDashboard(container) {
     container.querySelector('#btn-add-water')?.addEventListener('click', () => {
       store.addWater(250);
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
-      render();
     });
 
     container.querySelector('#btn-sub-water')?.addEventListener('click', () => {
       store.addWater(-250);
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
-      render();
     });
 
     // 3. Copy Yesterday's Meals Button
@@ -529,7 +525,6 @@ export function renderDashboard(container) {
       if (count > 0) {
         toast(`Copied ${count} meals from yesterday!`, 'success');
         if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([20, 40]);
-        render();
       } else {
         toast('No meals found from yesterday to copy.', 'info');
       }
@@ -550,7 +545,6 @@ export function renderDashboard(container) {
         store.addMeal(meal);
         toast(`Logged: ${meal.name} (+${meal.kcal} kcal)`, 'success');
         if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
-        render();
       });
     });
 
@@ -592,8 +586,18 @@ export function renderDashboard(container) {
     });
   }
 
+  let renderScheduled = false;
+  function scheduleRender() {
+    if (renderScheduled) return;
+    renderScheduled = true;
+    requestAnimationFrame(() => {
+      renderScheduled = false;
+      render();
+    });
+  }
+
   render();
-  unsub = store.subscribe(() => render());
+  unsub = store.subscribe(() => scheduleRender());
 
   return () => {
     unsub?.();
