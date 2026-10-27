@@ -302,21 +302,56 @@ function getTutorialConfig(pageKey, isEn) {
                 </p>
               </div>
               <button type="button" class="btn btn-secondary btn-block" id="tut-coach-play-btn" style="gap:8px">
-                <span style="width:14px;height:14px;display:inline-flex">${icons.sound}</span>
+                <span id="tut-coach-play-icon" style="width:14px;height:14px;display:inline-flex">${icons.sound}</span>
                 <span id="tut-coach-play-label">${isEn ? 'Play Voice Audio' : 'Dengar Suara Hero'}</span>
               </button>
             </div>
           `,
           mount: (box) => {
             let activeCoach = 'deku';
+            let isPlaying = false;
+            let playTimer = null;
             const dekuBtn = box.querySelector('#tut-coach-deku');
             const bakuBtn = box.querySelector('#tut-coach-baku');
             const jaEl = box.querySelector('#tut-coach-ja');
             const textEl = box.querySelector('#tut-coach-text');
             const playBtn = box.querySelector('#tut-coach-play-btn');
+            const playIcon = box.querySelector('#tut-coach-play-icon');
             const playLabel = box.querySelector('#tut-coach-play-label');
 
+            const resetPlayBtn = () => {
+              isPlaying = false;
+              if (playTimer) {
+                clearTimeout(playTimer);
+                playTimer = null;
+              }
+              if (playBtn) {
+                playBtn.classList.remove('is-playing');
+                playBtn.style.borderColor = '';
+                playBtn.style.color = '';
+                playBtn.style.background = '';
+              }
+              if (playIcon) playIcon.innerHTML = icons.sound;
+              if (playLabel) playLabel.textContent = isEn ? 'Play Voice Audio' : 'Dengar Suara Hero';
+            };
+
+            const setPlayingBtn = () => {
+              isPlaying = true;
+              if (playBtn) {
+                playBtn.classList.add('is-playing');
+                playBtn.style.borderColor = 'rgba(239, 68, 68, 0.45)';
+                playBtn.style.color = '#fca5a5';
+                playBtn.style.background = 'rgba(239, 68, 68, 0.12)';
+              }
+              if (playIcon) playIcon.innerHTML = icons.pause;
+              if (playLabel) playLabel.textContent = isEn ? 'Stop / Skip Voice' : 'Langkau / Hentikan Suara';
+            };
+
             const setCoach = (coach) => {
+              if (activeCoach !== coach) {
+                soundboard.stopAll();
+                resetPlayBtn();
+              }
               activeCoach = coach;
               if (coach === 'deku') {
                 dekuBtn.className = 't-coach-btn active-deku';
@@ -341,25 +376,44 @@ function getTutorialConfig(pageKey, isEn) {
             dekuBtn?.addEventListener('click', () => setCoach('deku'));
             bakuBtn?.addEventListener('click', () => setCoach('bakugou'));
 
-            playBtn?.addEventListener('click', () => {
-              playBtn.disabled = true;
-              if (playLabel) playLabel.textContent = isEn ? 'Playing Audio...' : 'Memainkan Suara...';
+            const onVoiceState = (ev) => {
+              if (!ev.detail?.isPlaying) {
+                resetPlayBtn();
+              }
+            };
+            window.addEventListener('calmal:voice-state', onVoiceState);
 
-              // Pick line and trigger real voice audio
+            playBtn?.addEventListener('click', () => {
+              if (isPlaying) {
+                soundboard.stopAll();
+                resetPlayBtn();
+                return;
+              }
+
+              setPlayingBtn();
               const picked = soundboard.pickNextLine(activeCoach);
               if (picked?.line) {
                 jaEl.textContent = picked.line.ja;
                 textEl.textContent = isEn ? picked.line.en : picked.line.ms;
-                soundboard.playLineAudio(activeCoach, picked.line).catch(() => {});
+                soundboard.playLineAudio(activeCoach, picked.line).catch(() => {
+                  resetPlayBtn();
+                });
               } else {
-                soundboard.play(activeCoach, 'greet').catch(() => {});
+                soundboard.play(activeCoach, 'greet').catch(() => {
+                  resetPlayBtn();
+                });
               }
 
-              setTimeout(() => {
-                playBtn.disabled = false;
-                if (playLabel) playLabel.textContent = isEn ? 'Play Voice Audio' : 'Dengar Suara Hero';
-              }, 2200);
+              playTimer = setTimeout(() => {
+                resetPlayBtn();
+              }, 4000);
             });
+
+            return () => {
+              window.removeEventListener('calmal:voice-state', onVoiceState);
+              if (playTimer) clearTimeout(playTimer);
+              soundboard.stopAll();
+            };
           },
         },
       ],
@@ -1016,21 +1070,56 @@ function getTutorialConfig(pageKey, isEn) {
                 </div>
               </div>
               <button type="button" class="btn btn-secondary btn-block" id="tut-prof-play-btn" style="gap:8px">
-                <span style="width:14px;height:14px;display:inline-flex">${icons.sound}</span>
+                <span id="tut-prof-play-icon" style="width:14px;height:14px;display:inline-flex">${icons.sound}</span>
                 <span id="tut-prof-play-label">${isEn ? 'Play Hero Voice Line' : 'Dengar Suara Hero'}</span>
               </button>
             </div>
           `,
           mount: (box) => {
             let activeChar = 'deku';
+            let isPlaying = false;
+            let playTimer = null;
             const dekuBtn = box.querySelector('#tut-prof-deku');
             const bakuBtn = box.querySelector('#tut-prof-baku');
             const jaEl = box.querySelector('#tut-prof-ja');
             const msEl = box.querySelector('#tut-prof-ms');
             const playBtn = box.querySelector('#tut-prof-play-btn');
+            const playIcon = box.querySelector('#tut-prof-play-icon');
             const playLabel = box.querySelector('#tut-prof-play-label');
 
+            const resetPlayBtn = () => {
+              isPlaying = false;
+              if (playTimer) {
+                clearTimeout(playTimer);
+                playTimer = null;
+              }
+              if (playBtn) {
+                playBtn.classList.remove('is-playing');
+                playBtn.style.borderColor = '';
+                playBtn.style.color = '';
+                playBtn.style.background = '';
+              }
+              if (playIcon) playIcon.innerHTML = icons.sound;
+              if (playLabel) playLabel.textContent = isEn ? 'Play Hero Voice Line' : 'Dengar Suara Hero';
+            };
+
+            const setPlayingBtn = () => {
+              isPlaying = true;
+              if (playBtn) {
+                playBtn.classList.add('is-playing');
+                playBtn.style.borderColor = 'rgba(239, 68, 68, 0.45)';
+                playBtn.style.color = '#fca5a5';
+                playBtn.style.background = 'rgba(239, 68, 68, 0.12)';
+              }
+              if (playIcon) playIcon.innerHTML = icons.pause;
+              if (playLabel) playLabel.textContent = isEn ? 'Stop / Skip Voice' : 'Langkau / Hentikan Suara';
+            };
+
             const setChar = (char) => {
+              if (activeChar !== char) {
+                soundboard.stopAll();
+                resetPlayBtn();
+              }
               activeChar = char;
               if (char === 'deku') {
                 dekuBtn.className = 't-coach-btn active-deku';
@@ -1055,24 +1144,44 @@ function getTutorialConfig(pageKey, isEn) {
             dekuBtn?.addEventListener('click', () => setChar('deku'));
             bakuBtn?.addEventListener('click', () => setChar('bakugou'));
 
-            playBtn?.addEventListener('click', () => {
-              playBtn.disabled = true;
-              if (playLabel) playLabel.textContent = isEn ? 'Playing Audio...' : 'Memainkan Suara...';
+            const onVoiceState = (ev) => {
+              if (!ev.detail?.isPlaying) {
+                resetPlayBtn();
+              }
+            };
+            window.addEventListener('calmal:voice-state', onVoiceState);
 
+            playBtn?.addEventListener('click', () => {
+              if (isPlaying) {
+                soundboard.stopAll();
+                resetPlayBtn();
+                return;
+              }
+
+              setPlayingBtn();
               const picked = soundboard.pickNextLine(activeChar);
               if (picked?.line) {
                 jaEl.textContent = picked.line.ja;
                 msEl.textContent = isEn ? picked.line.en : picked.line.ms;
-                soundboard.playLineAudio(activeChar, picked.line).catch(() => {});
+                soundboard.playLineAudio(activeChar, picked.line).catch(() => {
+                  resetPlayBtn();
+                });
               } else {
-                soundboard.play(activeChar, 'greet').catch(() => {});
+                soundboard.play(activeChar, 'greet').catch(() => {
+                  resetPlayBtn();
+                });
               }
 
-              setTimeout(() => {
-                playBtn.disabled = false;
-                if (playLabel) playLabel.textContent = isEn ? 'Play Hero Voice Line' : 'Dengar Suara Hero';
-              }, 2200);
+              playTimer = setTimeout(() => {
+                resetPlayBtn();
+              }, 4000);
             });
+
+            return () => {
+              window.removeEventListener('calmal:voice-state', onVoiceState);
+              if (playTimer) clearTimeout(playTimer);
+              soundboard.stopAll();
+            };
           },
         },
         {
@@ -1167,7 +1276,19 @@ export function openPageTutorial(pageKey) {
         </button>
       </div>
     </div>
-  `);
+  `, {
+    onClose: () => {
+      soundboard.stopAll();
+      if (activeCleanup) {
+        try {
+          activeCleanup();
+        } catch {
+          // ignore
+        }
+        activeCleanup = null;
+      }
+    },
+  });
 
   const slideContainer = sheetEl.querySelector('#tut-slide-container');
   const stepInd = sheetEl.querySelector('#tut-step-ind');
@@ -1187,6 +1308,7 @@ export function openPageTutorial(pageKey) {
       }
       activeCleanup = null;
     }
+    soundboard.stopAll();
 
     currentStep = idx;
     const step = config.steps[idx];
@@ -1247,6 +1369,7 @@ export function openPageTutorial(pageKey) {
 
   // Next Button Handler
   nextBtn?.addEventListener('click', () => {
+    soundboard.stopAll();
     if (currentStep < totalSteps - 1) {
       soundboard.playUISound('nav');
       renderStep(currentStep + 1);
@@ -1258,15 +1381,24 @@ export function openPageTutorial(pageKey) {
 
   // Back Button Handler
   prevBtn?.addEventListener('click', () => {
+    soundboard.stopAll();
     if (currentStep > 0) {
       soundboard.playUISound('nav');
       renderStep(currentStep - 1);
     }
   });
 
-  // Skip Button Handler
+  // Skip Button Handler: Stop immediately and close with zero lingering audio
   skipBtn?.addEventListener('click', () => {
-    soundboard.playUISound('cancel');
+    soundboard.stopAll();
+    if (activeCleanup) {
+      try {
+        activeCleanup();
+      } catch {
+        // ignore
+      }
+      activeCleanup = null;
+    }
     close();
   });
 
@@ -1275,6 +1407,7 @@ export function openPageTutorial(pageKey) {
     bar.addEventListener('click', () => {
       const targetStep = parseInt(bar.dataset.step, 10);
       if (!isNaN(targetStep) && targetStep !== currentStep) {
+        soundboard.stopAll();
         soundboard.playUISound('nav');
         renderStep(targetStep);
       }

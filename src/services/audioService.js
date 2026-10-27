@@ -506,6 +506,7 @@ class AudioService {
    * Prevents audio running in the background or overlapping
    */
   stopAll() {
+    this._playbackId = (this._playbackId || 0) + 1;
     this.isPaused = false;
     if (this.currentAudio) {
       try {
@@ -513,6 +514,16 @@ class AudioService {
         this.currentAudio.currentTime = 0;
       } catch { /* noop */ }
       this.currentAudio = null;
+    }
+    if (this.cache) {
+      this.cache.forEach((audio) => {
+        try {
+          if (!audio.paused) {
+            audio.pause();
+            audio.currentTime = 0;
+          }
+        } catch { /* noop */ }
+      });
     }
     if (this.currentSourceNode) {
       try {
@@ -683,6 +694,7 @@ class AudioService {
     if (store.settings?.soundEnabled === false || this.isMuted) return;
     this.stopAll();
     this.init();
+    const playbackId = ++this._playbackId;
     const charKey = (character === 'baku' || character === 'bakugo') ? 'bakugou' : character;
     const line = lineObj || VOICE_SHUFFLE_CATALOG[charKey]?.[0];
     if (!line) return;
@@ -701,6 +713,7 @@ class AudioService {
     const fallbackPath = `/assets/companions/${charKey}/audio/${charKey}_voice.mp3?${version}`;
 
     for (const p of [primaryPath, rawPrimaryPath, fallbackPath]) {
+      if (this._playbackId !== playbackId) return;
       try {
         let audio = this.cache.get(p);
         if (!audio) {
@@ -738,6 +751,13 @@ class AudioService {
         };
 
         await audio.play();
+        if (this._playbackId !== playbackId) {
+          try {
+            audio.pause();
+            audio.currentTime = 0;
+          } catch {}
+          return;
+        }
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: true, isPaused: false, character: charKey } }));
         }
@@ -747,13 +767,18 @@ class AudioService {
       }
     }
 
+    if (this._playbackId !== playbackId) return;
+
     // Direct Web Audio fallback with auto-stop tracking
     try {
       if (this.audioContext) {
         const resp = await fetch(primaryPath);
+        if (this._playbackId !== playbackId) return;
         if (resp.ok) {
           const arrayBuf = await resp.arrayBuffer();
+          if (this._playbackId !== playbackId) return;
           const audioBuf = await this.audioContext.decodeAudioData(arrayBuf);
+          if (this._playbackId !== playbackId) return;
           const srcNode = this.audioContext.createBufferSource();
           srcNode.buffer = audioBuf;
           srcNode.connect(this.audioContext.destination);
@@ -773,6 +798,8 @@ class AudioService {
     } catch {
       // fallback
     }
+
+    if (this._playbackId !== playbackId) return;
 
     this.playSyntheticHeroSFX(charKey, 'greet');
     this.speakJapanese(charKey, 'greet');
