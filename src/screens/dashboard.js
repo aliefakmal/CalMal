@@ -69,7 +69,7 @@ export function renderDashboard(container) {
               </div>
             </div>
 
-            <div class="ring-wrap" style="margin:14px auto 12px">
+            <div class="ring-wrap">
               ${ringSVG({ size: 210, stroke: 7, progress, over: isOver })}
               <div class="ring-center">
                 <div class="ring-big num ${isOver ? 'color-danger' : ''}" style="${isOver ? 'color:var(--danger)' : ''}">
