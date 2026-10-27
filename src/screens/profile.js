@@ -118,19 +118,23 @@ export function renderProfile(container) {
 
       <div class="stack">
         <!-- 1. Current Biometrics Summary Card (TOP PRIORITY STATS) -->
-        <div class="card stack">
-          <div class="card-title row between" style="align-items:center">
-            <span class="row" style="gap:6px;align-items:center">
-              <span>${icons.scale}</span>
-              <span>${t('prof_stats_title')}</span>
-            </span>
-            <div class="row" style="gap:6px;align-items:center">
-              <span class="badge ${profile.goal === 'lose' ? 'primary' : 'ok'}">${t('prof_goal_' + (profile.goal || 'lose'))}</span>
-              <span class="badge ok">${bmiCategory} (BMI ${bmi.toFixed(1)})</span>
-              <button type="button" class="btn btn-xs btn-ghost" id="btn-edit-profile-card" title="${t('edit')}">
-                ${icons.edit}
-                <span>${t('edit')}</span>
-              </button>
+        <div class="card stack" style="gap:14px">
+          <div class="row between wrap" style="align-items:center;gap:10px;margin-bottom:2px">
+            <div class="row" style="gap:8px;align-items:center;flex-shrink:0">
+              <span style="display:inline-flex;align-items:center;color:var(--primary);width:20px;height:20px">
+                ${icons.scale}
+              </span>
+              <span style="font-size:16px;font-weight:700;color:var(--text-1);letter-spacing:-0.02em;white-space:nowrap">
+                ${t('prof_stats_title')}
+              </span>
+            </div>
+            <div class="row wrap" style="gap:6px;align-items:center">
+              <span class="badge ${profile.goal === 'lose' ? 'primary' : 'ok'}" style="white-space:nowrap;font-size:11px;padding:3px 9px;height:24px">
+                ${t('prof_goal_' + (profile.goal || 'lose'))}
+              </span>
+              <span class="badge ok" style="white-space:nowrap;font-size:11px;padding:3px 9px;height:24px">
+                ${bmiCategory} (BMI ${bmi.toFixed(1)})
+              </span>
             </div>
           </div>
 
@@ -402,7 +406,6 @@ export function renderProfile(container) {
       });
     };
     container.querySelector('#btn-edit-profile-head')?.addEventListener('click', triggerEditProfile);
-    container.querySelector('#btn-edit-profile-card')?.addEventListener('click', triggerEditProfile);
 
     // Record Weight
     container.querySelector('#btn-log-weight')?.addEventListener('click', () => {

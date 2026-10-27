@@ -428,6 +428,8 @@ input[type='range'] { width: 100%; accent-color: #fff; height: 28px; }
   letter-spacing: 0.04em;
   background: var(--surface-3);
   color: #fff;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .badge.ok { background: rgba(61, 220, 151, 0.14); color: var(--ok); }
 .badge.warn { background: rgba(255, 214, 10, 0.13); color: var(--warn); }
