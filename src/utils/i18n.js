@@ -199,6 +199,39 @@ const DICTIONARY = {
     rec_saved_collection: 'Your Recipe Collection',
     rec_no_meals_filter: 'No meals for this category in the current plan.',
 
+    // Tutorials & Section Guides
+    guide_badge: 'Tutorial',
+    guide_toggle_open: 'View Guide ▼',
+    guide_toggle_close: 'Hide Guide ▲',
+    guide_planner_title: 'How to Use 7-Day Meal Plan',
+    guide_planner_desc: 'Easily organize, filter, and log your daily nutrition:',
+    guide_planner_s1: 'Filter by Day: Tap any day (Mon–Sun) to view its scheduled meals, or choose "All Days" to see the full week.',
+    guide_planner_s2: 'Filter by Meal Time: Filter instantly for Breakfast, Lunch, Dinner, or Snacks.',
+    guide_planner_s3: 'Filter by Diet: Select dietary focus like High Protein, Budget (< RM10), or Less Oil to adapt all dishes.',
+    guide_planner_s4: 'Quick Log (+ Log Meal): Tap the green button to instantly record the meal and macros into today\'s calorie diary.',
+    guide_planner_s5: 'Swap Dish: Tap "Swap Dish" to rotate any meal to an alternative healthy Malaysian option.',
+    guide_planner_s6: 'Calorie Calibration: Tap "Preferences" to recalibrate your daily target calories and meal count (2, 3, or 4 meals/day).',
+
+    guide_market_title: 'How to Shop at Malaysian Wet Markets & Grocers',
+    guide_market_desc: 'Smart tips to get fresh, high-protein, budget-friendly ingredients:',
+    guide_market_s1: 'Fresh Proteins: Buy chicken breast, local sea bass (siakap), mackerel (kembung), and eggs at morning wet markets for optimal freshness and cost savings.',
+    guide_market_s2: 'Local Greens & Ulam: Pick up pegaga, raja, cucumbers, bendi (okra), and spinach for high dietary fiber and micronutrients.',
+    guide_market_s3: 'Smart Carbs: Choose wholemeal bread, whole rolled oats, or sweet potatoes. When ordering or cooking rice, practice half-portion rice (nasi separuh).',
+    guide_market_s4: 'Flavor without Hidden Fats: Use fresh aromatics like turmeric, lemongrass, ginger, garlic, and chili instead of excessive palm oil or rich coconut santan.',
+
+    guide_generator_title: 'How to Use AI Recipe Generator',
+    guide_generator_desc: 'Create personalized healthy meals from what you have:',
+    guide_generator_s1: 'Select Diet Focus: Choose Halal, High Protein, Low Carb, or Budget focus.',
+    guide_generator_s2: 'Input Ingredients: Enter what you currently have in your kitchen or snap/upload a photo of your fridge ingredients.',
+    guide_generator_s3: 'Generate: Gemini AI creates a personalized recipe with cooking steps, exact calorie count, and macro breakdown.',
+    guide_generator_s4: 'Save or Log: Save your favorite AI-generated recipes to your offline collection, or log them directly into your daily meals.',
+
+    guide_saved_title: 'How to Use Saved Collection',
+    guide_saved_desc: 'Manage your saved favorite recipes:',
+    guide_saved_s1: 'View Details: Tap any saved recipe card to review ingredients, cooking directions, and macros.',
+    guide_saved_s2: 'Quick Log: Add saved recipes to today\'s meal diary with a single tap.',
+    guide_saved_s3: 'Management: Delete old recipes you no longer need using the trash icon.',
+
     // Preferences tags
     pref_all: 'All Suggestions',
     pref_protein: 'High Protein',
@@ -423,6 +456,39 @@ const DICTIONARY = {
     rec_save_recipe: 'Simpan Resipi',
     rec_saved_collection: 'Koleksi Resipi Anda',
     rec_no_meals_filter: 'Tiada hidangan untuk kategori ini dalam pelan semasa.',
+
+    // Tutorials & Section Guides
+    guide_badge: 'Tutorial',
+    guide_toggle_open: 'Lihat Panduan ▼',
+    guide_toggle_close: 'Tutup Panduan ▲',
+    guide_planner_title: 'Cara Penggunaan Pelan Makanan 7-Hari',
+    guide_planner_desc: 'Urus, tapis, dan rekod nutrisi harian anda dengan mudah:',
+    guide_planner_s1: 'Tapis Ikut Hari: Sentuh mana-mana hari (Isn–Aha) untuk melihat menu hari tersebut, atau sentuh "Semua Hari" untuk jadual penuh.',
+    guide_planner_s2: 'Tapis Ikut Waktu Makan: Tapis serta-merta untuk Sarapan, Makan Tengah Hari, Makan Malam, atau Snek.',
+    guide_planner_s3: 'Tapis Ikut Diet: Pilih keutamaan pemakanan seperti Tinggi Protein, Bajet (< RM10), atau Kurang Minyak.',
+    guide_planner_s4: 'Rekod Pantas (+ Rekod Hidangan): Sentuh butang hijau untuk memasukkan kalori dan makronutrien ke dalam diari makanan hari ini.',
+    guide_planner_s5: 'Tukar Lauk: Tidak berselera dengan lauk tertentu? Sentuh "Tukar Lauk" untuk menukar hidangan ke lauk sihat alternatif secara automatik.',
+    guide_planner_s6: 'Kalibrasi Sasaran: Sentuh "Keutamaan" untuk melaraskan sasaran kalori harian dan kekerapan hidangan (2, 3, atau 4 kali sehari).',
+
+    guide_market_title: 'Panduan Belanja Pasar & Bahan Basah Malaysia',
+    guide_market_desc: 'Tips pintar untuk mendapatkan bahan segar, tinggi protein, dan jimat:',
+    guide_market_s1: 'Protein Segar: Beli dada ayam, ikan siakap, ikan kembung, dan telur di pasar pagi untuk kesegaran maksimum dan harga lebih berpatutan.',
+    guide_market_s2: 'Ulam-Ulaman & Sayur: Amalkan pegaga, ulam raja, timun, bendi, dan bayam untuk serat kenyang dan mikronutrien tinggi.',
+    guide_market_s3: 'Karbohidrat Pintar: Pilih roti mil penuh, oat, atau keledek manis. Amalkan nasi separuh untuk mengawal paras gula darah.',
+    guide_market_s4: 'Rasa Enak Tanpa Lemak: Gunakan herba segar seperti kunyit, serai, halia, bawang putih dan cili berbanding minyak berlebihan atau santan pekat.',
+
+    guide_generator_title: 'Cara Penggunaan Penjana Resipi AI',
+    guide_generator_desc: 'Cipta hidangan sihat peribadi daripada bahan yang ada:',
+    guide_generator_s1: 'Pilih Fokus Diet: Pilih fokus Halal, Tinggi Protein, Rendah Karbo, atau Bajet.',
+    guide_generator_s2: 'Masukkan Bahan: Taip bahan yang ada di dapur anda atau tangkap foto bahan dalam peti sejuk.',
+    guide_generator_s3: 'Jana Resipi: Gemini AI akan mencipta resipi khas dengan langkah memasak serta pecahan kalori dan makro lengkap.',
+    guide_generator_s4: 'Simpan atau Log: Simpan resipi kegemaran anda ke koleksi luar talian, atau rekod terus ke diari makanan hari ini.',
+
+    guide_saved_title: 'Cara Penggunaan Koleksi Resipi Disimpan',
+    guide_saved_desc: 'Urus resipi kegemaran yang telah anda simpan:',
+    guide_saved_s1: 'Lihat Maklumat: Sentuh mana-mana kad resipi untuk melihat senarai bahan, arahan masakan, dan makro.',
+    guide_saved_s2: 'Log Pantas: Rekod resipi yang disimpan ke diari makanan harian anda dengan satu sentuhan.',
+    guide_saved_s3: 'Pengurusan: Padam resipi lama yang tidak lagi diperlukan menggunakan ikon tong sampah.',
 
     // Preferences tags
     pref_all: 'Semua Pilihan',

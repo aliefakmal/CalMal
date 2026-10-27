@@ -1257,6 +1257,14 @@
 
 .lang-pill-btn .lang-icon {
   font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lang-pill-btn .lang-icon svg {
+  width: 13px;
+  height: 13px;
 }
 
 .lang-pill-btn .lang-cur {
@@ -1269,4 +1277,85 @@
   color: var(--muted);
   font-size: 10px;
   font-weight: 500;
+}
+
+/* ---------------- Section Guide / Tutorial Accordion ---------------- */
+.section-guide-card {
+  background: #0d0d10;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s var(--ease);
+}
+
+.section-guide-toggle-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.section-guide-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.guide-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.guide-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.guide-caret {
+  font-size: 10px;
+  color: var(--muted);
+  transition: transform 0.2s var(--ease);
+}
+
+.section-guide-content {
+  padding: 0 14px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.section-guide-content.hidden {
+  display: none;
+}
+
+.guide-steps-list {
+  padding-left: 0;
+  margin: 10px 0 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guide-steps-list li {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #d4d4d8;
+  padding-left: 6px;
+  border-left: 2px solid rgba(59, 130, 246, 0.45);
 }

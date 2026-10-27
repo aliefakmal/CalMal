@@ -6,7 +6,7 @@ import { dashboardMessage } from '../services/companionService.js';
 import { openMealEditor } from '../components/mealEditor.js';
 import { formatPace, formatDuration, calcSuggestedDailyTarget } from '../utils/calc.js';
 import { esc, fmtTime, todayKey } from '../utils/helpers.js';
-import { t } from '../utils/i18n.js';
+import { t, getLang, toggleLang } from '../utils/i18n.js';
 
 export function renderDashboard(container) {
   let unsub = null;
@@ -61,6 +61,10 @@ export function renderDashboard(container) {
             <div class="card-title row between" style="width:100%;margin-bottom:4px">
               <span>${t('dash_calorie_balance')}</span>
               <div class="row" style="gap:6px;align-items:center">
+                <button type="button" class="lang-pill-btn section-lang-toggle" title="Switch Language" style="padding:2px 7px;font-size:10.5px">
+                  <span class="lang-icon">${icons.globe}</span>
+                  <span class="lang-cur">${getLang().toUpperCase()}</span>
+                </button>
                 <button type="button" class="btn btn-xs btn-ghost" id="btn-adjust-target" title="${t('dash_adjust')}" style="padding:2px 8px;font-size:11px;border:1px solid var(--border-soft);cursor:pointer">
                   ${icons.edit}
                   <span>${t('dash_adjust')}</span>
@@ -149,7 +153,11 @@ export function renderDashboard(container) {
                     <div class="xs muted">${water} / ${waterTarget} ml (${waterPct}%)</div>
                   </div>
                 </div>
-                <div class="row" style="gap:4px">
+                <div class="row" style="gap:4px;align-items:center">
+                  <button type="button" class="lang-pill-btn section-lang-toggle" title="Switch Language" style="padding:2px 7px;font-size:10.5px">
+                    <span class="lang-icon">${icons.globe}</span>
+                    <span class="lang-cur">${getLang().toUpperCase()}</span>
+                  </button>
                   <button type="button" class="btn btn-xs btn-ghost" id="btn-sub-water" title="Remove 250ml water" style="padding:3px 7px;font-size:11px;border:1px solid var(--border-soft);color:var(--text-muted)">
                     ${icons.minus}
                     <span>250ml</span>
@@ -184,7 +192,11 @@ export function renderDashboard(container) {
           <div class="card bento-card">
             <div class="card-title row between" style="flex-wrap:wrap;gap:8px">
               <span>${t('dash_today_meals')}</span>
-              <div class="row" style="gap:6px">
+              <div class="row" style="gap:6px;align-items:center">
+                <button type="button" class="lang-pill-btn section-lang-toggle" title="Switch Language" style="padding:2px 7px;font-size:10.5px">
+                  <span class="lang-icon">${icons.globe}</span>
+                  <span class="lang-cur">${getLang().toUpperCase()}</span>
+                </button>
                 <button type="button" class="btn btn-xs btn-secondary" id="btn-copy-yesterday" title="${t('dash_copy_yesterday')}">
                   ${icons.refresh}
                   <span>${t('dash_copy_yesterday')}</span>
@@ -427,6 +439,15 @@ export function renderDashboard(container) {
   }
 
   function bindEvents() {
+    // 0. Section Language Toggles
+    container.querySelectorAll('.section-lang-toggle').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleLang();
+        render();
+      });
+    });
+
     // 1. Adjust Daily Calorie Target Modal (Bug Fixed)
     container.querySelector('#btn-adjust-target')?.addEventListener('click', () => {
       const currentProfile = store.profile || {};

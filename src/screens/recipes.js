@@ -173,19 +173,57 @@ export function generateSmartPlan(pref = 'all', targetKcal = 1800, mealCount = 2
       ? `7-Day Malaysian style meal plan aligned with ~${targetKcal} kcal daily target focusing on: ${prefLabel}.`
       : `Pelan 7-Hari gaya Malaysia diselaraskan mengikut sasaran ~${targetKcal} kcal sehari dengan fokus: ${prefLabel}.`,
     preference: pref,
-    days,
-    shopping_tips: isEn
-      ? [
-          'Buy fresh chicken breast and local fish (sea bass / mackerel) at morning markets for freshness and best value.',
-          'Incorporate local fresh herbs and greens like pegaga, cucumbers, and okra for micronutrients and satiety.',
-          'Moderate rich gravies and highlight turmeric, ginger, lemongrass, and chili for bold Malaysian flavor without excess calories.',
-        ]
-      : [
-          'Beli dada ayam segar dan ikan tempatan (siakap / kembung) di pasar pagi untuk kualiti segar dan harga jimat.',
-          'Amalkan ulam-ulaman segar tempatan seperti pegaga, timun, bendi dan raja untuk mikronutrien serta serat kenyang.',
-          'Kawal santan dan lebihkan herba rempah ratus seperti kunyit, halia, serai dan cili untuk rasa sedap tanpa kalori tersembunyi.',
-        ],
+    shopping_tips: getShoppingTips(),
   };
+}
+
+export function getShoppingTips() {
+  const isEn = getLang() === 'en';
+  return isEn
+    ? [
+        'Buy fresh chicken breast, lean cuts, and local fish (sea bass / mackerel) at morning markets for freshness and best value.',
+        'Incorporate local fresh herbs and greens like pegaga, ulam raja, cucumbers, and okra for micronutrients and satiety.',
+        'Moderate rich gravies and highlight turmeric, ginger, lemongrass, and chili for bold Malaysian flavor without excess calories.',
+        'Choose wholemeal bread, whole rolled oats, or half portions of white rice to keep daily carbohydrate spikes controlled.',
+        'Drink plain warm water or sugar-free Chinese tea / Teh O Kosong instead of sweetened condensed milk beverages.',
+      ]
+    : [
+        'Beli dada ayam segar, daging tanpa lemak, dan ikan tempatan (siakap / kembung) di pasar pagi untuk kualiti segar dan harga jimat.',
+        'Amalkan ulam-ulaman segar tempatan seperti pegaga, timun, bendi dan raja untuk mikronutrien serta serat kenyang.',
+        'Kawal santan dan lebihkan herba rempah ratus seperti kunyit, halia, serai dan cili untuk rasa sedap tanpa kalori tersembunyi.',
+        'Pilih roti mil gandum penuh, oat, atau kurangkan nasi putih kepada separuh hidangan untuk kawal lonjakan gula darah.',
+        'Amalkan air kosong atau teh cina / teh o kosong tanpa gula berbanding minuman susu pekat manis.',
+      ];
+}
+
+export function renderSectionLangToggle() {
+  const lang = getLang();
+  return `
+    <button type="button" class="lang-pill-btn section-lang-toggle" title="Switch Language / Tukar Bahasa (EN / BM)">
+      <span class="lang-icon">${icons.globe}</span>
+      <span class="lang-cur">${lang.toUpperCase()}</span>
+      <span class="lang-alt">${lang === 'en' ? 'BM' : 'EN'}</span>
+    </button>
+  `;
+}
+
+export function renderGuideAccordion(id, title, steps = []) {
+  return `
+    <div class="section-guide-card" id="guide-card-${id}" style="margin:6px 0">
+      <button type="button" class="section-guide-toggle-btn" data-guide="${id}">
+        <div class="row" style="gap:8px;align-items:center">
+          <span class="guide-badge">${t('guide_badge')}</span>
+          <span class="guide-title">${esc(title)}</span>
+        </div>
+        <span class="guide-caret" id="caret-${id}">▼</span>
+      </button>
+      <div class="section-guide-content hidden" id="content-${id}">
+        <ul class="guide-steps-list">
+          ${steps.map((st) => `<li>${esc(st)}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
 }
 
 export function renderRecipes(container) {
@@ -240,14 +278,27 @@ export function renderRecipes(container) {
   }
 
   function renderRecipeGenerator() {
+    const isEn = getLang() === 'en';
     return `
       <div class="stack fade-up">
         <div class="card stack">
-          <div class="card-title">
-            <span>${t('rec_diet_focus')}</span>
-            <span class="xs muted">Halal / Health Focus</span>
+          <div class="card-title row between" style="align-items:center">
+            <div>
+              <span>${t('rec_diet_focus')}</span>
+              <span class="xs muted" style="margin-left:6px">${isEn ? 'Halal / Health Focus' : 'Fokus Sihat & Halal'}</span>
+            </div>
+            ${renderSectionLangToggle()}
           </div>
-          <div class="chips" id="diet-chips">
+
+          <!-- Recipe Generator Tutorial Accordion -->
+          ${renderGuideAccordion('generator', t('guide_generator_title'), [
+            t('guide_generator_s1'),
+            t('guide_generator_s2'),
+            t('guide_generator_s3'),
+            t('guide_generator_s4'),
+          ])}
+
+          <div class="chips" id="diet-chips" style="margin-top:4px">
             ${DIET_FILTERS.map((d) => `<button type="button" class="chip ${selectedDiet === d ? 'active' : ''}" data-d="${d}">${d}</button>`).join('')}
           </div>
 
@@ -552,7 +603,7 @@ export function renderRecipes(container) {
               <h2 style="font-size:20px;font-weight:800;color:#fff;margin:2px 0 4px">${t('rec_schedule_title')}</h2>
               <p class="xs muted" style="line-height:1.4">${esc(plan.summary || t('rec_schedule_sub'))}</p>
             </div>
-            <div class="row" style="gap:6px">
+            <div class="row" style="gap:6px;align-items:center">
               <button type="button" class="btn btn-sm btn-ghost" id="btn-pref-modal" title="Preferences & Targets">
                 ${icons.settings}
                 <span>${isEn ? 'Preferences' : 'Keutamaan'}</span>
@@ -563,9 +614,20 @@ export function renderRecipes(container) {
               <button type="button" class="btn btn-sm btn-ghost" id="btn-print-plan" title="Print / PDF">
                 ${icons.printer}
               </button>
+              ${renderSectionLangToggle()}
             </div>
           </div>
         </div>
+
+        <!-- 7-Day Meal Plan Guide Accordion -->
+        ${renderGuideAccordion('planner', t('guide_planner_title'), [
+          t('guide_planner_s1'),
+          t('guide_planner_s2'),
+          t('guide_planner_s3'),
+          t('guide_planner_s4'),
+          t('guide_planner_s5'),
+          t('guide_planner_s6'),
+        ])}
 
         <!-- Filter Dock (Sticky / Unified) -->
         <div class="plan-filter-dock" id="plan-filter-dock">
@@ -603,30 +665,49 @@ export function renderRecipes(container) {
         <!-- Main Plan Content -->
         ${renderPlanContent(plan)}
 
-        <!-- Shopping & Grocery Tips Accordion/Card -->
-        ${
-          plan.shopping_tips && plan.shopping_tips.length
-            ? `<div class="card flat" style="background:#09090b;border:1px solid rgba(255,255,255,0.07);padding:14px 16px">
-                <b class="xs muted" style="text-transform:uppercase;letter-spacing:0.05em">${t('rec_market_tips')}</b>
-                <ul style="padding-left:18px;margin:8px 0 0;line-height:1.6;font-size:12.5px;color:var(--text-2)">
-                  ${plan.shopping_tips.map((tip) => `<li>${esc(tip)}</li>`).join('')}
-                </ul>
-              </div>`
-            : ''
-        }
+        <!-- Shopping & Grocery Tips Section -->
+        <div class="card flat stack" style="background:#09090b;border:1px solid rgba(255,255,255,0.08);padding:14px 16px;gap:10px">
+          <div class="row between" style="align-items:center">
+            <div class="row" style="gap:8px;align-items:center">
+              <span class="badge ok">${isEn ? 'Market Guide' : 'Panduan Pasar'}</span>
+              <b class="xs muted" style="text-transform:uppercase;letter-spacing:0.05em">${t('rec_market_tips')}</b>
+            </div>
+            ${renderSectionLangToggle()}
+          </div>
+          <ul style="padding-left:18px;margin:2px 0 6px;line-height:1.6;font-size:12.5px;color:var(--text-2)">
+            ${getShoppingTips().map((tip) => `<li>${esc(tip)}</li>`).join('')}
+          </ul>
+          ${renderGuideAccordion('market', t('guide_market_title'), [
+            t('guide_market_s1'),
+            t('guide_market_s2'),
+            t('guide_market_s3'),
+            t('guide_market_s4'),
+          ])}
+        </div>
       </div>
     `;
   }
 
   function renderSavedRecipes() {
     const list = store.state.recipes;
+    const isEn = getLang() === 'en';
     return `
       <div class="stack fade-up">
-        <div class="card">
-          <div class="card-title">
-            <span>${t('rec_saved_collection')}</span>
-            <span class="muted">${list.length} recipes</span>
+        <div class="card stack">
+          <div class="card-title row between" style="align-items:center">
+            <div>
+              <span>${t('rec_saved_collection')}</span>
+              <span class="muted" style="margin-left:6px">${list.length} ${isEn ? 'recipes' : 'resipi'}</span>
+            </div>
+            ${renderSectionLangToggle()}
           </div>
+
+          <!-- Saved Collection Tutorial Accordion -->
+          ${renderGuideAccordion('saved', t('guide_saved_title'), [
+            t('guide_saved_s1'),
+            t('guide_saved_s2'),
+            t('guide_saved_s3'),
+          ])}
 
           <div class="list">
             ${
@@ -779,6 +860,29 @@ export function renderRecipes(container) {
     }
 
     function bindEvents() {
+      // Universal Section Language Switchers
+      container.querySelectorAll('.section-lang-toggle').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleLang();
+          if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+          render();
+        });
+      });
+
+      // Section Guides Accordions
+      container.querySelectorAll('.section-guide-toggle-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.guide;
+          const content = container.querySelector(`#content-${id}`);
+          const caret = container.querySelector(`#caret-${id}`);
+          if (content) {
+            const isHidden = content.classList.toggle('hidden');
+            if (caret) caret.textContent = isHidden ? '▼' : '▲';
+          }
+        });
+      });
+
       container.querySelectorAll('#recipe-tabs button').forEach((b) => {
         b.addEventListener('click', () => {
           tab = b.dataset.t;
