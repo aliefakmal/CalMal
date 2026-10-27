@@ -2541,3 +2541,116 @@
   padding-left: 6px;
   border-left: 2px solid rgba(59, 130, 246, 0.45);
 }
+
+/* ---------------- Refresh Button Feedback ---------------- */
+.spin-active svg {
+  animation: spinSingle 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes spinSingle {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ---------------- Print / Export Modal & Sheet ---------------- */
+.print-modal-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 85vh;
+}
+
+.print-preview-container {
+  background: #141416;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  max-height: 380px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.printable-schedule-doc {
+  background: #ffffff;
+  color: #111827;
+  border-radius: 8px;
+  padding: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.printable-day-block {
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed #e5e7eb;
+}
+.printable-day-block:last-child {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.printable-day-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1f2937;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.printable-meal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  color: #374151;
+  padding: 1.5px 0;
+  line-height: 1.35;
+}
+
+.printable-meal-tag {
+  font-weight: 700;
+  color: #047857;
+  font-size: 10.5px;
+}
+
+.printable-meal-nums {
+  font-size: 10px;
+  color: #6b7280;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.printable-tips-box {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  font-size: 10px;
+  color: #374151;
+  line-height: 1.4;
+}
+
+/* ---------------- Native Print Media ---------------- */
+@media print {
+  body, html {
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+  
+  #app-header,
+  #app-nav,
+  .app-floating-audio,
+  .plan-header-card .row,
+  .plan-filter-dock,
+  .market-touch-card,
+  .sheet-backdrop,
+  .sheet,
+  #recipe-tabs,
+  .btn,
+  .btn-guide-pill {
+    display: none !important;
+  }
+}
+
