@@ -54,52 +54,116 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
         </div>
       </div>
 
-      <!-- Malaysian Modifiers Card -->
-      <div class="card flat" style="background:#09090b;border:1px solid rgba(255,255,255,0.08);padding:12px;border-radius:12px">
-        <span class="label small bold" style="display:block;margin-bottom:8px">🇲🇾 Malaysian Modifiers (Instant Calorie Recalibration):</span>
+      <!-- Malaysian Modifiers Card (Clean, Minimalist & Responsive) -->
+      <div class="mod-card">
+        <div class="row between" style="align-items:center">
+          <span style="font-size:13px;font-weight:800;color:#fff;display:flex;align-items:center;gap:6px">
+            🇲🇾 Malaysian Modifiers
+          </span>
+          <span class="xs muted">Auto-calibrated</span>
+        </div>
+
+        <!-- Minimalist How-To-Use Guide -->
+        <div class="mod-guide-box" id="mod-guide-box">
+          <div class="mod-guide-header" id="btn-toggle-mod-guide" role="button" tabindex="0">
+            <span style="font-size:11.5px;font-weight:700;color:#fff;display:flex;align-items:center;gap:5px">
+              <span>💡</span> <span>Cara Guna / How to Use</span>
+            </span>
+            <span class="xs muted" id="guide-toggle-icon" style="font-size:10px">Tutup ▲</span>
+          </div>
+          <div class="mod-guide-content" id="mod-guide-body">
+            <div style="font-size:11px;color:#d1d1d6;line-height:1.45;margin-bottom:6px">
+              Sentuh pilihan di bawah untuk melaraskan kalori secara automatik mengikut gaya hidangan Malaysia:
+            </div>
+            <div class="grid grid-3" style="gap:5px">
+              <div style="background:rgba(255,255,255,0.03);padding:5px 6px;border-radius:6px">
+                <b style="color:#fff;font-size:10.5px;display:block">🍲 Kuah</b>
+                <span style="font-size:9.5px;color:var(--muted)">Asing (-80 kcal) vs Banjir (+120 kcal)</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);padding:5px 6px;border-radius:6px">
+                <b style="color:#fff;font-size:10.5px;display:block">🍚 Nasi</b>
+                <span style="font-size:9.5px;color:var(--muted)">Separuh (-100 kcal) vs Tambah (+150 kcal)</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);padding:5px 6px;border-radius:6px">
+                <b style="color:#fff;font-size:10.5px;display:block">🥤 Minuman</b>
+                <span style="font-size:9.5px;color:var(--muted)">Kosong (-45) / Kurang (-25) / Kaw (+60)</span>
+              </div>
+            </div>
+          </div>
+        </div>
         
-        <!-- Kuah Modifier -->
-        <div style="margin-bottom:8px">
-          <div class="row between xs muted" style="margin-bottom:3px">
-            <span>Pelaras Kuah (Gravy):</span>
-            <b id="kuah-label">${kuahMod === 'asing' ? '-80 kcal' : kuahMod === 'banjir' ? '+120 kcal' : 'Normal'}</b>
+        <!-- Kuah Modifier Row -->
+        <div class="mod-row">
+          <div class="mod-header">
+            <span>Pelaras Kuah (Gravy)</span>
+            <span class="mod-badge" id="kuah-label">${kuahMod === 'asing' ? '-80 kcal' : kuahMod === 'banjir' ? '+120 kcal' : 'Normal'}</span>
           </div>
-          <div class="segmented" style="height:32px;font-size:11px">
-            <button type="button" class="btn-mod-kuah ${kuahMod === 'asing' ? 'active' : ''}" data-v="asing">Kuah Asing (-80)</button>
-            <button type="button" class="btn-mod-kuah ${kuahMod === 'biasa' ? 'active' : ''}" data-v="biasa">Biasa (0)</button>
-            <button type="button" class="btn-mod-kuah ${kuahMod === 'banjir' ? 'active' : ''}" data-v="banjir">Kuah Banjir (+120)</button>
-          </div>
-        </div>
-
-        <!-- Nasi Modifier -->
-        <div style="margin-bottom:8px">
-          <div class="row between xs muted" style="margin-bottom:3px">
-            <span>Sukatan Nasi (Rice Portion):</span>
-            <b id="nasi-label">${nasiMod === 'separuh' ? '-100 kcal' : nasiMod === 'tambah' ? '+150 kcal' : 'Normal'}</b>
-          </div>
-          <div class="segmented" style="height:32px;font-size:11px">
-            <button type="button" class="btn-mod-nasi ${nasiMod === 'separuh' ? 'active' : ''}" data-v="separuh">Nasi Separuh (-100)</button>
-            <button type="button" class="btn-mod-nasi ${nasiMod === 'biasa' ? 'active' : ''}" data-v="biasa">Biasa (0)</button>
-            <button type="button" class="btn-mod-nasi ${nasiMod === 'tambah' ? 'active' : ''}" data-v="tambah">Tambah Nasi (+150)</button>
+          <div class="mod-track">
+            <button type="button" class="mod-btn btn-mod-kuah ${kuahMod === 'asing' ? 'active' : ''}" data-v="asing">
+              <span>Asing</span>
+              <small>-80 kcal</small>
+            </button>
+            <button type="button" class="mod-btn btn-mod-kuah ${kuahMod === 'biasa' ? 'active' : ''}" data-v="biasa">
+              <span>Biasa</span>
+              <small>0 kcal</small>
+            </button>
+            <button type="button" class="mod-btn btn-mod-kuah ${kuahMod === 'banjir' ? 'active' : ''}" data-v="banjir">
+              <span>Banjir</span>
+              <small>+120 kcal</small>
+            </button>
           </div>
         </div>
 
-        <!-- Minuman / Manis Modifier -->
-        <div>
-          <div class="row between xs muted" style="margin-bottom:3px">
-            <span>Tahap Manis / Susu (Drinks / Sweetness):</span>
-            <b id="manis-label">${manisMod === 'kosong' ? '-45 kcal' : manisMod === 'kurang' ? '-25 kcal' : manisMod === 'kaw' ? '+60 kcal' : 'Normal'}</b>
+        <!-- Nasi Modifier Row -->
+        <div class="mod-row">
+          <div class="mod-header">
+            <span>Sukatan Nasi (Rice Portion)</span>
+            <span class="mod-badge" id="nasi-label">${nasiMod === 'separuh' ? '-100 kcal' : nasiMod === 'tambah' ? '+150 kcal' : 'Normal'}</span>
           </div>
-          <div class="segmented" style="height:32px;font-size:11px">
-            <button type="button" class="btn-mod-manis ${manisMod === 'kosong' ? 'active' : ''}" data-v="kosong">Kosong (-45)</button>
-            <button type="button" class="btn-mod-manis ${manisMod === 'kurang' ? 'active' : ''}" data-v="kurang">Kurang Manis (-25)</button>
-            <button type="button" class="btn-mod-manis ${manisMod === 'biasa' ? 'active' : ''}" data-v="biasa">Biasa (0)</button>
-            <button type="button" class="btn-mod-manis ${manisMod === 'kaw' ? 'active' : ''}" data-v="kaw">Kaw / Susu (+60)</button>
+          <div class="mod-track">
+            <button type="button" class="mod-btn btn-mod-nasi ${nasiMod === 'separuh' ? 'active' : ''}" data-v="separuh">
+              <span>Separuh</span>
+              <small>-100 kcal</small>
+            </button>
+            <button type="button" class="mod-btn btn-mod-nasi ${nasiMod === 'biasa' ? 'active' : ''}" data-v="biasa">
+              <span>Biasa</span>
+              <small>0 kcal</small>
+            </button>
+            <button type="button" class="mod-btn btn-mod-nasi ${nasiMod === 'tambah' ? 'active' : ''}" data-v="tambah">
+              <span>Tambah</span>
+              <small>+150 kcal</small>
+            </button>
+          </div>
+        </div>
+
+        <!-- Minuman / Manis Modifier Row -->
+        <div class="mod-row">
+          <div class="mod-header">
+            <span>Tahap Manis / Susu (Drinks)</span>
+            <span class="mod-badge" id="manis-label">${manisMod === 'kosong' ? '-45 kcal' : manisMod === 'kurang' ? '-25 kcal' : manisMod === 'kaw' ? '+60 kcal' : 'Normal'}</span>
+          </div>
+          <div class="mod-track">
+            <button type="button" class="mod-btn btn-mod-manis ${manisMod === 'kosong' ? 'active' : ''}" data-v="kosong">
+              <span>Kosong</span>
+              <small>-45 kcal</small>
+            </button>
+            <button type="button" class="mod-btn btn-mod-manis ${manisMod === 'kurang' ? 'active' : ''}" data-v="kurang">
+              <span>Kurang</span>
+              <small>-25 kcal</small>
+            </button>
+            <button type="button" class="mod-btn btn-mod-manis ${manisMod === 'biasa' ? 'active' : ''}" data-v="biasa">
+              <span>Biasa</span>
+              <small>0 kcal</small>
+            </button>
+            <button type="button" class="mod-btn btn-mod-manis ${manisMod === 'kaw' ? 'active' : ''}" data-v="kaw">
+              <span>Kaw</span>
+              <small>+60 kcal</small>
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- Portion Slider -->
+      <!-- Portion Multiplier Slider Card -->
       <div class="portion-box">
         <div class="row between">
           <span class="label">Overall Portion Multiplier</span>
@@ -111,17 +175,28 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
         </div>
       </div>
 
-      <!-- Macros Grid -->
-      <div class="grid grid-2">
-        <div class="field"><label for="me-kcal">Calories</label><div class="input-suffix"><input class="input num" id="me-kcal" type="number" inputmode="decimal" min="0" /><span>kcal</span></div></div>
-        <div class="field"><label for="me-weight">Weight</label><div class="input-suffix"><input class="input num" id="me-weight" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
-        <div class="field"><label for="me-protein">Protein</label><div class="input-suffix"><input class="input num" id="me-protein" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
-        <div class="field"><label for="me-carbs">Carbs</label><div class="input-suffix"><input class="input num" id="me-carbs" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
-        <div class="field"><label for="me-fat">Fat</label><div class="input-suffix"><input class="input num" id="me-fat" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
-        <div class="field" style="justify-content:flex-end"><button type="button" class="btn btn-ghost" id="me-calc" title="Calculate calories from macros">Auto-sum macros</button></div>
+      <!-- Nutrition Breakdown Section -->
+      <div class="stack" style="gap:8px">
+        <div class="row between" style="align-items:center">
+          <span class="label bold small" style="margin:0">Nutrition Breakdown</span>
+          <button type="button" class="btn btn-ghost btn-xs" id="me-calc" title="Auto calculate calories from macros" style="font-size:11.5px;padding:3px 8px;gap:4px">
+            ✨ <span>Auto-sum macros</span>
+          </button>
+        </div>
+
+        <div class="grid grid-2" style="gap:10px">
+          <div class="field"><label for="me-kcal">Calories</label><div class="input-suffix"><input class="input num" id="me-kcal" type="number" inputmode="decimal" min="0" /><span>kcal</span></div></div>
+          <div class="field"><label for="me-weight">Serving Weight</label><div class="input-suffix"><input class="input num" id="me-weight" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
+        </div>
+
+        <div class="grid grid-3" style="gap:8px">
+          <div class="field"><label for="me-protein">Protein</label><div class="input-suffix"><input class="input num" id="me-protein" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
+          <div class="field"><label for="me-carbs">Carbs</label><div class="input-suffix"><input class="input num" id="me-carbs" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
+          <div class="field"><label for="me-fat">Fat</label><div class="input-suffix"><input class="input num" id="me-fat" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
+        </div>
       </div>
 
-      <div class="grid grid-2" style="margin-top:6px">
+      <div class="grid grid-2" style="margin-top:6px;gap:10px">
         <button class="btn btn-ghost" data-close>Cancel</button>
         <button class="btn btn-primary" id="me-save">${existingId ? 'Save Changes' : 'Log Meal'}</button>
       </div>
@@ -167,15 +242,35 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
     el.querySelector('#me-range').value = mult;
     el.querySelectorAll('[data-mult]').forEach((c) => c.classList.toggle('active', Number(c.dataset.mult) === mult));
 
-    // Update labels
+    // Update labels with visual status indicators
     const kl = el.querySelector('#kuah-label');
-    if (kl) kl.textContent = kuahMod === 'asing' ? '-80 kcal' : kuahMod === 'banjir' ? '+120 kcal' : 'Normal';
+    if (kl) {
+      kl.textContent = kuahMod === 'asing' ? '-80 kcal' : kuahMod === 'banjir' ? '+120 kcal' : 'Normal';
+      kl.className = `mod-badge ${kuahMod === 'asing' ? 'neg' : kuahMod === 'banjir' ? 'pos' : ''}`;
+    }
     const nl = el.querySelector('#nasi-label');
-    if (nl) nl.textContent = nasiMod === 'separuh' ? '-100 kcal' : nasiMod === 'tambah' ? '+150 kcal' : 'Normal';
+    if (nl) {
+      nl.textContent = nasiMod === 'separuh' ? '-100 kcal' : nasiMod === 'tambah' ? '+150 kcal' : 'Normal';
+      nl.className = `mod-badge ${nasiMod === 'separuh' ? 'neg' : nasiMod === 'tambah' ? 'pos' : ''}`;
+    }
     const ml = el.querySelector('#manis-label');
-    if (ml) ml.textContent = manisMod === 'kosong' ? '-45 kcal' : manisMod === 'kurang' ? '-25 kcal' : manisMod === 'kaw' ? '+60 kcal' : 'Normal';
+    if (ml) {
+      ml.textContent = manisMod === 'kosong' ? '-45 kcal' : manisMod === 'kurang' ? '-25 kcal' : manisMod === 'kaw' ? '+60 kcal' : 'Normal';
+      ml.className = `mod-badge ${manisMod === 'kosong' || manisMod === 'kurang' ? 'neg' : manisMod === 'kaw' ? 'pos' : ''}`;
+    }
   };
   paint();
+
+  // Toggle How-To-Use guide
+  const guideToggle = el.querySelector('#btn-toggle-mod-guide');
+  const guideBody = el.querySelector('#mod-guide-body');
+  const guideIcon = el.querySelector('#guide-toggle-icon');
+  if (guideToggle && guideBody) {
+    guideToggle.addEventListener('click', () => {
+      const isHidden = guideBody.classList.toggle('hidden');
+      if (guideIcon) guideIcon.textContent = isHidden ? 'Buka ▼' : 'Tutup ▲';
+    });
+  }
 
   // Autocomplete change listener on name input
   el.querySelector('#me-name')?.addEventListener('input', (e) => {
