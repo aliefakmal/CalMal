@@ -31,11 +31,17 @@ function load() {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaults();
-    const parsed = { ...defaults(), ...JSON.parse(raw) };
-    if (parsed.profile?.selectedCompanion) {
-      applyHeroTheme(parsed.profile.selectedCompanion);
+    const parsed = JSON.parse(raw);
+    const def = defaults();
+    const merged = {
+      ...def,
+      ...parsed,
+      settings: { ...def.settings, ...(parsed?.settings || {}) },
+    };
+    if (merged.profile?.selectedCompanion) {
+      applyHeroTheme(merged.profile.selectedCompanion);
     }
-    return parsed;
+    return merged;
   } catch {
     return defaults();
   }
