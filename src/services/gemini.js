@@ -95,7 +95,7 @@ async function generateJSON({ prompt, images = [], temperature = 0.4, signal }) 
 
     for (const model of modelChain) {
       try {
-        const endpoint = GeminiConfig.getEndpoint(model);
+        const endpoint = GeminiConfig.getEndpoint(model, key);
         const res = await fetch(endpoint, {
           method: 'POST',
           signal,
@@ -142,13 +142,157 @@ function userContext() {
 }
 
 // ----------------- Smart Built-in Malaysian & Asian Food Database -----------------
-const LOCAL_MALAYSIAN_DISHES = [
+export const LOCAL_MALAYSIAN_DISHES = [
   {
-    keywords: ['nasi lemak', 'sambal', 'anchovies', 'coconut rice', 'ayam'],
+    id: 'chagee_oolong',
+    keywords: ['vanilla oolong', 'oolong milk tea', 'chagee', 'milk tea', 'oolong', 'teh susu oolong', 'boba', 'bubble tea', 'tealive', 'tasek central', 'cup', 'drink', 'minuman', 'air', 'vanilla'],
+    food_name: 'Large - Vanilla Oolong Milk Tea (CHAGEE)',
+    estimated_weight_g: 500,
+    calories_kcal: 230,
+    macros: { protein_g: 4.2, carbs_g: 38.0, fat_g: 6.2 },
+    items_breakdown: [
+      { name: 'Vanilla Oolong Fresh Milk Tea Base', weight_g: 460, calories_kcal: 200 },
+      { name: 'Natural Cane Sugar (Less Sweet)', weight_g: 15, calories_kcal: 30 },
+      { name: 'Filtered Ice Cube', weight_g: 25, calories_kcal: 0 },
+    ],
+    suitability_status: 'GOOD',
+    recommended_portion_adjustment: 'Pilihan "Less Sweet" (Kurang Manis) mengurangkan sekitar 70 kcal berbanding manis biasa.',
+    deku: 'Pilihan minuman yang bijak! Teh oolong kaya dengan antioksidan polifenol yang menyokong metabolisme tanpa gula berlebihan.',
+    bakugou: 'Hoi! Nasib baik kau pilih kurang manis! Jangan berani tambah gula atau minum bergelen-gelen setiap hari kalau nak kekalkan berat badan ideal!',
+  },
+  {
+    id: 'jasmine_tea',
+    keywords: ['jasmine', 'green milk tea', 'tie guan yin', 'da hong pao', 'peach oolong', 'floral tea'],
+    food_name: 'Jasmine Green Milk Tea (CHAGEE / Modern Tea)',
+    estimated_weight_g: 500,
+    calories_kcal: 210,
+    macros: { protein_g: 4.0, carbs_g: 34.0, fat_g: 5.5 },
+    items_breakdown: [
+      { name: 'Fragrant Jasmine Green Tea & Fresh Milk', weight_g: 470, calories_kcal: 185 },
+      { name: 'Cane Sweetener (Kurang Manis)', weight_g: 15, calories_kcal: 25 },
+    ],
+    suitability_status: 'GOOD',
+    recommended_portion_adjustment: 'Teh hijau melati rendah kalori dengan antioksidan katekin semulajadi.',
+    deku: 'Haruman melati membantu mengurangkan tekanan mental, dan teh hijau menyokong pembakaran lemak!',
+    bakugou: 'Minuman herba wangi yang bagus! Pastikan kau habiskan air kosong juga sepanjang hari!',
+  },
+  {
+    id: 'boba_brown_sugar',
+    keywords: ['brown sugar', 'pearl milk tea', 'boba', 'pearls', 'tapioca pearl', 'tiger sugar', 'xing fu tang'],
+    food_name: 'Brown Sugar Pearl Milk Tea (Boba Tea)',
+    estimated_weight_g: 520,
+    calories_kcal: 380,
+    macros: { protein_g: 4.5, carbs_g: 68.0, fat_g: 8.5 },
+    items_breakdown: [
+      { name: 'Fresh Whole Milk & Brown Sugar Syrup', weight_g: 400, calories_kcal: 240 },
+      { name: 'Chewy Tapioca Pearls (Boba)', weight_g: 120, calories_kcal: 140 },
+    ],
+    suitability_status: 'MODERATE',
+    recommended_portion_adjustment: 'Mutiara tapioka tinggi kanji dan kalori. Nikmati sekali-sekala atau kongsi porsi bersama kawan.',
+    deku: 'Boba memberi tenaga pantas melalui karbohidrat ringkas. Seimbangkan dengan senaman kardio petang ini!',
+    bakugou: 'HEI! Mutiara boba tu penuh kanji gula! Lepas minum ni, pergi buat lompat tali 500 kali sekarang!',
+  },
+  {
+    id: 'zus_latte',
+    keywords: ['spanish latte', 'latte', 'iced latte', 'zus', 'gigi coffee', 'cappuccino', 'flat white', 'coffee', 'kopi susu'],
+    food_name: 'Spanish Iced Latte (Zus / Gigi Coffee)',
+    estimated_weight_g: 380,
+    calories_kcal: 175,
+    macros: { protein_g: 6.0, carbs_g: 22.0, fat_g: 5.0 },
+    items_breakdown: [
+      { name: 'Double Espresso Shot & Fresh Milk', weight_g: 340, calories_kcal: 135 },
+      { name: 'Sweetened Condensed Milk Drizzle', weight_g: 20, calories_kcal: 40 },
+    ],
+    suitability_status: 'GOOD',
+    recommended_portion_adjustment: 'Kopi susu berprotein sederhana. Sangat sesuai untuk suntikan fokus dan tenaga waktu kerja.',
+    deku: 'Kafein meningkatkan konsentrasi dan prestasi olahraga! Protein susu turut menyokong pemulihan.',
+    bakugou: 'Espresso mantap! Teruskan momentum fokus ni untuk bakar kalori seharian!',
+  },
+  {
+    id: 'americano_black',
+    keywords: ['americano', 'long black', 'kopi o kosong', 'black coffee', 'espresso'],
+    food_name: 'Iced Americano / Kopi O Kosong',
+    estimated_weight_g: 350,
+    calories_kcal: 15,
+    macros: { protein_g: 0.8, carbs_g: 2.0, fat_g: 0.1 },
+    items_breakdown: [
+      { name: 'Arabica Espresso Extraction & Cold Water', weight_g: 350, calories_kcal: 15 },
+    ],
+    suitability_status: 'GOOD',
+    recommended_portion_adjustment: 'Pilihan sifar gula sempurna untuk defisit kalori dan pembakaran lemak optimum.',
+    deku: 'Pilihan luar biasa untuk diet defisit kalori! Hampir sifar kalori dengan kafein tulen.',
+    bakugou: 'BAGUS! Minum kopi hitam macam seorang pejuang sejati! Tak ada gula sampah langsung!',
+  },
+  {
+    id: 'teh_tarik',
+    keywords: ['teh tarik', 'teh c', 'teh panas', 'pulled milk tea', 'kurang manis', 'teh ais'],
+    food_name: 'Teh Tarik Kurang Manis (Pulled Tea)',
+    estimated_weight_g: 240,
+    calories_kcal: 115,
+    macros: { protein_g: 3.2, carbs_g: 19.0, fat_g: 3.5 },
+    items_breakdown: [
+      { name: 'Strong Black Ceylon Tea', weight_g: 180, calories_kcal: 5 },
+      { name: 'Low-Sugar Evaporated & Condensed Milk', weight_g: 60, calories_kcal: 110 },
+    ],
+    suitability_status: 'GOOD',
+    recommended_portion_adjustment: 'Memilih kurang manis menjimatkan kira-kira 60 kcal berbanding teh tarik biasa.',
+    deku: 'Langkah hebat meminta kurang manis! Dapat rasa kenikmatan mamak tanpa lonjakan gula mendadak.',
+    bakugou: 'Nasib baik kau suruh mamak letak kurang susu pekat! Kekalkan disiplin tu!',
+  },
+  {
+    id: 'milo_ais',
+    keywords: ['milo', 'milo ais', 'milo dinosaur', 'iced milo', 'milo panas'],
+    food_name: 'Iced Milo / Milo Ais Kurang Manis',
+    estimated_weight_g: 280,
+    calories_kcal: 175,
+    macros: { protein_g: 4.2, carbs_g: 28.0, fat_g: 4.5 },
+    items_breakdown: [
+      { name: 'Malted Cocoa Powder & Hot Water', weight_g: 220, calories_kcal: 115 },
+      { name: 'Evaporated Milk & Light Condensed Milk', weight_g: 40, calories_kcal: 60 },
+    ],
+    suitability_status: 'MODERATE',
+    recommended_portion_adjustment: 'Minuman malt coklat bertenaga. Sangat sesuai diminum sebelum sesi sukan atau aktiviti fizikal.',
+    deku: 'Milo membekalkan zat besi dan vitamin B yang penting untuk metabolisme sel darah merah!',
+    bakugou: 'Rasa coklat sedap, tapi ingat karbohidrat tu! Gunakan tenaga Milo ni untuk larian pecut!',
+  },
+  {
+    id: 'kopi_ais',
+    keywords: ['kopi ais', 'kopi peng', 'kopi mamak', 'kopi c ais'],
+    food_name: 'Kopi Ais Mamak / Kopi Peng Kurang Manis',
+    estimated_weight_g: 280,
+    calories_kcal: 140,
+    macros: { protein_g: 2.5, carbs_g: 22.0, fat_g: 4.0 },
+    items_breakdown: [
+      { name: 'Pekat Robusta Coffee Brew', weight_g: 220, calories_kcal: 10 },
+      { name: 'Condensed Milk & Evaporated Milk', weight_g: 45, calories_kcal: 130 },
+    ],
+    suitability_status: 'GOOD',
+    recommended_portion_adjustment: 'Aroma kopi klasik Malaysia dengan suntikan tenaga kafein pantas.',
+    deku: 'Kopi klasik yang membangkitkan semangat! Pastikan minum air kosong secukupnya untuk kekal terhidrat.',
+    bakugou: 'Kopi kaw! Jangan tidur lepas minum ni, buat kerja sampai selesai!',
+  },
+  {
+    id: 'sirap_bandung',
+    keywords: ['sirap bandung', 'bandung', 'sirap ais', 'rose syrup'],
+    food_name: 'Sirap Bandung Ais Kurang Manis',
+    estimated_weight_g: 280,
+    calories_kcal: 155,
+    macros: { protein_g: 2.0, carbs_g: 26.0, fat_g: 3.5 },
+    items_breakdown: [
+      { name: 'Rose Cordial & Condensed Milk Blend', weight_g: 260, calories_kcal: 155 },
+    ],
+    suitability_status: 'MODERATE',
+    recommended_portion_adjustment: 'Minuman manis penyejuk tekak. Imbangi dengan hidangan tinggi serat dan sayuran.',
+    deku: 'Sirap bandung menyegarkan pada hari panas, cuma hadkan pengambilan gula harian anda!',
+    bakugou: 'Air merah manis jambu ni sedap, tapi jangan minum hari-hari kalau taknak boroi!',
+  },
+  {
+    id: 'nasi_lemak',
+    keywords: ['nasi lemak', 'sambal', 'anchovies', 'coconut rice', 'ayam berempah', 'telur rebus', 'ayam'],
     food_name: 'Nasi Lemak with Spiced Fried Chicken',
     estimated_weight_g: 420,
     calories_kcal: 660,
-    macros: { protein_g: 34, carbs_g: 74, fat_g: 24 },
+    macros: { protein_g: 34.0, carbs_g: 74.0, fat_g: 24.0 },
     items_breakdown: [
       { name: 'Crispy Spiced Fried Chicken', weight_g: 130, calories_kcal: 290 },
       { name: 'Fragrant Coconut Steamed Rice', weight_g: 180, calories_kcal: 240 },
@@ -157,32 +301,17 @@ const LOCAL_MALAYSIAN_DISHES = [
       { name: 'Roasted Peanuts & Fried Anchovies', weight_g: 25, calories_kcal: 25 },
     ],
     suitability_status: 'MODERATE',
-    recommended_portion_adjustment: 'Opt for skinless chicken breast and request less sambal to maintain an optimal calorie deficit.',
-    deku: 'Analysis complete! The high-quality protein from spiced chicken is fantastic for post-workout muscle repair. Just watch the saturated fats in the coconut rice!',
-    bakugou: 'HEY! That fried chicken delivers serious explosive power, but don’t drink the sambal like water unless you want your morning run to go to waste!',
+    recommended_portion_adjustment: 'Pilih bahagian dada ayam tanpa kulit dan minta sambal diasingkan untuk kawalan lemak tepu.',
+    deku: 'Protein ayam berempah sangat bagus untuk membina otot, cuma berwaspada dengan santan dalam nasi!',
+    bakugou: 'Ayam berempah padu gila! Tapi jangan teguk kuah sambal macam air kalau taknak larian pagi sia-sia!',
   },
   {
-    keywords: ['roti canai', 'dhal', 'curry', 'mamak'],
-    food_name: 'Roti Canai with Lentil Dhal & Sambal',
-    estimated_weight_g: 210,
-    calories_kcal: 410,
-    macros: { protein_g: 11, carbs_g: 55, fat_g: 16 },
-    items_breakdown: [
-      { name: 'Crispy Pan-Fried Flatbread (Roti)', weight_g: 120, calories_kcal: 310 },
-      { name: 'Aromatic Lentil Dhal Curry', weight_g: 70, calories_kcal: 75 },
-      { name: 'Mamak Sweet-Spicy Sambal', weight_g: 20, calories_kcal: 25 },
-    ],
-    suitability_status: 'MODERATE',
-    recommended_portion_adjustment: 'Add two soft-boiled eggs to significantly boost the protein ratio of this meal.',
-    deku: 'Roti canai provides immediate fast-acting carbs! Drink plenty of water and balance with a lean protein dinner tonight.',
-    bakugou: 'WHAT?! A single piece is already over 300 calories! If you eat two pieces, get out there and run a 5K right now!',
-  },
-  {
-    keywords: ['chicken rice', 'nasi ayam', 'steamed chicken', 'hainan'],
+    id: 'chicken_rice',
+    keywords: ['chicken rice', 'nasi ayam', 'steamed chicken', 'hainan', 'ayam kukus', 'sup ayam'],
     food_name: 'Hainanese Steamed Chicken Rice',
     estimated_weight_g: 380,
     calories_kcal: 540,
-    macros: { protein_g: 32, carbs_g: 66, fat_g: 15 },
+    macros: { protein_g: 32.0, carbs_g: 66.0, fat_g: 15.0 },
     items_breakdown: [
       { name: 'Steamed Chicken Breast Fillet', weight_g: 140, calories_kcal: 220 },
       { name: 'Ginger-Infused Fragrant Rice', weight_g: 180, calories_kcal: 240 },
@@ -190,48 +319,138 @@ const LOCAL_MALAYSIAN_DISHES = [
       { name: 'Fresh Chili & Minced Ginger Sauce', weight_g: 20, calories_kcal: 50 },
     ],
     suitability_status: 'GOOD',
-    recommended_portion_adjustment: 'A well-balanced meal. Rich in lean protein with controlled complex carbohydrates.',
-    deku: 'Smart choice! Steamed chicken preserves vital micronutrients without excess frying oil. Ideal for athletic recovery.',
-    bakugou: 'Good! You chose steamed chicken instead of greasy fried drumsticks! Keep up this discipline if you want to crush your target weight!',
+    recommended_portion_adjustment: 'Pilihan hidangan yang sangat seimbang. Kaya dengan protein tanpa minyak gorengan berlebihan.',
+    deku: 'Pilihan bijak! Ayam kukus mengekalkan nutrien tanpa minyak tepu berlebihan. Sesuai untuk pemulihan atletik.',
+    bakugou: 'Bagus! Kau pilih ayam kukus berbanding ayam goreng minyak hitam! Kekalkan disiplin ni!',
   },
   {
-    keywords: ['char kuey teow', 'kuey teow', 'noodles', 'cockles', 'prawns'],
+    id: 'nasi_kandar',
+    keywords: ['nasi kandar', 'kuah campur', 'kari mamak', 'ayam goreng mamak', 'bendi', 'pelita', 'kayu'],
+    food_name: 'Nasi Kandar (Ayam Goreng & Kuah Campur)',
+    estimated_weight_g: 480,
+    calories_kcal: 690,
+    macros: { protein_g: 38.0, carbs_g: 78.0, fat_g: 26.0 },
+    items_breakdown: [
+      { name: 'Ayam Goreng Berempah Mamak', weight_g: 150, calories_kcal: 320 },
+      { name: 'Nasi Putih Beras Wangi', weight_g: 200, calories_kcal: 260 },
+      { name: 'Kuah Campur Banjir (Kari & Korma)', weight_g: 90, calories_kcal: 90 },
+      { name: 'Sayur Bendi Rebus', weight_g: 40, calories_kcal: 20 },
+    ],
+    suitability_status: 'MODERATE',
+    recommended_portion_adjustment: 'Minta "kuah suku" atau asingkan kuah bagi mengurangkan kalori minyak kari sebanyak 100 kcal.',
+    deku: 'Sayur bendi kaya dengan serat larut yang membantu melancarkan pencernaan makanan berempah.',
+    bakugou: 'Banjir kuah kari memang sedap, tapi pastikan kau bakar habis kalori ni petang nanti!',
+  },
+  {
+    id: 'char_kuey_teow',
+    keywords: ['char kuey teow', 'kuey teow', 'noodles', 'cockles', 'prawns', 'koay teow goreng'],
     food_name: 'Char Kuey Teow with Prawns & Cockles',
     estimated_weight_g: 360,
     calories_kcal: 620,
-    macros: { protein_g: 24, carbs_g: 76, fat_g: 25 },
+    macros: { protein_g: 24.0, carbs_g: 76.0, fat_g: 25.0 },
     items_breakdown: [
       { name: 'Wok-Seared Flat Rice Noodles', weight_g: 200, calories_kcal: 380 },
       { name: 'Fresh Sea Prawns & Cockles', weight_g: 80, calories_kcal: 110 },
       { name: 'Scrambled Egg & Crispy Bean Sprouts', weight_g: 80, calories_kcal: 130 },
     ],
     suitability_status: 'MODERATE',
-    recommended_portion_adjustment: 'Request less cooking oil and ask for double the bean sprouts and Chinese chives for extra dietary fiber.',
-    deku: 'Prawns and shellfish provide zinc and iron! Carbohydrate density is quite high, making it great fuel on moderate-to-high cardio training days.',
-    bakugou: 'Wok hei smells amazing, but that pan oil is dangerous! You better burn these calories off this evening!',
+    recommended_portion_adjustment: 'Minta taugeh dan kucai lebih untuk serat, serta kurangkan minyak kuali.',
+    deku: 'Udang dan kerang membekalkan mineral zink serta zat besi yang berkualiti!',
+    bakugou: 'Bau wok hei memang padu, tapi minyak kuali tu tinggi! Lari 5KM lepas makan ni!',
   },
   {
-    keywords: ['teh tarik', 'tea', 'milk tea', 'sweet drink'],
-    food_name: 'Pulled Milk Tea (Teh Tarik Less Sweet)',
-    estimated_weight_g: 240,
-    calories_kcal: 115,
-    macros: { protein_g: 3, carbs_g: 19, fat_g: 3.5 },
+    id: 'mee_goreng',
+    keywords: ['mee goreng', 'fried noodles', 'maggi goreng', 'mee mamak', 'mee goreng basah'],
+    food_name: 'Mee Goreng Mamak Special',
+    estimated_weight_g: 350,
+    calories_kcal: 550,
+    macros: { protein_g: 16.0, carbs_g: 70.0, fat_g: 21.0 },
     items_breakdown: [
-      { name: 'Strong Black Ceylon Tea', weight_g: 180, calories_kcal: 5 },
-      { name: 'Low-Sugar Evaporated & Condensed Milk', weight_g: 60, calories_kcal: 110 },
+      { name: 'Yellow Noodles Wok Fried', weight_g: 200, calories_kcal: 330 },
+      { name: 'Fried Tofu, Egg & Cucur Mamak', weight_g: 110, calories_kcal: 180 },
+      { name: 'Lime & Sambal Garnish', weight_g: 40, calories_kcal: 40 },
+    ],
+    suitability_status: 'MODERATE',
+    recommended_portion_adjustment: 'Perah limau nipis segar dan elakkan menambah kuah kicap manis tambahan.',
+    deku: 'Tauhu goreng menyumbang protein tumbuhan, manakala karbohidrat mi memberi tenaga latihan!',
+    bakugou: 'Mi goreng mamak malam-malam bahaya untuk berat badan! Bersenam esok pagi tanpa alasan!',
+  },
+  {
+    id: 'roti_canai',
+    keywords: ['roti canai', 'dhal', 'curry', 'mamak', 'roti telur'],
+    food_name: 'Roti Canai with Lentil Dhal & Sambal',
+    estimated_weight_g: 210,
+    calories_kcal: 410,
+    macros: { protein_g: 11.0, carbs_g: 55.0, fat_g: 16.0 },
+    items_breakdown: [
+      { name: 'Crispy Pan-Fried Flatbread (Roti)', weight_g: 120, calories_kcal: 310 },
+      { name: 'Aromatic Lentil Dhal Curry', weight_g: 70, calories_kcal: 75 },
+      { name: 'Mamak Sweet-Spicy Sambal', weight_g: 20, calories_kcal: 25 },
+    ],
+    suitability_status: 'MODERATE',
+    recommended_portion_adjustment: 'Makan bersama kuah dhal berbanding kari pekat berlemak untuk serat kekacang.',
+    deku: 'Roti canai membekalkan karbohidrat segera. Minum air kosong secukupnya untuk kekal segar.',
+    bakugou: 'Sekeping dah lebih 300 kalori! Kalau kau makan dua keping, pergi lari sekarang!',
+  },
+  {
+    id: 'healthy_salad',
+    keywords: ['grilled chicken', 'salad', 'chicken breast', 'dada ayam', 'clean food', 'poke bowl', 'telur rebus', 'boiled egg'],
+    food_name: 'Healthy Grilled Chicken Breast Salad Bowl',
+    estimated_weight_g: 360,
+    calories_kcal: 340,
+    macros: { protein_g: 42.0, carbs_g: 14.0, fat_g: 8.0 },
+    items_breakdown: [
+      { name: 'Herb Marinated Grilled Chicken Breast', weight_g: 180, calories_kcal: 220 },
+      { name: 'Crisp Romaine, Cucumber & Cherry Tomatoes', weight_g: 150, calories_kcal: 40 },
+      { name: 'Light Sesame Olive Dressing', weight_g: 30, calories_kcal: 80 },
     ],
     suitability_status: 'GOOD',
-    recommended_portion_adjustment: 'Ordering "Kurang Manis" (Less Sweet) saves about 50–70 kcal compared to standard Malaysian sweet tea.',
-    deku: 'Nicely done! Choosing less condensed milk helps control insulin spikes while still enjoying local comfort flavors.',
-    bakugou: 'Tsk, lucky you asked for less sugar! Don’t you dare add two extra scoops of condensed milk next time!',
+    recommended_portion_adjustment: 'Pilihan pemakanan bersih (clean eating) bertaraf emas untuk membina otot dan mengurangkan lemak badan.',
+    deku: '42g protein tulen dengan lemak minimal! Ini hidangan terbaik untuk hypertrophy dan kesihatan kardiovaskular!',
+    bakugou: 'INI BARU MAKANAN CHAMPION! Teruskan disiplin ketat macam ni kalau nak kalahkan sasaran badan kau!',
   },
 ];
 
-function fallbackFoodAnalysis(note = '') {
-  const q = (note || '').toLowerCase();
-  const matched = LOCAL_MALAYSIAN_DISHES.find((d) => d.keywords.some((k) => q.includes(k))) || LOCAL_MALAYSIAN_DISHES[0];
+export function findLocalDish(query = '') {
+  const q = String(query || '').toLowerCase().trim();
+  if (!q) return LOCAL_MALAYSIAN_DISHES[0];
+
+  // 1. Direct ID match
+  const byId = LOCAL_MALAYSIAN_DISHES.find((d) => d.id === q);
+  if (byId) return byId;
+
+  // 2. Keyword match
+  const byKw = LOCAL_MALAYSIAN_DISHES.find((d) => d.keywords.some((k) => q.includes(k) || k.includes(q)));
+  if (byKw) return byKw;
+
+  // 3. Name match
+  const byName = LOCAL_MALAYSIAN_DISHES.find((d) => d.food_name.toLowerCase().includes(q));
+  if (byName) return byName;
+
+  return LOCAL_MALAYSIAN_DISHES[0];
+}
+
+export function fallbackFoodAnalysis(note = '') {
+  const q = (note || '').toLowerCase().trim();
+  let matched = null;
+  if (q) {
+    matched = LOCAL_MALAYSIAN_DISHES.find((d) => d.keywords.some((k) => q.includes(k)));
+  }
+
+  if (!matched) {
+    // If note mentions drinks, cups, tea, milk, coffee, boba, water:
+    if (/tea|teh|milk|susu|oolong|chagee|coffee|kopi|milo|drink|minuman|air|cup|boba|latte|ais|ice/i.test(q)) {
+      matched = LOCAL_MALAYSIAN_DISHES[0]; // Large - Vanilla Oolong Milk Tea (CHAGEE)
+    } else if (/ayam|nasi|rice|chicken|daging|goreng|noodle|mee|roti/i.test(q)) {
+      matched = LOCAL_MALAYSIAN_DISHES[9]; // Nasi Lemak
+    } else {
+      matched = LOCAL_MALAYSIAN_DISHES[0];
+    }
+  }
+
   return {
     is_food: true,
+    is_fallback: true,
     food_name: matched.food_name,
     estimated_weight_g: matched.estimated_weight_g,
     calories_kcal: matched.calories_kcal,
@@ -255,11 +474,13 @@ export async function analyzeFood({ image, note, signal }) {
   } catch {
     r = null;
   }
-  if (!r) {
-    r = fallbackFoodAnalysis(note);
+
+  // If AI returned a recognized beverage or food name with calories, preserve it!
+  if (r && r.food_name && (r.calories_kcal > 0 || /tea|teh|milk|susu|oolong|coffee|kopi|drink|air|chagee|boba/i.test(r.food_name))) {
+    r.is_food = true;
   }
-  if (r.is_food === false) {
-    // If user specifically submitted food to analyze, salvage with smart local engine
+
+  if (!r || r.is_food === false) {
     r = fallbackFoodAnalysis(note);
   }
   return normalizeFood(r);
@@ -274,6 +495,7 @@ export function normalizeFood(r) {
     protein: Number(m.protein_g) || 0,
     carbs: Number(m.carbs_g) || 0,
     fat: Number(m.fat_g) || 0,
+    is_fallback: !!r.is_fallback,
     items: (r.items_breakdown || []).map((i) => ({
       name: i.name,
       weight_g: Math.round(Number(i.weight_g) || 0),
@@ -497,7 +719,7 @@ export async function testApiKey() {
 
   for (const model of GeminiConfig.models) {
     try {
-      const endpoint = GeminiConfig.getEndpoint(model);
+      const endpoint = GeminiConfig.getEndpoint(model, key);
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },

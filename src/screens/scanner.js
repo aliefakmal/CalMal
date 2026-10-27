@@ -1,7 +1,7 @@
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import { icons } from '../components/icons.js';
 import { toast, statusBadge, openSheet } from '../components/ui.js';
-import { analyzeFood, readNutritionLabel } from '../services/gemini.js';
+import { analyzeFood, readNutritionLabel, findLocalDish } from '../services/gemini.js';
 import { lookupBarcode, scaleNutrients } from '../services/openFoodFacts.js';
 import { compressImage, esc, round1, int } from '../utils/helpers.js';
 import { companionBubble } from '../components/companion.js';
@@ -26,28 +26,28 @@ export function renderScanner(container) {
   let facingMode = store.settings?.cameraFacing || 'environment'; // 'environment' | 'user'
 
   const QUICK_CHIPS_EN = [
+    'Vanilla Oolong',
+    'Milk tea / Boba',
+    'Less sweet',
+    'Teh Tarik',
+    'Milo Ais',
+    'Kopi O',
     'Half rice',
     'Less oil',
-    'Extra gravy',
-    'Gravy on side',
     'Chicken breast',
-    'Less sweet',
-    'Skinless',
-    'Sambal on side',
-    'Boiled egg',
     'Extra veggies',
   ];
 
   const QUICK_CHIPS_MS = [
+    'Vanilla Oolong',
+    'Milk tea / Boba',
+    'Kurang manis',
+    'Teh Tarik',
+    'Milo Ais',
+    'Kopi O',
     'Nasi separuh',
     'Kurang minyak',
-    'Kuah banjir',
-    'Kuah asing',
     'Ayam dada',
-    'Kurang manis',
-    'Tanpa kulit',
-    'Sambal asing',
-    'Telur rebus',
     'Sayur lebih',
   ];
 
@@ -95,7 +95,14 @@ export function renderScanner(container) {
       <div class="card flat" style="padding:14px;background:#0d0d0e;margin-bottom:14px">
         <div class="scanner-viewport" id="viewport-box">
           <video id="scanner-video" class="scanner-video" autoplay playsinline webkit-playsinline muted></video>
-          <img id="scanner-preview-img" class="preview-thumb hidden" alt="Image preview" />
+          <img id="scanner-preview-img" class="preview-thumb hidden" alt="Image preview" style="cursor:pointer" title="Tekan untuk kembali ke kamera langsung" />
+          <div id="shutter-flash" style="position:absolute;inset:0;background:#ffffff;opacity:0;pointer-events:none;z-index:25;transition:opacity 0.14s ease-out"></div>
+
+          <!-- Floating Retake / Live Camera Button -->
+          <button type="button" class="btn btn-sm btn-secondary hidden" id="btn-retake-live" style="position:absolute;top:10px;right:10px;z-index:24;background:rgba(20,20,22,0.9);backdrop-filter:blur(8px);font-size:11.5px;padding:5px 11px;border:1px solid rgba(255,255,255,0.25);cursor:pointer;gap:5px">
+            ${icons.refresh}
+            <span>${isEn ? 'Live Camera' : 'Kamera Langsung'}</span>
+          </button>
 
           <!-- Continuous Live Camera Status HUD -->
           <div id="camera-status-hud" class="hidden" style="position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;z-index:16;pointer-events:none">
@@ -348,6 +355,35 @@ export function renderScanner(container) {
 
           ${r.recommendation.deku ? companionBubble('deku', r.recommendation.deku, { compact: true }) : ''}
           ${r.recommendation.bakugou ? companionBubble('bakugou', r.recommendation.bakugou, { compact: true }) : ''}
+
+          <!-- 1-Tap Malaysian Food & Beverage Quick Switcher -->
+          <div class="card flat" style="background:rgba(255,255,255,0.02);border:1px solid var(--border-soft);padding:10px 12px;margin:10px 0;border-radius:10px">
+            <div class="row between" style="margin-bottom:7px;align-items:center">
+              <span class="xs bold" style="color:var(--text-1)">💡 ${isEn ? 'Confirm / Quick Switch Item:' : 'Sahkan / Tukar Makanan & Minuman:'}</span>
+              <span class="xs muted">1-Tap</span>
+            </div>
+            <div class="chips" id="switch-dish-chips" style="gap:5px;flex-wrap:wrap">
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Vanilla Oolong') ? 'active' : ''}" data-id="chagee_oolong">🧋 Vanilla Oolong (CHAGEE)</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Jasmine') ? 'active' : ''}" data-id="jasmine_tea">🧋 Jasmine Milk Tea</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Boba') ? 'active' : ''}" data-id="boba_brown_sugar">🧋 Boba Milk Tea</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Spanish') ? 'active' : ''}" data-id="zus_latte">☕ Spanish Latte</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Americano') ? 'active' : ''}" data-id="americano_black">☕ Kopi O Kosong</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Teh Tarik') ? 'active' : ''}" data-id="teh_tarik">☕ Teh Tarik Kurang Manis</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Milo') ? 'active' : ''}" data-id="milo_ais">🍫 Milo Ais</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Kopi Ais') ? 'active' : ''}" data-id="kopi_ais">☕ Kopi Ais Mamak</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Sirap') ? 'active' : ''}" data-id="sirap_bandung">🌸 Sirap Bandung</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Nasi Lemak') ? 'active' : ''}" data-id="nasi_lemak">🍚 Nasi Lemak Ayam</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Chicken Rice') || r.name.includes('Nasi Ayam') ? 'active' : ''}" data-id="chicken_rice">🍗 Nasi Ayam Hainan</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Kandar') ? 'active' : ''}" data-id="nasi_kandar">🍛 Nasi Kandar</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Char Kuey Teow') ? 'active' : ''}" data-id="char_kuey_teow">🍜 Char Kuey Teow</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Mee Goreng') ? 'active' : ''}" data-id="mee_goreng">🍜 Mee Goreng Mamak</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Roti Canai') ? 'active' : ''}" data-id="roti_canai">🥞 Roti Canai</button>
+              <button type="button" class="chip btn-quick-switch ${r.name.includes('Salad') ? 'active' : ''}" data-id="healthy_salad">🥗 Dada Ayam Sihat</button>
+            </div>
+            <div style="margin-top:8px">
+              <input type="text" id="quick-dish-search" class="input input-sm" placeholder="${isEn ? '🔍 Search food/drink (e.g. Chagee, Oolong, Milo, Ayam)...' : '🔍 Cari atau pilih hidangan (cth: Chagee, Oolong, Milo, Ayam)...'}" style="font-size:12px;padding:6px 10px;height:32px" />
+            </div>
+          </div>
 
           <div class="grid grid-2" style="margin-top:10px">
             <button type="button" class="btn btn-secondary" id="btn-quick-edit">
@@ -651,9 +687,35 @@ export function renderScanner(container) {
     }
   }
 
+  function resetToLiveCamera() {
+    const prevImg = container.querySelector('#scanner-preview-img');
+    const videoEl = container.querySelector('#scanner-video');
+    const btnRetake = container.querySelector('#btn-retake-live');
+
+    if (prevImg) {
+      prevImg.classList.add('hidden');
+      prevImg.src = '';
+    }
+    if (btnRetake) {
+      btnRetake.classList.add('hidden');
+    }
+    if (videoEl) {
+      videoEl.style.display = 'block';
+      if (videoEl.paused && stream && stream.active) {
+        videoEl.play().catch(() => {});
+      }
+    }
+    setCameraUIState('active');
+  }
+
   function captureFrame() {
     const video = container.querySelector('#scanner-video');
     if (!video || !video.srcObject) return null;
+
+    // Pastikan video aktif jika sebelum ini disembunyikan
+    if (video.style.display === 'none') {
+      video.style.display = 'block';
+    }
 
     const w = video.videoWidth;
     const h = video.videoHeight;
@@ -689,18 +751,68 @@ export function renderScanner(container) {
   }
 
   async function processFoodScan(imgObj) {
+    // Kosongkan keputusan lama serta-merta agar UI tidak tersekat pada hidangan sebelum ini
+    analysisResult = null;
+    updateResultsUI();
+
     setAnalyzing(true);
     try {
       capturedImage = imgObj;
       const prevImg = container.querySelector('#scanner-preview-img');
       const videoEl = container.querySelector('#scanner-video');
+      const btnRetake = container.querySelector('#btn-retake-live');
+
       if (prevImg && (imgObj.dataUrl || imgObj.thumb)) {
         prevImg.src = imgObj.dataUrl || imgObj.thumb;
         prevImg.classList.remove('hidden');
         if (videoEl) videoEl.style.display = 'none';
       }
+      if (btnRetake) {
+        btnRetake.classList.remove('hidden');
+      }
 
-      const allNotes = [...selectedChips, customContextNote].filter(Boolean).join(', ');
+      // Imbas teks atau kod QR pada cawan/bungkusan secara setempat jika wujud
+      let detectedText = '';
+      try {
+        const testImg = new Image();
+        testImg.src = imgObj.dataUrl || imgObj.thumb;
+        await new Promise((resolve) => {
+          testImg.onload = resolve;
+          testImg.onerror = resolve;
+        });
+
+        if (testImg.naturalWidth) {
+          const testCanvas = document.createElement('canvas');
+          testCanvas.width = testImg.naturalWidth;
+          testCanvas.height = testImg.naturalHeight;
+          const tCtx = testCanvas.getContext('2d');
+          tCtx.drawImage(testImg, 0, 0);
+
+          // 1. Semak jika terdapat kod QR/kod bar pada pelekat cawan (cth: CHAGEE Cup)
+          try {
+            const qrReader = new BrowserMultiFormatReader();
+            const qrRes = qrReader.decodeFromCanvas(testCanvas);
+            if (qrRes && qrRes.getText()) {
+              detectedText += ' ' + qrRes.getText();
+            }
+          } catch {}
+
+          // 2. Semak jika pelayar menyokong TextDetector (Chrome/Android)
+          if (typeof window !== 'undefined' && 'TextDetector' in window) {
+            try {
+              const td = new window.TextDetector();
+              const detected = await td.detect(testCanvas);
+              if (detected && detected.length) {
+                detectedText += ' ' + detected.map((d) => d.rawValue || '').join(' ');
+              }
+            } catch {}
+          }
+        }
+      } catch (e) {
+        console.warn('Local OCR text check error:', e);
+      }
+
+      const allNotes = [...selectedChips, customContextNote, detectedText].filter(Boolean).join(', ');
       const res = await analyzeFood({ image: imgObj, note: allNotes });
       analysisResult = res;
       toast(`AI recognized: ${res.name}`, 'success');
@@ -886,8 +998,34 @@ export function renderScanner(container) {
       }
     });
 
+    // 3e. Floating Retake / Live Camera Button & Preview Tap
+    container.querySelector('#btn-retake-live')?.addEventListener('click', () => {
+      resetToLiveCamera();
+      toast('Kamera langsung diaktifkan semula.', 'info', 1400);
+    });
+    container.querySelector('#scanner-preview-img')?.addEventListener('click', () => {
+      resetToLiveCamera();
+    });
+
     // 4. Shutter Button (Capture Frame)
-    container.querySelector('#btn-shutter')?.addEventListener('click', () => {
+    container.querySelector('#btn-shutter')?.addEventListener('click', async () => {
+      // Kilat visual pengatup (tactile camera flash)
+      const flashEl = container.querySelector('#shutter-flash');
+      if (flashEl) {
+        flashEl.style.opacity = '0.75';
+        setTimeout(() => { flashEl.style.opacity = '0'; }, 130);
+      }
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(25); } catch {}
+      }
+
+      // Jika video sebelum ini ditutup oleh gambar beku terdahulu, aktifkan semula video
+      const prevImg = container.querySelector('#scanner-preview-img');
+      if (prevImg && !prevImg.classList.contains('hidden')) {
+        resetToLiveCamera();
+        await new Promise((r) => setTimeout(r, 90));
+      }
+
       const img = captureFrame();
       if (!img) {
         // Fallback to native mobile device camera synchronously
@@ -971,20 +1109,79 @@ export function renderScanner(container) {
           carbs: analysisResult.carbs,
           fat: analysisResult.fat,
           weight_g: analysisResult.weight_g,
-          thumb: capturedImage?.thumb,
+          thumb: capturedImage?.thumb || capturedImage?.dataUrl,
         },
         {
           title: 'Quick Edit Meal',
           onSaved: () => {
             analysisResult = null;
+            resetToLiveCamera();
             updateResultsUI();
           },
         }
       );
     });
 
+    // Quick Dish & Beverage Switcher
+    container.querySelectorAll('.btn-quick-switch').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const dishId = btn.dataset.id;
+        const dish = findLocalDish(dishId);
+        if (dish) {
+          analysisResult = {
+            name: dish.food_name,
+            weight_g: dish.estimated_weight_g,
+            kcal: dish.calories_kcal,
+            protein: dish.macros.protein_g,
+            carbs: dish.macros.carbs_g,
+            fat: dish.macros.fat_g,
+            items: dish.items_breakdown.map((i) => ({ name: i.name, weight_g: i.weight_g, kcal: i.calories_kcal })),
+            recommendation: {
+              status: dish.suitability_status,
+              adjustment: dish.recommended_portion_adjustment,
+              deku: dish.deku,
+              bakugou: dish.bakugou,
+            },
+          };
+          updateResultsUI();
+          toast(`Ditukar ke: ${dish.food_name}`, 'info', 1600);
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            try { navigator.vibrate(15); } catch {}
+          }
+        }
+      });
+    });
+
+    // Quick Dish Search Input
+    const searchInput = container.querySelector('#quick-dish-search');
+    searchInput?.addEventListener('input', (e) => {
+      const q = e.target.value.trim();
+      if (q.length >= 2) {
+        const dish = findLocalDish(q);
+        if (dish && dish.food_name !== analysisResult?.name) {
+          analysisResult = {
+            name: dish.food_name,
+            weight_g: dish.estimated_weight_g,
+            kcal: dish.calories_kcal,
+            protein: dish.macros.protein_g,
+            carbs: dish.macros.carbs_g,
+            fat: dish.macros.fat_g,
+            items: dish.items_breakdown.map((i) => ({ name: i.name, weight_g: i.weight_g, kcal: i.calories_kcal })),
+            recommendation: {
+              status: dish.suitability_status,
+              adjustment: dish.recommended_portion_adjustment,
+              deku: dish.deku,
+              bakugou: dish.bakugou,
+            },
+          };
+          updateResultsUI();
+        }
+      }
+    });
+
     container.querySelector('#btn-save-log')?.addEventListener('click', () => {
       if (!analysisResult) return;
+      const savedName = analysisResult.name;
       const meal = store.addMeal({
         name: analysisResult.name,
         kcal: analysisResult.kcal,
@@ -992,12 +1189,36 @@ export function renderScanner(container) {
         carbs: analysisResult.carbs,
         fat: analysisResult.fat,
         weight_g: analysisResult.weight_g,
-        thumb: capturedImage?.thumb,
+        thumb: capturedImage?.thumb || capturedImage?.dataUrl || '',
       });
-      toast(`${analysisResult.name} saved to log!`, 'success');
+      toast(`${savedName} berjaya disimpan ke log makanan!`, 'success');
       onMealLogged(meal);
+
+      // Reset kamera kepada mod langsung supaya pengguna boleh imbas hidangan/minuman baru serta-merta
+      resetToLiveCamera();
       analysisResult = null;
-      updateResultsUI();
+      capturedImage = null;
+
+      // Paparkan banner pengesahan kemas dan sediakan butang imbas seterusnya
+      const rc = container.querySelector('#results-container');
+      if (rc) {
+        const isEn = getLang() === 'en';
+        rc.innerHTML = `
+          <div class="card flat ok-border fade-up" style="margin-top:14px;background:rgba(61,220,151,0.06);border:1px solid rgba(61,220,151,0.3);padding:16px;text-align:center;border-radius:12px">
+            <div style="font-size:28px;margin-bottom:6px">✅</div>
+            <b style="color:var(--ok);font-size:16px;display:block;margin-bottom:4px">${esc(savedName)} ${isEn ? 'Logged!' : 'Berjaya Direkod!'}</b>
+            <p class="small muted" style="margin:0 0 12px;line-height:1.4">${isEn ? 'Live camera is active for your next food or drink scan.' : 'Kamera langsung telah diaktifkan semula. Halakan kamera untuk imbas makanan atau minuman seterusnya.'}</p>
+            <div class="row center" style="gap:8px;flex-wrap:wrap">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-scan-another">📸 ${isEn ? 'Scan Next Item' : 'Imbas Makanan Seterusnya'}</button>
+              <a href="#dashboard" class="btn btn-primary btn-sm" id="btn-view-logged-dash">📊 ${isEn ? 'View Diary' : 'Lihat Log Hari Ini'}</a>
+            </div>
+          </div>
+        `;
+        rc.querySelector('#btn-scan-another')?.addEventListener('click', () => {
+          resetToLiveCamera();
+          rc.innerHTML = '';
+        });
+      }
     });
 
     // Save Barcode Log
@@ -1016,6 +1237,7 @@ export function renderScanner(container) {
       });
       toast(`${analysisResult.name} saved!`, 'success');
       onMealLogged(meal);
+      resetToLiveCamera();
       analysisResult = null;
       updateResultsUI();
     });
@@ -1031,10 +1253,11 @@ export function renderScanner(container) {
         carbs: d.carbs,
         fat: d.fat,
         weight_g: analysisResult.servingSize || 100,
-        thumb: capturedImage?.thumb,
+        thumb: capturedImage?.thumb || capturedImage?.dataUrl || '',
       });
       toast(`${analysisResult.name} saved!`, 'success');
       onMealLogged(meal);
+      resetToLiveCamera();
       analysisResult = null;
       updateResultsUI();
     });
@@ -1050,12 +1273,13 @@ export function renderScanner(container) {
           carbs: d.carbs,
           fat: d.fat,
           weight_g: analysisResult.servingSize || 100,
-          thumb: capturedImage?.thumb,
+          thumb: capturedImage?.thumb || capturedImage?.dataUrl,
         },
         {
           title: 'Adjust Label Portion',
           onSaved: () => {
             analysisResult = null;
+            resetToLiveCamera();
             updateResultsUI();
           },
         }
