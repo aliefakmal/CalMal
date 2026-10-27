@@ -283,11 +283,11 @@ function getTutorialConfig(pageKey, isEn) {
                 <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
                 <span class="tutorial-widget-tip">${isEn ? 'Tap to switch coach' : 'Sentuh untuk tukar jurulatih'}</span>
               </div>
-              <div class="row gap-2" style="margin-bottom:4px">
-                <button type="button" class="btn btn-sm btn-block" id="tut-coach-deku" style="flex:1;border:1px solid #10b981;background:rgba(16,185,129,0.15);color:#34d399">
+              <div class="t-coach-toggle-grid">
+                <button type="button" class="t-coach-btn active-deku" id="tut-coach-deku">
                   <span>Izuku Midoriya (Deku)</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-ghost btn-block" id="tut-coach-baku" style="flex:1;border:1px solid rgba(255,255,255,0.12)">
+                <button type="button" class="t-coach-btn" id="tut-coach-baku">
                   <span>Katsuki Bakugou</span>
                 </button>
               </div>
@@ -319,24 +319,16 @@ function getTutorialConfig(pageKey, isEn) {
             const setCoach = (coach) => {
               activeCoach = coach;
               if (coach === 'deku') {
-                dekuBtn.style.background = 'rgba(16,185,129,0.15)';
-                dekuBtn.style.borderColor = '#10b981';
-                dekuBtn.style.color = '#34d399';
-                bakuBtn.style.background = 'transparent';
-                bakuBtn.style.borderColor = 'rgba(255,255,255,0.12)';
-                bakuBtn.style.color = '#e2e8f0';
+                dekuBtn.className = 't-coach-btn active-deku';
+                bakuBtn.className = 't-coach-btn';
                 jaEl.textContent = '大丈夫！';
                 jaEl.style.color = '#34d399';
                 textEl.textContent = isEn
                   ? 'Don’t worry, you’ve got this! Let’s stay on track today!'
                   : 'Jangan risau, semuanya akan baik-baik saja! Mari capai sasaran hari ini!';
               } else {
-                bakuBtn.style.background = 'rgba(249,115,22,0.15)';
-                bakuBtn.style.borderColor = '#f97316';
-                bakuBtn.style.color = '#fb923c';
-                dekuBtn.style.background = 'transparent';
-                dekuBtn.style.borderColor = 'rgba(255,255,255,0.12)';
-                dekuBtn.style.color = '#e2e8f0';
+                bakuBtn.className = 't-coach-btn active-baku';
+                dekuBtn.className = 't-coach-btn';
                 jaEl.textContent = 'おいおいおい！';
                 jaEl.style.color = '#fb923c';
                 textEl.textContent = isEn
@@ -957,10 +949,10 @@ function getTutorialConfig(pageKey, isEn) {
                 <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
                 <span class="tutorial-widget-tip">${isEn ? 'Select fitness goal' : 'Pilih matlamat kecergasan'}</span>
               </div>
-              <div class="row gap-2">
-                <button type="button" class="t-demo-btn active" id="goal-fat" style="flex:1;border-color:#10b981;color:#34d399">${isEn ? 'Fat Loss' : 'Bakar Lemak'}</button>
-                <button type="button" class="t-demo-btn" id="goal-keep" style="flex:1">${isEn ? 'Maintain' : 'Kekal Berat'}</button>
-                <button type="button" class="t-demo-btn" id="goal-bulk" style="flex:1">${isEn ? 'Build Muscle' : 'Bina Otot'}</button>
+              <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:6px;width:100%">
+                <button type="button" class="t-demo-btn active" id="goal-fat" style="border-color:#10b981;color:#34d399">${isEn ? 'Fat Loss' : 'Bakar Lemak'}</button>
+                <button type="button" class="t-demo-btn" id="goal-keep">${isEn ? 'Maintain' : 'Kekal Berat'}</button>
+                <button type="button" class="t-demo-btn" id="goal-bulk">${isEn ? 'Build Muscle' : 'Bina Otot'}</button>
               </div>
               <div style="background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px">
                 <div class="row between" style="margin-bottom:4px">
@@ -1006,11 +998,11 @@ function getTutorialConfig(pageKey, isEn) {
                 <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
                 <span class="tutorial-widget-tip">${isEn ? 'Japanese Voice Lines' : 'Suara Asli Jepun'}</span>
               </div>
-              <div class="row gap-2">
-                <button type="button" class="btn btn-secondary btn-block" id="tut-prof-deku" style="flex:1;border-color:rgba(16,185,129,0.4)">
+              <div class="t-coach-toggle-grid">
+                <button type="button" class="t-coach-btn active-deku" id="tut-prof-deku">
                   <span>Izuku Midoriya (Deku)</span>
                 </button>
-                <button type="button" class="btn btn-secondary btn-block" id="tut-prof-baku" style="flex:1;border-color:rgba(249,115,22,0.4)">
+                <button type="button" class="t-coach-btn" id="tut-prof-baku">
                   <span>Katsuki Bakugou</span>
                 </button>
               </div>
@@ -1038,29 +1030,30 @@ function getTutorialConfig(pageKey, isEn) {
             const playBtn = box.querySelector('#tut-prof-play-btn');
             const playLabel = box.querySelector('#tut-prof-play-label');
 
-            dekuBtn?.addEventListener('click', () => {
-              activeChar = 'deku';
-              dekuBtn.style.borderColor = '#10b981';
-              bakuBtn.style.borderColor = 'rgba(255,255,255,0.12)';
-              jaEl.textContent = '大丈夫！';
-              jaEl.style.color = '#34d399';
-              msEl.textContent = isEn
-                ? 'Don’t worry, you’ve got this! Let’s break through limits!'
-                : 'Jangan risau, semuanya akan baik-baik saja! Mari melepasi had batasan!';
+            const setChar = (char) => {
+              activeChar = char;
+              if (char === 'deku') {
+                dekuBtn.className = 't-coach-btn active-deku';
+                bakuBtn.className = 't-coach-btn';
+                jaEl.textContent = '大丈夫！';
+                jaEl.style.color = '#34d399';
+                msEl.textContent = isEn
+                  ? 'Don’t worry, you’ve got this! Let’s break through limits!'
+                  : 'Jangan risau, semuanya akan baik-baik saja! Mari melepasi had batasan!';
+              } else {
+                bakuBtn.className = 't-coach-btn active-baku';
+                dekuBtn.className = 't-coach-btn';
+                jaEl.textContent = 'おいおいおい！';
+                jaEl.style.color = '#fb923c';
+                msEl.textContent = isEn
+                  ? 'Oi oi oi! Break through your limits, don’t slack off!'
+                  : 'Oi oi oi! Pecahkan had batasan kau, jangan malas!';
+              }
               soundboard.playUISound('toggle-on');
-            });
+            };
 
-            bakuBtn?.addEventListener('click', () => {
-              activeChar = 'bakugou';
-              bakuBtn.style.borderColor = '#f97316';
-              dekuBtn.style.borderColor = 'rgba(255,255,255,0.12)';
-              jaEl.textContent = 'おいおいおい！';
-              jaEl.style.color = '#f97316';
-              msEl.textContent = isEn
-                ? 'Oi oi oi! Break through your limits, don’t slack off!'
-                : 'Oi oi oi! Pecahkan had batasan kau, jangan malas!';
-              soundboard.playUISound('toggle-on');
-            });
+            dekuBtn?.addEventListener('click', () => setChar('deku'));
+            bakuBtn?.addEventListener('click', () => setChar('bakugou'));
 
             playBtn?.addEventListener('click', () => {
               playBtn.disabled = true;
