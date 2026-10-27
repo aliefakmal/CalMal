@@ -118,57 +118,66 @@ export function renderProfile(container) {
       </div>
 
       <div class="stack">
-        <!-- App Language Switcher Card (Multi-Language Settings) -->
-        <div class="card stack" style="border:1px solid var(--border-soft);background:var(--surface-2)">
-          <div class="card-title row between">
-            <span class="row" style="gap:6px;align-items:center">
-              <span>🌐</span>
-              <span>${t('prof_lang_title')}</span>
-            </span>
-            <span class="badge ok">${isEn ? 'English (EN)' : 'Bahasa Melayu (BM)'}</span>
-          </div>
-          <p class="small muted" style="line-height:1.45;margin-bottom:2px">
-            ${isEn ? 'Select your interface language. The entire application updates immediately without reloading.' : 'Pilih bahasa paparan aplikasi. Keseluruhan aplikasi akan berubah serta-merta tanpa perlu muat semula.'}
-          </p>
-          <div class="segmented" id="app-lang-switcher" style="margin-top:4px">
-            <button type="button" data-l="en" class="${isEn ? 'active' : ''}">
-              <span>🇬🇧 English</span>
-            </button>
-            <button type="button" data-l="ms" class="${!isEn ? 'active' : ''}">
-              <span>🇲🇾 Bahasa Melayu</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Install CalMal App Card (Add to Home Screen) -->
-        <div class="card stack" style="border:1px solid var(--border-soft);background:var(--surface-2)">
+        <!-- 1. Current Biometrics Summary Card (TOP PRIORITY STATS) -->
+        <div class="card stack">
           <div class="card-title row between" style="align-items:center">
-            <span class="row" style="gap:8px;align-items:center">
-              <img src="/calmal-logo.png" alt="CalMal Logo" style="width:26px;height:26px;border-radius:7px;object-fit:cover;border:1px solid rgba(255,255,255,0.12)" />
-              <span>${isEn ? 'Home Screen App' : 'Aplikasi Skrin Utama'}</span>
+            <span class="row" style="gap:6px;align-items:center">
+              <span>${icons.scale}</span>
+              <span>${t('prof_stats_title')}</span>
             </span>
-            <span class="badge ${isStandalone() ? 'ok' : 'primary'}">
-              ${isStandalone() ? (isEn ? 'Installed' : 'Dipasang') : (isEn ? 'Ready to Install' : 'Sedia Dipasang')}
-            </span>
+            <div class="row" style="gap:6px;align-items:center">
+              <span class="badge ${profile.goal === 'lose' ? 'primary' : 'ok'}">${t('prof_goal_' + (profile.goal || 'lose'))}</span>
+              <span class="badge ok">${bmiCategory} (BMI ${bmi.toFixed(1)})</span>
+              <button type="button" class="btn btn-xs btn-ghost" id="btn-edit-profile-card" title="${t('edit')}">
+                ${icons.edit}
+                <span>${t('edit')}</span>
+              </button>
+            </div>
           </div>
-          <p class="small muted" style="line-height:1.45;margin-bottom:2px">
-            ${isEn
-              ? 'Add CalMal to your phone Home Screen for instant launch, full screen view without browser bars, and reliable offline access.'
-              : 'Pasang CalMal ke Skrin Utama telefon untuk mod skrin penuh tanpa bar carian pelayar, akses pantas, dan sokongan luar talian.'}
-          </p>
-          ${isStandalone()
-            ? `<div class="row" style="gap:6px;align-items:center;color:var(--ok);font-size:12.5px;font-weight:600;padding:4px 0">
-                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                 <span>${isEn ? 'Running in standalone full-screen mode' : 'Sedang berjalan dalam mod skrin utama penuh'}</span>
-               </div>`
-            : `<button type="button" class="btn btn-primary btn-block" id="btn-install-profile" style="margin-top:4px">
-                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                 <span>${isEn ? 'Add to Home Screen' : 'Pasang ke Skrin Utama'}</span>
-               </button>`
-          }
+
+          <!-- Key Metrics Equation -->
+          <div class="equation">
+            <div class="eq-cell">
+              <span>${t('prof_weight')}</span>
+              <b class="num">${profile.weight}<small style="font-size:12px;color:var(--muted)">kg</small></b>
+            </div>
+            <div class="eq-cell">
+              <span>${t('prof_target_weight')}</span>
+              <b class="num">${profile.targetWeight || '–'}<small style="font-size:12px;color:var(--muted)">kg</small></b>
+            </div>
+            <div class="eq-cell">
+              <span>${t('dash_target')}</span>
+              <b class="num">${targetKcal}<small style="font-size:12px;color:var(--muted)">kcal</small></b>
+            </div>
+          </div>
+
+          <!-- Weight Progress Chart -->
+          <div style="margin-top:12px">
+            <div class="row between" style="margin-bottom:4px">
+              <span class="small bold muted" style="text-transform:uppercase;letter-spacing:0.06em">${isEn ? 'Weight Progress' : 'Kemajuan Berat Badan'}</span>
+              <span class="xs muted">${weights.length} ${isEn ? 'records' : 'rekod'}</span>
+            </div>
+            ${renderWeightChart(weights, profile.targetWeight)}
+          </div>
+
+          <!-- Daily Weight Log Input -->
+          <div class="divider"></div>
+          <div class="row" style="align-items:flex-end;gap:10px">
+            <div class="field" style="flex:1">
+              <label for="new-weight-input">${isEn ? "Log Today's Weight:" : 'Rekod Berat Hari Ini:'}</label>
+              <div class="input-suffix">
+                <input class="input num" id="new-weight-input" type="number" step="0.1" value="${profile.weight}" />
+                <span>kg</span>
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary" id="btn-log-weight">
+              ${icons.scale}
+              <span>${t('save')}</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Hero Rank & License Status Card -->
+        <!-- 2. Hero Rank & License Status Card -->
         <div class="card" style="border:1px solid var(--hero-glow);background:linear-gradient(135deg, rgba(18,18,21,0.95), rgba(28,28,30,0.85))">
           <div class="card-title row between">
             <div class="row" style="gap:10px;align-items:center">
@@ -195,61 +204,7 @@ export function renderProfile(container) {
           </div>
         </div>
 
-        <!-- Current Biometrics Summary Card -->
-        <div class="card">
-          <div class="card-title row between">
-            <span>${t('prof_stats_title')}</span>
-            <div class="row" style="gap:6px">
-              <span class="badge ok">${bmiCategory} (BMI ${bmi.toFixed(1)})</span>
-              <button type="button" class="btn btn-xs btn-ghost" id="btn-edit-profile-card">
-                ${icons.edit}
-                <span>${t('edit')}</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="equation">
-            <div class="eq-cell">
-              <span>${t('prof_weight')}</span>
-              <b class="num">${profile.weight}<small style="font-size:12px;color:var(--muted)">kg</small></b>
-            </div>
-            <div class="eq-cell">
-              <span>${t('prof_target_weight')}</span>
-              <b class="num">${profile.targetWeight || '–'}<small style="font-size:12px;color:var(--muted)">kg</small></b>
-            </div>
-            <div class="eq-cell">
-              <span>${t('dash_target')}</span>
-              <b class="num">${targetKcal}<small style="font-size:12px;color:var(--muted)">kcal</small></b>
-            </div>
-          </div>
-
-          <!-- Weight Progress Chart -->
-          <div style="margin-top:16px">
-            <div class="row between" style="margin-bottom:4px">
-              <span class="small bold muted" style="text-transform:uppercase;letter-spacing:0.06em">${isEn ? 'Weight Progress' : 'Kemajuan Berat Badan'}</span>
-              <span class="xs muted">${weights.length} ${isEn ? 'records' : 'rekod'}</span>
-            </div>
-            ${renderWeightChart(weights, profile.targetWeight)}
-          </div>
-
-          <!-- Daily Weight Log Input -->
-          <div class="divider"></div>
-          <div class="row" style="align-items:flex-end;gap:10px">
-            <div class="field" style="flex:1">
-              <label for="new-weight-input">${isEn ? "Log Today's Weight:" : 'Rekod Berat Hari Ini:'}</label>
-              <div class="input-suffix">
-                <input class="input num" id="new-weight-input" type="number" step="0.1" value="${profile.weight}" />
-                <span>kg</span>
-              </div>
-            </div>
-            <button type="button" class="btn btn-primary" id="btn-log-weight">
-              ${icons.scale}
-              <span>${t('save')}</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Hero Badges Card -->
+        <!-- 3. Hero Badges Card -->
         <div class="card">
           <div class="card-title row between">
             <span>${isEn ? 'Hero Badge Collection' : 'Koleksi Lencana Wira'}</span>
@@ -276,18 +231,99 @@ export function renderProfile(container) {
           </div>
         </div>
 
-        <!-- OpenStreetMap Info Card -->
+        <!-- 4. App Preferences & System Settings Card -->
         <div class="card stack">
-          <div class="card-title row between">
-            <span>${isEn ? 'Map & Route Tracker' : 'Peta & Penjejak Laluan'}</span>
-            <span class="badge ok">${icons.pin} OpenStreetMap</span>
+          <div class="card-title row between" style="align-items:center">
+            <span>${t('prof_settings_title')}</span>
+            <span class="xs muted">CalMal System</span>
           </div>
-          <p class="small muted" style="line-height:1.45">
-            ${isEn ? 'Live run tracking and Strava-style GPS maps use <b>OpenStreetMap (OSM)</b>. No API key required — works straight from your device GPS.' : 'Penjejakan larian langsung menggunakan <b>OpenStreetMap (OSM)</b>. Tiada kunci API diperlukan — berfungsi terus daripada GPS peranti.'}
-          </p>
+
+          <!-- App Language Selector -->
+          <div style="padding:6px 0">
+            <div class="row between" style="align-items:center;margin-bottom:8px">
+              <span class="small bold" style="color:#fff">${t('prof_lang_title')}</span>
+              <span class="badge ok">${isEn ? 'English (EN)' : 'Bahasa Melayu (BM)'}</span>
+            </div>
+            <div class="segmented" id="app-lang-switcher">
+              <button type="button" data-l="en" class="${isEn ? 'active' : ''}">🇬🇧 English</button>
+              <button type="button" data-l="ms" class="${!isEn ? 'active' : ''}">🇲🇾 Bahasa Melayu</button>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Home Screen App (PWA) -->
+          <div class="row between" style="align-items:center;padding:6px 0">
+            <div>
+              <b class="small" style="color:#fff">${isEn ? 'Home Screen App' : 'Aplikasi Skrin Utama'}</b>
+              <p class="xs muted" style="margin:2px 0 0">${isEn ? 'Launch in full screen without browser bars & offline use' : 'Buka dalam mod skrin penuh tanpa bar carian pelayar'}</p>
+            </div>
+            ${isStandalone()
+              ? `<span class="badge ok">✓ ${isEn ? 'Installed' : 'Dipasang'}</span>`
+              : `<button type="button" class="btn btn-sm btn-secondary" id="btn-install-profile" style="flex-shrink:0">
+                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                   <span>${isEn ? 'Install' : 'Pasang'}</span>
+                 </button>`
+            }
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Japanese Voice & Sound Effects -->
+          <label class="row between" style="padding:6px 0;cursor:pointer">
+            <div>
+              <b style="color:#fff">${t('prof_voice_effects')}</b>
+              <p class="xs muted" style="margin:2px 0 0">${isEn ? 'Web Audio Japanese voice cues and hero sound effects.' : 'Kesan audio suara bahasa Jepun dan nada wira.'}</p>
+            </div>
+            <input type="checkbox" id="sound-toggle" ${settings.soundEnabled !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
+          </label>
+
+          <div class="divider"></div>
+
+          <!-- Companions Dialogues -->
+          <label class="row between" style="padding:6px 0;cursor:pointer">
+            <div>
+              <b style="color:#fff">${isEn ? 'Deku & Bakugou Companions' : 'Teman Deku & Bakugou'}</b>
+              <p class="xs muted" style="margin:2px 0 0">${isEn ? 'Manga dialogue & motivational cues on dashboard and scanner.' : 'Dialog manga & kata semangat di papan pemuka dan pengimbas.'}</p>
+            </div>
+            <input type="checkbox" id="companion-toggle" ${settings.companions !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
+          </label>
+
+          <div class="divider"></div>
+
+          <!-- Daily Smart Reminders -->
+          <label class="row between" style="padding:6px 0;cursor:pointer">
+            <div>
+              <b style="color:#fff">${isEn ? 'Daily Smart Reminders' : 'Peringatan Harian Pintar'}</b>
+              <p class="xs muted" style="margin:2px 0 0">${isEn ? 'Meal reminders (8 AM, 1 PM, 8 PM) and workout alerts (5:30 PM).' : 'Peringatan waktu makan dan aktiviti riadah.'}</p>
+            </div>
+            <input type="checkbox" id="notif-toggle" ${settings.notifications ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
+          </label>
+
+          <div class="divider"></div>
+
+          <!-- Fasting Mode -->
+          <label class="row between" style="padding:6px 0;cursor:pointer">
+            <div>
+              <b style="color:#fff">${isEn ? 'Fasting Mode / Puasa (Ramadan & Intermittent)' : 'Mod Puasa (Ramadan & Berselang)'}</b>
+              <p class="xs muted" style="margin:2px 0 0">${isEn ? 'Reschedules hydration & meal alerts for Sahur & Iftar.' : 'Menyesuaikan peringatan makan & air untuk Sahur & Iftar.'}</p>
+            </div>
+            <input type="checkbox" id="fasting-toggle" ${settings.fastingMode ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
+          </label>
+
+          <div class="divider"></div>
+
+          <!-- Continuous Live Camera -->
+          <label class="row between" style="padding:6px 0;cursor:pointer">
+            <div>
+              <b style="color:#fff">${isEn ? 'Continuous Live Camera (Default: On)' : 'Kamera Langsung Automatik'}</b>
+              <p class="xs muted" style="margin:2px 0 0">${isEn ? 'Starts camera feed immediately upon opening Scan tab.' : 'Buka kamera secara automatik apabila ke tab Imbas.'}</p>
+            </div>
+            <input type="checkbox" id="camera-always-toggle" ${settings.cameraAlwaysOn !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
+          </label>
         </div>
 
-        <!-- Gemini Multi-Model Cascade Card -->
+        <!-- 5. Gemini Multi-Model Cascade Card -->
         <div class="card stack">
           <div class="card-title row between">
             <span>${isEn ? 'AI Engine & Fallback Cascade' : 'Enjin AI & Tindanan Alternatif'}</span>
@@ -296,7 +332,7 @@ export function renderProfile(container) {
 
           <p class="small muted" style="line-height:1.45">
             ${isEn
-              ? 'CalMal features an intelligent multi-tier AI cascading engine: <b>Gemini 3.5 Flash Lite</b> (primary) → <b>Gemini 3.1 Flash Lite</b> (fallback 1) → <b>Gemma 4 31B</b> (fallback 2) → <b>Smart Asian Dietary Engine</b> (offline fallback). An API key is completely optional — you can provide your Google Gemini API key below to unlock cloud capabilities.'
+              ? 'CalMal features an intelligent multi-tier AI cascading engine: <b>Gemini 3.5 Flash Lite</b> (primary) → <b>Gemini 3.1 Flash Lite</b> (fallback 1) → <b>Gemma 4 31B</b> (fallback 2) → <b>Smart Asian Dietary Engine</b> (offline fallback). An API key is completely optional — you can provide your Google Gemini API key below to unlock personal cloud quota.'
               : 'CalMal dilengkapi enjin AI bertindih pintar: <b>Gemini 3.5 Flash Lite</b> (utama) → <b>Gemini 3.1 Flash Lite</b> → <b>Gemma 4 31B</b> → <b>Enjin Pemakanan Tempatan</b> (luar talian). Kunci API adalah pilihan sahaja.'}
           </p>
 
@@ -317,77 +353,11 @@ export function renderProfile(container) {
           </div>
         </div>
 
-        <!-- App Language Setting Card -->
+        <!-- 6. Data Management Card -->
         <div class="card stack">
-          <div class="card-title row between">
-            <span>${t('prof_lang_title')}</span>
-            <span class="badge ok">${getLang().toUpperCase()}</span>
-          </div>
-          <div class="segmented" id="app-lang-switcher" style="margin-top:4px">
-            <button type="button" data-l="en" class="${getLang() === 'en' ? 'active' : ''}">English (EN)</button>
-            <button type="button" data-l="ms" class="${getLang() === 'ms' ? 'active' : ''}">Bahasa Melayu (BM)</button>
-          </div>
-        </div>
-
-        <!-- Companion & Notification Settings Card -->
-        <div class="card stack">
-          <div class="card-title">
-            <span>${t('prof_companion_title')}</span>
-          </div>
-
-          <label class="row between" style="padding:8px 0;cursor:pointer">
-            <div>
-              <b>${isEn ? 'Deku & Bakugou Companions' : 'Teman Deku & Bakugou'}</b>
-              <p class="small muted">${isEn ? 'Manga dialogue & motivational voice bubble cues on dashboard and scanner.' : 'Dialog manga & kata semangat suara animasi di papan pemuka dan pengimbas.'}</p>
-            </div>
-            <input type="checkbox" id="companion-toggle" ${settings.companions !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
-          </label>
-
-          <div class="divider"></div>
-
-          <label class="row between" style="padding:8px 0;cursor:pointer">
-            <div>
-              <b>${t('prof_voice_effects')}</b>
-              <p class="small muted">${isEn ? 'Web Audio Japanese voice cues and hero sound effects.' : 'Kesan audio suara bahasa Jepun dan nada wira.'}</p>
-            </div>
-            <input type="checkbox" id="sound-toggle" ${settings.soundEnabled !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
-          </label>
-
-          <div class="divider"></div>
-
-          <label class="row between" style="padding:8px 0;cursor:pointer">
-            <div>
-              <b>${isEn ? 'Daily Smart Reminders' : 'Peringatan Harian Pintar'}</b>
-              <p class="small muted">${isEn ? 'Meal reminders (8:00 AM, 1:00 PM, 8:00 PM) and evening run alerts (5:30 PM).' : 'Peringatan waktu makan dan peringatan riadah petang.'}</p>
-            </div>
-            <input type="checkbox" id="notif-toggle" ${settings.notifications ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
-          </label>
-
-          <div class="divider"></div>
-
-          <label class="row between" style="padding:8px 0;cursor:pointer">
-            <div>
-              <b>${isEn ? 'Fasting Mode / Puasa (Ramadan & Intermittent)' : 'Mod Puasa (Ramadan & Berselang)'}</b>
-              <p class="small muted">${isEn ? 'Disables daytime meal alerts; reschedules hydration and reminder prompts for Sahur & Iftar.' : 'Menyesuaikan peringatan waktu makan dan hidrasi untuk waktu Sahur & Iftar.'}</p>
-            </div>
-            <input type="checkbox" id="fasting-toggle" ${settings.fastingMode ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
-          </label>
-
-          <div class="divider"></div>
-
-          <label class="row between" style="padding:8px 0;cursor:pointer">
-            <div>
-              <b>${isEn ? 'Continuous Live Camera (Default: On)' : 'Kamera Langsung Automatik (Asal: Buka)'}</b>
-              <p class="small muted">${isEn ? 'Automatically starts camera feed immediately upon navigating to the Scan tab.' : 'Membuka kamera secara automatik serta-merta apabila ke tab Imbas.'}</p>
-            </div>
-            <input type="checkbox" id="camera-always-toggle" ${settings.cameraAlwaysOn !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
-          </label>
-        </div>
-
-        <!-- Data Management Card -->
-        <div class="card stack">
-          <div class="card-title">
+          <div class="card-title row between" style="align-items:center">
             <span>${isEn ? 'Data Management' : 'Pengurusan Data'}</span>
+            <span class="xs muted">Local-First Storage</span>
           </div>
 
           <div class="row wrap" style="gap:10px">
@@ -402,7 +372,7 @@ export function renderProfile(container) {
           </div>
         </div>
 
-        <!-- Sources & Attributions Card -->
+        <!-- 7. Sources & Attributions Card (BOTTOM) -->
         <div class="card stack">
           <div class="card-title row between">
             <span>${isEn ? 'Sources & Attributions' : 'Sumber & Rujukan'}</span>
@@ -411,8 +381,8 @@ export function renderProfile(container) {
           <div class="stack" style="gap:10px;font-size:13px">
             <div class="row between" style="padding:6px 0;border-bottom:1px solid var(--border-soft)">
               <div>
-                <b style="color:#fff">OpenStreetMap</b>
-                <div class="xs muted">Live cartography and map tiles</div>
+                <b style="color:#fff">OpenStreetMap (OSM)</b>
+                <div class="xs muted">Live GPS cartography & Strava-style routes</div>
               </div>
               <span class="xs muted">ODbL Contributor</span>
             </div>
@@ -444,6 +414,9 @@ export function renderProfile(container) {
               </div>
               <span class="xs muted">Ainsworth et al.</span>
             </div>
+          </div>
+          <div class="xs muted center" style="margin-top:6px;padding-top:8px;border-top:1px solid var(--border-soft)">
+            CalMal v2.5 · Local-first privacy · Data stored securely on your device
           </div>
         </div>
       </div>
