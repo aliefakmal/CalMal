@@ -69,7 +69,6 @@ function renderNav(active) {
 }
 
 function renderTopbar() {
-  const online = navigator.onLine;
   const rec = tracker.isActive();
   const lang = getLang();
   const standalone = isStandalone();
@@ -99,9 +98,6 @@ function renderTopbar() {
       ` : ''}
 
       ${rec ? `<a class="pill-status rec" href="#/activity" id="rec-pill"><span class="dot"></span>${t('topbar_recording')}</a>` : ''}
-      <span class="pill-status ${online ? '' : 'offline'}" title="${online ? t('topbar_online') : t('topbar_offline_desc')}">
-        <span class="dot"></span>${online ? t('topbar_online') : t('topbar_offline')}
-      </span>
     </div>`;
 
   document.getElementById('topbar-tutorial-btn')?.addEventListener('click', () => {
@@ -153,8 +149,6 @@ function route() {
 }
 
 window.addEventListener('hashchange', route);
-window.addEventListener('online', renderTopbar);
-window.addEventListener('offline', renderTopbar);
 
 let wasActive = tracker.isActive();
 tracker.subscribe(() => {

@@ -9,8 +9,7 @@ import { avatar } from '../components/companion.js';
 import { openProfileEditor } from '../components/profileEditor.js';
 import { soundboard } from '../services/audioService.js';
 import { esc, fmtDate, todayKey } from '../utils/helpers.js';
-import { t, getLang, setLang } from '../utils/i18n.js';
-import { isStandalone, promptInstall } from '../utils/pwaInstall.js';
+import { t, getLang } from '../utils/i18n.js';
 
 
 export function renderProfile(container) {
@@ -238,37 +237,6 @@ export function renderProfile(container) {
             <span class="xs muted">CalMal System</span>
           </div>
 
-          <!-- App Language Selector -->
-          <div style="padding:6px 0">
-            <div class="row between" style="align-items:center;margin-bottom:8px">
-              <span class="small bold" style="color:#fff">${t('prof_lang_title')}</span>
-              <span class="badge ok">${isEn ? 'English (EN)' : 'Bahasa Melayu (BM)'}</span>
-            </div>
-            <div class="segmented" id="app-lang-switcher">
-              <button type="button" data-l="en" class="${isEn ? 'active' : ''}">🇬🇧 English</button>
-              <button type="button" data-l="ms" class="${!isEn ? 'active' : ''}">🇲🇾 Bahasa Melayu</button>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <!-- Home Screen App (PWA) -->
-          <div class="row between" style="align-items:center;padding:6px 0">
-            <div>
-              <b class="small" style="color:#fff">${isEn ? 'Home Screen App' : 'Aplikasi Skrin Utama'}</b>
-              <p class="xs muted" style="margin:2px 0 0">${isEn ? 'Launch in full screen without browser bars & offline use' : 'Buka dalam mod skrin penuh tanpa bar carian pelayar'}</p>
-            </div>
-            ${isStandalone()
-              ? `<span class="badge ok">✓ ${isEn ? 'Installed' : 'Dipasang'}</span>`
-              : `<button type="button" class="btn btn-sm btn-secondary" id="btn-install-profile" style="flex-shrink:0">
-                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                   <span>${isEn ? 'Install' : 'Pasang'}</span>
-                 </button>`
-            }
-          </div>
-
-          <div class="divider"></div>
-
           <!-- Japanese Voice & Sound Effects -->
           <label class="row between" style="padding:6px 0;cursor:pointer">
             <div>
@@ -426,21 +394,6 @@ export function renderProfile(container) {
   }
 
   function bindEvents() {
-    // App Language Switcher
-    container.querySelectorAll('#app-lang-switcher button').forEach((b) => {
-      b.addEventListener('click', () => {
-        const lang = b.dataset.l;
-        setLang(lang);
-        toast(lang === 'en' ? 'Language changed to English!' : 'Bahasa ditukar ke Bahasa Melayu!', 'success');
-      });
-    });
-
-    // Install to Home Screen Trigger
-    container.querySelector('#btn-install-profile')?.addEventListener('click', () => {
-      promptInstall();
-      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
-    });
-
     // Edit Profile Modal Trigger
     const triggerEditProfile = () => {
       openProfileEditor((updatedProfile) => {
