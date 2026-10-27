@@ -290,6 +290,18 @@ export function renderProfile(container) {
           </div>
         </div>
 
+        <!-- App Language Setting Card -->
+        <div class="card stack">
+          <div class="card-title row between">
+            <span>${t('prof_lang_title')}</span>
+            <span class="badge ok">${getLang().toUpperCase()}</span>
+          </div>
+          <div class="segmented" id="app-lang-switcher" style="margin-top:4px">
+            <button type="button" data-l="en" class="${getLang() === 'en' ? 'active' : ''}">English (EN)</button>
+            <button type="button" data-l="ms" class="${getLang() === 'ms' ? 'active' : ''}">Bahasa Melayu (BM)</button>
+          </div>
+        </div>
+
         <!-- Companion & Notification Settings Card -->
         <div class="card stack">
           <div class="card-title">

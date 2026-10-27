@@ -15,39 +15,39 @@ export const MALAYSIAN_MEAL_POOL = {
     { name: 'Oatmeal Bersama Buah Epal, Kismis & Segelas Susu Rendah Lemak', kcal: 310, protein_g: 14, tags: ['oil', 'quick', 'budget', 'all'] },
     { name: 'Tosai Garing Bersama Kuah Dhal & Chutney Pudina', kcal: 260, protein_g: 9, tags: ['mamak', 'oil', 'budget', 'all'] },
     { name: 'Nasi Lemak Sihat (Nasi Separuh, Sambal Kurang Minyak, Telur Rebus & Timun)', kcal: 380, protein_g: 14, tags: ['melayu', 'budget', 'all'] },
-    { name: 'Bihun Sup Ayam Dada Jernih Bersama Daun Bawang & Cili Potong', kcal: 330, protein_g: 22, tags: ['protein', 'oil', 'melayu', 'all'] },
-    { name: 'Roti Canai Kosong (1 Keping) Bersama Kuah Kari Ayam Asing', kcal: 340, protein_g: 10, tags: ['mamak', 'all'] },
+    { name: 'Bihun Sup Ayam Dada Jernih Bersama Daun Bawang & Cili Potong', kcal: 330, protein_g: 22, tags: ['protein', 'oil', 'melayu', 'budget', 'all'] },
+    { name: 'Roti Canai Kosong (1 Keping) Bersama Kuah Kari Ayam Asing', kcal: 340, protein_g: 10, tags: ['mamak', 'budget', 'all'] },
     { name: 'Scrambled Eggs (2 Biji), Roti Bakar Gandum Penuh & Tomato Ceri', kcal: 290, protein_g: 18, tags: ['protein', 'lowcarb', 'quick', 'all'] },
-    { name: 'Telur Dadar Herba & Sup Sayur Cendawan', kcal: 230, protein_g: 15, tags: ['lowcarb', 'quick', 'oil', 'all'] },
-    { name: 'Roti Naan Garlic Bakar Tandoor Bersama Kuah Dhal Pekat', kcal: 350, protein_g: 12, tags: ['mamak', 'budget', 'all'] },
+    { name: 'Telur Dadar Herba & Sup Sayur Cendawan', kcal: 230, protein_g: 15, tags: ['lowcarb', 'quick', 'oil', 'budget', 'all'] },
+    { name: 'Roti Naan Garlic Bakar Tandoor Bersama Kuah Dhal Pekat', kcal: 350, protein_g: 12, tags: ['mamak', 'budget', 'protein', 'all'] },
     { name: 'Greek Yogurt Bersama Hirisan Pisang & Sedikit Madu Asli', kcal: 240, protein_g: 15, tags: ['protein', 'quick', 'oil', 'all'] },
   ],
   lunch: [
-    { name: 'Nasi Putih (1/2 Cawan), Ayam Masak Lemak Cili Api (Dada), Kubis Goreng Kunyit & Teh O Ais Kosong', kcal: 850, protein_g: 65, tags: ['melayu', 'protein', 'all'] },
-    { name: 'Nasi Putih (1/2 Cawan), Sup Ayam Utara (Dada), Ulam Timun, Sambal Belacan & Limau Ais Kurang Manis', kcal: 820, protein_g: 63, tags: ['melayu', 'oil', 'protein', 'all'] },
+    { name: 'Nasi Putih (1/2 Cawan), Ayam Masak Lemak Cili Api (Dada), Kubis Goreng Kunyit & Teh O Ais Kosong', kcal: 850, protein_g: 65, tags: ['melayu', 'protein', 'budget', 'all'] },
+    { name: 'Nasi Putih (1/2 Cawan), Sup Ayam Utara (Dada), Ulam Timun, Sambal Belacan & Limau Ais Kurang Manis', kcal: 820, protein_g: 63, tags: ['melayu', 'oil', 'protein', 'budget', 'all'] },
     { name: 'Nasi Putih (1/2 Cawan), Ayam Bakar Madu Bersaiz Sederhana, Ulam Raja, Pegaga & Air Kosong', kcal: 830, protein_g: 64, tags: ['melayu', 'protein', 'oil', 'all'] },
-    { name: 'Nasi Kerabu Kelantan Bersama Ayam Percik Dada, Ulam Segar & Telur Masin Separuh', kcal: 780, protein_g: 58, tags: ['melayu', 'protein', 'all'] },
-    { name: 'Nasi Ayam Hainan Stim (Bahagian Dada), Sup Timun Jernih & Sos Halia Cili', kcal: 680, protein_g: 48, tags: ['protein', 'oil', 'all'] },
+    { name: 'Nasi Kerabu Kelantan Bersama Ayam Percik Dada, Ulam Segar & Telur Masin Separuh', kcal: 780, protein_g: 58, tags: ['melayu', 'protein', 'oil', 'budget', 'all'] },
+    { name: 'Nasi Ayam Hainan Stim (Bahagian Dada), Sup Timun Jernih & Sos Halia Cili', kcal: 680, protein_g: 48, tags: ['protein', 'oil', 'budget', 'quick', 'all'] },
     { name: 'Nasi Campur Sihat: Nasi 1/2 Senduk, Ikan Kembung Bakar Air Asam, Bendi Rebus & Tauhu Sumbat', kcal: 540, protein_g: 44, tags: ['melayu', 'oil', 'budget', 'protein', 'all'] },
-    { name: 'Nasi Kandar Sihat: Nasi 1/2, Ayam Tandoori Panggang, Bendi Celur & Kuah Dhal Asing', kcal: 690, protein_g: 54, tags: ['mamak', 'protein', 'all'] },
-    { name: 'Nasi Goreng Kampung Kurang Minyak Bersama Dada Ayam Kunyit & Kangkung Belacan', kcal: 640, protein_g: 42, tags: ['melayu', 'budget', 'quick', 'all'] },
-    { name: 'Sup Daging Empuk Bersama Kentang, Lobak Merah & Nasi Putih Separuh', kcal: 620, protein_g: 45, tags: ['melayu', 'protein', 'oil', 'all'] },
-    { name: 'Salad Ulam Kampung Bersama Isi Ayam Panggang Rosemary & Sos Lemon Air Asam', kcal: 450, protein_g: 52, tags: ['lowcarb', 'protein', 'oil', 'all'] },
+    { name: 'Nasi Kandar Sihat: Nasi 1/2, Ayam Tandoori Panggang, Bendi Celur & Kuah Dhal Asing', kcal: 690, protein_g: 54, tags: ['mamak', 'protein', 'budget', 'all'] },
+    { name: 'Nasi Goreng Kampung Kurang Minyak Bersama Dada Ayam Kunyit & Kangkung Belacan', kcal: 640, protein_g: 42, tags: ['melayu', 'budget', 'quick', 'protein', 'all'] },
+    { name: 'Sup Daging Empuk Bersama Kentang, Lobak Merah & Nasi Putih Separuh', kcal: 620, protein_g: 45, tags: ['melayu', 'protein', 'oil', 'budget', 'all'] },
+    { name: 'Salad Ulam Kampung Bersama Isi Ayam Panggang Rosemary & Sos Lemon Air Asam', kcal: 450, protein_g: 52, tags: ['lowcarb', 'protein', 'oil', 'quick', 'all'] },
     { name: 'Nasi Bujang Sihat: Nasi 1/2, Telur Mata 2 Biji, Sup Kosong & Sambal Kicap Cili Padi', kcal: 490, protein_g: 22, tags: ['budget', 'quick', 'all'] },
-    { name: 'Bihun Tomyam Putih Campur Udang Segar & Cendawan Tiram', kcal: 510, protein_g: 36, tags: ['oil', 'quick', 'all'] },
+    { name: 'Bihun Tomyam Putih Campur Udang Segar & Cendawan Tiram', kcal: 510, protein_g: 36, tags: ['oil', 'quick', 'budget', 'protein', 'all'] },
   ],
   dinner: [
-    { name: 'Mee Hoon Sup Ayam (Tanpa Minyak Berlebihan) Dengan Lebihan Isi Ayam Dada & Taugeh', kcal: 890, protein_g: 62, tags: ['melayu', 'oil', 'protein', 'all'] },
-    { name: 'Bihun Goreng Putih Kampung Bersama Ayam Cincang & Sawi Hijau', kcal: 940, protein_g: 64, tags: ['melayu', 'protein', 'all'] },
-    { name: 'Sup Bihun Bersama Isi Ayam Dada & Sayur Campur Segar', kcal: 900, protein_g: 63, tags: ['oil', 'melayu', 'protein', 'all'] },
-    { name: 'Ikan Siakap Stim Limau & Halia Bersama Sayur Bayam Bening & Nasi Putih 1/2 Cawan', kcal: 580, protein_g: 52, tags: ['oil', 'protein', 'melayu', 'all'] },
-    { name: 'Ayam Dada Panggang Herba, Kentang Putar Tanpa Mentega & Salad Jagung Manis', kcal: 540, protein_g: 56, tags: ['protein', 'quick', 'all'] },
-    { name: 'Sup Tulang / Daging Halia Bersama Sayur Sawi & Nasi Putih Separuh', kcal: 620, protein_g: 46, tags: ['melayu', 'protein', 'oil', 'all'] },
-    { name: 'Kuey Teow Kungfu Sup Jernih Bersama Telur Putih, Udang & Kobis Bunga', kcal: 560, protein_g: 38, tags: ['oil', 'quick', 'all'] },
-    { name: 'Yong Tau Foo Rebus Sup Jernih (Tauhu, Bendi, Peria, Telur & Kangkung Celur)', kcal: 420, protein_g: 34, tags: ['oil', 'lowcarb', 'budget', 'all'] },
-    { name: 'Chapati Panas (2 Keping) Bersama Kuah Dhal Pekat & Ayam Tandoori Panggang', kcal: 580, protein_g: 48, tags: ['mamak', 'protein', 'oil', 'all'] },
-    { name: 'Sup Ayam Kampung Herba Bersama Keledek Manis Rebus', kcal: 490, protein_g: 42, tags: ['oil', 'melayu', 'protein', 'all'] },
-    { name: 'Wrap Tortilla Gandum Penuh Bersama Isi Ayam Dada, Salad Timun & Sos Yogurt', kcal: 460, protein_g: 40, tags: ['quick', 'protein', 'lowcarb', 'all'] },
+    { name: 'Mee Hoon Sup Ayam (Tanpa Minyak Berlebihan) Dengan Lebihan Isi Ayam Dada & Taugeh', kcal: 890, protein_g: 62, tags: ['melayu', 'oil', 'protein', 'budget', 'all'] },
+    { name: 'Bihun Goreng Putih Kampung Bersama Ayam Cincang & Sawi Hijau', kcal: 940, protein_g: 64, tags: ['melayu', 'protein', 'budget', 'quick', 'all'] },
+    { name: 'Sup Bihun Bersama Isi Ayam Dada & Sayur Campur Segar', kcal: 900, protein_g: 63, tags: ['oil', 'melayu', 'protein', 'budget', 'all'] },
+    { name: 'Ikan Siakap Stim Limau & Halia Bersama Sayur Bayam Bening & Nasi Putih 1/2 Cawan', kcal: 580, protein_g: 52, tags: ['oil', 'protein', 'melayu', 'lowcarb', 'all'] },
+    { name: 'Ayam Dada Panggang Herba, Kentang Putar Tanpa Mentega & Salad Jagung Manis', kcal: 540, protein_g: 56, tags: ['protein', 'quick', 'budget', 'all'] },
+    { name: 'Sup Tulang / Daging Halia Bersama Sayur Sawi & Nasi Putih Separuh', kcal: 620, protein_g: 46, tags: ['melayu', 'protein', 'oil', 'budget', 'all'] },
+    { name: 'Kuey Teow Kungfu Sup Jernih Bersama Telur Putih, Udang & Kobis Bunga', kcal: 560, protein_g: 38, tags: ['oil', 'quick', 'budget', 'protein', 'all'] },
+    { name: 'Yong Tau Foo Rebus Sup Jernih (Tauhu, Bendi, Peria, Telur & Kangkung Celur)', kcal: 420, protein_g: 34, tags: ['oil', 'lowcarb', 'budget', 'quick', 'all'] },
+    { name: 'Chapati Panas (2 Keping) Bersama Kuah Dhal Pekat & Ayam Tandoori Panggang', kcal: 580, protein_g: 48, tags: ['mamak', 'protein', 'oil', 'budget', 'all'] },
+    { name: 'Sup Ayam Kampung Herba Bersama Keledek Manis Rebus', kcal: 490, protein_g: 42, tags: ['oil', 'melayu', 'protein', 'budget', 'all'] },
+    { name: 'Wrap Tortilla Gandum Penuh Bersama Isi Ayam Dada, Salad Timun & Sos Yogurt', kcal: 460, protein_g: 40, tags: ['quick', 'protein', 'lowcarb', 'budget', 'all'] },
   ],
   snack: [
     { name: 'Buah Epal Hijau Bersama 10 Biji Badam Panggang Tanpa Garam', kcal: 180, protein_g: 5, tags: ['oil', 'quick', 'budget', 'all'] },
@@ -61,44 +61,44 @@ export const MALAYSIAN_MEAL_POOL = {
 
 export function getPreferences() {
   return [
-    { id: 'all', label: t('pref_all'), icon: '✨' },
-    { id: 'protein', label: t('pref_protein'), icon: '💪' },
-    { id: 'oil', label: t('pref_oil'), icon: '🥗' },
-    { id: 'budget', label: t('pref_budget'), icon: '💰' },
-    { id: 'quick', label: t('pref_quick'), icon: '⚡' },
-    { id: 'lowcarb', label: t('pref_lowcarb'), icon: '🌾' },
-    { id: 'melayu', label: t('pref_melayu'), icon: '🇲🇾' },
-    { id: 'mamak', label: t('pref_mamak'), icon: '🍛' },
+    { id: 'all', label: t('pref_all') },
+    { id: 'protein', label: t('pref_protein') },
+    { id: 'oil', label: t('pref_oil') },
+    { id: 'budget', label: t('pref_budget') },
+    { id: 'quick', label: t('pref_quick') },
+    { id: 'lowcarb', label: t('pref_lowcarb') },
+    { id: 'melayu', label: t('pref_melayu') },
+    { id: 'mamak', label: t('pref_mamak') },
   ];
 }
 
 export const PREFERENCES = [
-  { id: 'all', label: 'All Suggestions', icon: '✨' },
-  { id: 'protein', label: 'High Protein', icon: '💪' },
-  { id: 'oil', label: 'Less Oil / Soup', icon: '🥗' },
-  { id: 'budget', label: 'Budget (< RM10)', icon: '💰' },
-  { id: 'quick', label: 'Quick (< 15m)', icon: '⚡' },
-  { id: 'lowcarb', label: 'Low Carb', icon: '🌾' },
-  { id: 'melayu', label: 'Malay Traditional', icon: '🇲🇾' },
-  { id: 'mamak', label: 'Healthy Mamak', icon: '🍛' },
+  { id: 'all', label: 'All Suggestions' },
+  { id: 'protein', label: 'High Protein' },
+  { id: 'oil', label: 'Less Oil / Soup' },
+  { id: 'budget', label: 'Budget (< RM10)' },
+  { id: 'quick', label: 'Quick (< 15m)' },
+  { id: 'lowcarb', label: 'Low Carb' },
+  { id: 'melayu', label: 'Malay Traditional' },
+  { id: 'mamak', label: 'Healthy Mamak' },
 ];
 
 export function getMealTypeInfo(type = '') {
   const isEn = getLang() === 'en';
   const str = (type || '').toLowerCase();
   if (str.includes('sarapan') || str.includes('breakfast')) {
-    return { id: 'breakfast', label: isEn ? 'Breakfast' : 'Sarapan', icon: '🌅', colorClass: 'breakfast' };
+    return { id: 'breakfast', label: isEn ? 'Breakfast' : 'Sarapan', colorClass: 'breakfast' };
   }
   if (str.includes('tengah hari') || str.includes('lunch') || str.includes('siang')) {
-    return { id: 'lunch', label: isEn ? 'Lunch' : 'Makan Tengah Hari', icon: '☀️', colorClass: 'lunch' };
+    return { id: 'lunch', label: isEn ? 'Lunch' : 'Makan Tengah Hari', colorClass: 'lunch' };
   }
   if (str.includes('malam') || str.includes('dinner')) {
-    return { id: 'dinner', label: isEn ? 'Dinner' : 'Makan Malam', icon: '🌙', colorClass: 'dinner' };
+    return { id: 'dinner', label: isEn ? 'Dinner' : 'Makan Malam', colorClass: 'dinner' };
   }
   if (str.includes('snek') || str.includes('snack') || str.includes('petang') || str.includes('afternoon')) {
-    return { id: 'snack', label: isEn ? 'Snack' : 'Snek', icon: '🍎', colorClass: 'snack' };
+    return { id: 'snack', label: isEn ? 'Snack' : 'Snek', colorClass: 'snack' };
   }
-  return { id: 'other', label: type || (isEn ? 'Meal' : 'Hidangan'), icon: '🍽️', colorClass: 'other' };
+  return { id: 'other', label: type || (isEn ? 'Meal' : 'Hidangan'), colorClass: 'other' };
 }
 
 export function getNormalizedDayName(day = '') {
@@ -123,7 +123,8 @@ export function generateSmartPlan(pref = 'all', targetKcal = 1800, mealCount = 2
     const list = MALAYSIAN_MEAL_POOL[category] || MALAYSIAN_MEAL_POOL.lunch;
     const filtered = pref !== 'all' ? list.filter((m) => m.tags.includes(pref)) : list;
     const pool = filtered.length ? filtered : list;
-    return pool[(dayIdx * 3 + (category === 'dinner' ? 2 : category === 'lunch' ? 1 : 0)) % pool.length];
+    const offset = category === 'breakfast' ? 0 : category === 'lunch' ? 2 : category === 'dinner' ? 5 : 7;
+    return pool[(dayIdx + offset) % pool.length];
   }
 
   const days = daysName.map((day, idx) => {
@@ -402,7 +403,7 @@ export function renderRecipes(container) {
 
           <div class="divider" style="margin:12px 0 8px"></div>
           <button type="button" class="btn btn-ghost btn-sm btn-block" id="btn-quick-default-plan" style="color:var(--deku);gap:6px">
-            ⚡ <span>${t('rec_quick_default')}</span>
+            ${icons.bolt} <span>${t('rec_quick_default')}</span>
           </button>
         </div>
       </div>
@@ -413,74 +414,112 @@ export function renderRecipes(container) {
     const typeInfo = getMealTypeInfo(meal.type);
     return `
       <div class="plan-meal-card">
-        <div class="plan-meal-header">
-          <div style="display:flex;align-items:center;gap:6px">
-            ${showDayBadge ? `<span style="background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;color:#fff;font-size:11px;font-weight:700">${esc(dayName)}</span>` : ''}
-            <span class="meal-type-tag ${typeInfo.colorClass}">
-              <span>${typeInfo.icon}</span> <span>${esc(typeInfo.label)}</span>
-            </span>
+        <div>
+          <div class="plan-meal-header">
+            <div style="display:flex;align-items:center;gap:6px">
+              ${showDayBadge ? `<span class="meal-day-pill">${esc(dayName)}</span>` : ''}
+              <span class="meal-type-tag ${typeInfo.colorClass}">${esc(typeInfo.label)}</span>
+            </div>
+            <div class="meal-metrics-group">
+              <span class="meal-metric-badge kcal">${meal.kcal} kcal</span>
+              <span class="meal-metric-badge protein">${meal.protein_g}g protein</span>
+            </div>
           </div>
-          <div class="meal-metrics-group">
-            <span class="meal-metric-badge kcal">🔥 ${meal.kcal} kcal</span>
-            <span class="meal-metric-badge protein">💪 ${meal.protein_g}g P</span>
-          </div>
+          <div class="plan-meal-title">${esc(meal.name)}</div>
         </div>
-
-        <div class="plan-meal-title">${esc(meal.name)}</div>
 
         <div class="plan-meal-actions">
           <button type="button" class="plan-action-btn primary btn-log-meal" data-didx="${dayIdx}" data-midx="${mealIdx}" title="Log into today's diary">
-            <span>+</span> <span>${t('rec_log_meal')}</span>
+            ${icons.plus} <span>${t('rec_log_meal')}</span>
           </button>
           <button type="button" class="plan-action-btn btn-swap-meal" data-didx="${dayIdx}" data-midx="${mealIdx}" title="Swap with alternative dish">
-            <span>🔄</span> <span>${t('rec_swap_dish')}</span>
+            ${icons.refresh} <span>${t('rec_swap_dish')}</span>
           </button>
         </div>
       </div>
     `;
   }
 
-  function renderSingleDay(day, dayIdx) {
-    const targetKcal = store.macros?.target || 1800;
-    const dayName = getNormalizedDayName(day.day);
-    const dayProtein = (day.meals || []).reduce((sum, m) => sum + (Number(m.protein_g) || 0), 0);
+  function renderPlanContent(plan) {
+    const isEn = getLang() === 'en';
+
+    function matchMeal(meal) {
+      if (selectedMealFilter === 'all') return true;
+      const typeInfo = getMealTypeInfo(meal.type);
+      return typeInfo.id === selectedMealFilter;
+    }
+
+    if (selectedDayIndex >= 0) {
+      const day = plan.days?.[selectedDayIndex];
+      if (!day) return `<div class="empty">${t('rec_no_meals_filter')}</div>`;
+
+      const dayName = getNormalizedDayName(day.day);
+      const filteredMeals = (day.meals || []).filter(matchMeal);
+      const dayTotalKcal = (day.meals || []).reduce((sum, m) => sum + (Number(m.kcal) || 0), 0);
+      const dayTotalProtein = (day.meals || []).reduce((sum, m) => sum + (Number(m.protein_g) || 0), 0);
+
+      return `
+        <div class="plan-day-section fade-up">
+          <div class="plan-day-banner">
+            <div>
+              <div class="plan-day-title">${esc(dayName)}</div>
+              <div class="xs muted" style="margin-top:2px">${filteredMeals.length} ${isEn ? 'dishes scheduled' : 'hidangan berjadual'}</div>
+            </div>
+            <div class="meal-metrics-group">
+              <span class="meal-metric-badge kcal">${dayTotalKcal} kcal total</span>
+              <span class="meal-metric-badge protein">${dayTotalProtein}g protein</span>
+            </div>
+          </div>
+
+          ${
+            filteredMeals.length === 0
+              ? `<div class="empty" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">
+                  ${t('rec_no_meals_filter')}
+                </div>`
+              : `<div class="plan-meals-grid">
+                  ${filteredMeals.map((meal) => {
+                    const originalIdx = day.meals.indexOf(meal);
+                    return renderMealCard(meal, selectedDayIndex, originalIdx >= 0 ? originalIdx : 0, false);
+                  }).join('')}
+                </div>`
+          }
+        </div>
+      `;
+    }
+
+    // View for All Days (-1): Group by day
+    const daysWithMatches = (plan.days || []).map((day, dIdx) => ({
+      day,
+      dIdx,
+      dayName: getNormalizedDayName(day.day),
+      meals: (day.meals || []).filter(matchMeal),
+    })).filter((item) => item.meals.length > 0);
+
+    if (daysWithMatches.length === 0) {
+      return `
+        <div class="empty" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">
+          ${t('rec_no_meals_filter')}
+        </div>
+      `;
+    }
 
     return `
-      <div class="plan-day-section fade-up">
-        <div class="plan-day-banner">
-          <div class="plan-day-title">
-            <span>📅 ${dayName}</span>
-          </div>
-          <div class="row" style="gap:6px;align-items:center">
-            <span class="meal-metric-badge kcal" style="font-size:12px;padding:3px 9px">🔥 ${day.total_kcal} kcal</span>
-            <span class="meal-metric-badge protein" style="font-size:12px;padding:3px 9px">💪 ${dayProtein}g P</span>
-          </div>
-        </div>
-
-        <div class="stack" style="gap:8px">
-          ${(day.meals || []).map((m, mIdx) => renderMealCard(m, dayIdx, mIdx)).join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  function renderAllDays(days = []) {
-    return `
-      <div class="stack" style="gap:14px">
-        ${days.map((d, dIdx) => {
-          const dName = getNormalizedDayName(d.day);
+      <div class="stack fade-up" style="gap:16px">
+        ${daysWithMatches.map((item) => {
+          const dayKcal = (item.day.meals || []).reduce((sum, m) => sum + (Number(m.kcal) || 0), 0);
           return `
             <div class="plan-day-section">
               <div class="plan-day-banner">
-                <div class="plan-day-title">
-                  <span>📅 ${dName}</span>
-                </div>
-                <div class="row" style="gap:6px;align-items:center">
-                  <span class="meal-metric-badge kcal">🔥 ${d.total_kcal} kcal</span>
+                <div class="plan-day-title">${esc(item.dayName)}</div>
+                <div class="meal-metrics-group">
+                  <span class="meal-metric-badge kcal">${dayKcal} kcal</span>
                 </div>
               </div>
-              <div class="stack" style="gap:8px">
-                ${(d.meals || []).map((m, mIdx) => renderMealCard(m, dIdx, mIdx)).join('')}
+              <div class="plan-meals-grid">
+                ${item.meals.map((meal) => {
+                  const mIdx = item.day.meals.indexOf(meal);
+                  return renderMealCard(meal, item.dIdx, mIdx >= 0 ? mIdx : 0, false);
+                }).join('')}
               </div>
             </div>
           `;
@@ -489,78 +528,19 @@ export function renderRecipes(container) {
     `;
   }
 
-  function renderMealModeView(plan) {
-    const mealFilters = [
-      { id: 'all', label: t('rec_all_meals'), icon: '🍽️' },
-      { id: 'breakfast', label: t('rec_breakfast'), icon: '🌅' },
-      { id: 'lunch', label: t('rec_lunch'), icon: '☀️' },
-      { id: 'dinner', label: t('rec_dinner'), icon: '🌙' },
-      { id: 'snack', label: t('rec_snack'), icon: '🍎' },
-    ];
-
-    // Gather all meals with their corresponding day information
-    const allFilteredMeals = [];
-    (plan.days || []).forEach((d, dayIdx) => {
-      const dayName = getNormalizedDayName(d.day);
-      (d.meals || []).forEach((m, mealIdx) => {
-        const typeInfo = getMealTypeInfo(m.type);
-        if (selectedMealFilter === 'all' || typeInfo.id === selectedMealFilter) {
-          allFilteredMeals.push({ meal: m, dayIdx, mealIdx, dayName });
-        }
-      });
-    });
-
-    return `
-      <div class="stack fade-up" style="gap:10px">
-        <!-- Meal Time Filter Horizontal Scroll -->
-        <div class="plan-filter-scroll" id="meal-filter-scroll">
-          ${mealFilters.map((f) => `
-            <button type="button" class="plan-pill ${selectedMealFilter === f.id ? 'active' : ''}" data-mf="${f.id}">
-              <span>${f.icon}</span> <span>${f.label}</span>
-            </button>
-          `).join('')}
-        </div>
-
-        <!-- Meals List -->
-        <div class="stack" style="gap:8px">
-          ${
-            allFilteredMeals.length === 0
-              ? `<div class="empty" style="padding:20px;text-align:center;color:var(--muted);font-size:13px">
-                  ${t('rec_no_meals_filter')}
-                </div>`
-              : allFilteredMeals.map((item) => renderMealCard(item.meal, item.dayIdx, item.mealIdx, true, item.dayName)).join('')
-          }
-        </div>
-      </div>
-    `;
-  }
-
-  function renderDayModeView(plan) {
-    return `
-      <div class="stack fade-up" style="gap:10px">
-        <!-- Day Selector Horizontal Scroll -->
-        <div class="plan-filter-scroll" id="day-selector-scroll">
-          <button type="button" class="plan-pill ${selectedDayIndex === -1 ? 'active' : ''}" data-didx="-1">
-            <span>🗓️ ${t('rec_all_days')}</span>
-          </button>
-          ${(plan.days || []).map((d, idx) => {
-            const dName = getNormalizedDayName(d.day);
-            return `
-              <button type="button" class="plan-pill ${selectedDayIndex === idx ? 'active' : ''}" data-didx="${idx}">
-                <span>${dName}</span>
-              </button>
-            `;
-          }).join('')}
-        </div>
-
-        <!-- Single Day View or All Days View -->
-        ${selectedDayIndex >= 0 && plan.days?.[selectedDayIndex] ? renderSingleDay(plan.days[selectedDayIndex], selectedDayIndex) : renderAllDays(plan.days)}
-      </div>
-    `;
-  }
-
   function renderMealPlanResult(plan) {
-    const targetKcal = store.macros?.target || 1800;
+    const isEn = getLang() === 'en';
+    const dayShortNames = isEn
+      ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+      : ['Isn', 'Sel', 'Rab', 'Kha', 'Jum', 'Sab', 'Aha'];
+
+    const mealCategories = [
+      { id: 'all', label: isEn ? 'All Meals' : 'Semua Hidangan' },
+      { id: 'breakfast', label: isEn ? 'Breakfast' : 'Sarapan' },
+      { id: 'lunch', label: isEn ? 'Lunch' : 'Makan Tengah Hari' },
+      { id: 'dinner', label: isEn ? 'Dinner' : 'Makan Malam' },
+      { id: 'snack', label: isEn ? 'Snack' : 'Snek' },
+    ];
 
     return `
       <div class="plan-container fade-up">
@@ -574,52 +554,62 @@ export function renderRecipes(container) {
             </div>
             <div class="row" style="gap:6px">
               <button type="button" class="btn btn-sm btn-ghost" id="btn-pref-modal" title="Preferences & Targets">
-                <span>⚙️</span> <span>${getLang() === 'ms' ? 'Keutamaan' : 'Preferences'}</span>
+                ${icons.settings}
+                <span>${isEn ? 'Preferences' : 'Keutamaan'}</span>
+              </button>
+              <button type="button" class="btn btn-sm btn-ghost" id="btn-refresh-suggestions" title="Regenerate Plan">
+                ${icons.refresh}
               </button>
               <button type="button" class="btn btn-sm btn-ghost" id="btn-print-plan" title="Print / PDF">
                 ${icons.printer}
               </button>
             </div>
           </div>
+        </div>
 
-          <!-- Active Preferences Bar -->
-          <div style="display:flex;flex-direction:column;gap:6px;margin-top:2px">
-            <div class="row between" style="align-items:center">
-              <span class="xs bold muted" style="text-transform:uppercase;letter-spacing:0.04em">${t('rec_preferences')}</span>
-              <button type="button" class="btn btn-xs btn-ghost" id="btn-refresh-suggestions" style="color:var(--deku);font-size:11px;padding:2px 8px;gap:4px">
-                <span>🔄</span> <span>${t('rec_refresh')}</span>
+        <!-- Filter Dock (Sticky / Unified) -->
+        <div class="plan-filter-dock" id="plan-filter-dock">
+          <!-- Row 1: Day Tabs -->
+          <div class="plan-filter-scroll" id="day-selector-scroll">
+            <button type="button" class="plan-pill ${selectedDayIndex === -1 ? 'active' : ''}" data-didx="-1">
+              <span>${isEn ? 'All Days' : 'Semua Hari'}</span>
+            </button>
+            ${dayShortNames.map((short, idx) => `
+              <button type="button" class="plan-pill ${selectedDayIndex === idx ? 'active' : ''}" data-didx="${idx}">
+                <span>${short}</span>
               </button>
-            </div>
-            <div class="plan-filter-scroll" id="pref-chips">
-              ${getPreferences().map((p) => `
-                <button type="button" class="plan-pref-chip ${selectedPreference === p.id ? 'active' : ''}" data-pref="${p.id}">
-                  <span>${p.icon}</span> <span>${p.label}</span>
-                </button>
-              `).join('')}
-            </div>
+            `).join('')}
           </div>
 
-          <!-- View Mode Switcher: Ikut Hari vs Ikut Waktu Makan -->
-          <div class="plan-view-switch" style="margin-top:4px">
-            <button type="button" class="plan-view-btn ${planViewMode === 'day' ? 'active' : ''}" data-vm="day">
-              <span>📅</span> <span>${t('rec_view_day')}</span>
-            </button>
-            <button type="button" class="plan-view-btn ${planViewMode === 'meal' ? 'active' : ''}" data-vm="meal">
-              <span>🍽️</span> <span>${t('rec_view_meal')}</span>
-            </button>
+          <!-- Row 2: Meal Time Filter Pills -->
+          <div class="plan-filter-scroll" id="meal-filter-scroll">
+            ${mealCategories.map((c) => `
+              <button type="button" class="plan-pill ${selectedMealFilter === c.id ? 'active' : ''}" data-mf="${c.id}">
+                <span>${c.label}</span>
+              </button>
+            `).join('')}
+          </div>
+
+          <!-- Row 3: Dietary Preference Filter Chips -->
+          <div class="plan-filter-scroll" id="pref-chips">
+            ${getPreferences().map((p) => `
+              <button type="button" class="plan-pref-chip ${selectedPreference === p.id ? 'active' : ''}" data-pref="${p.id}">
+                <span>${p.label}</span>
+              </button>
+            `).join('')}
           </div>
         </div>
 
-        <!-- Dynamic Content View -->
-        ${planViewMode === 'day' ? renderDayModeView(plan) : renderMealModeView(plan)}
+        <!-- Main Plan Content -->
+        ${renderPlanContent(plan)}
 
         <!-- Shopping & Grocery Tips Accordion/Card -->
         ${
           plan.shopping_tips && plan.shopping_tips.length
-            ? `<div class="card flat" style="background:#09090b;border:1px solid rgba(255,255,255,0.07);padding:12px 14px">
-                <b class="xs muted" style="text-transform:uppercase;letter-spacing:0.05em">🛒 ${t('rec_market_tips')}</b>
-                <ul style="padding-left:18px;margin:6px 0 0;line-height:1.55;font-size:12px;color:var(--text-2)">
-                  ${plan.shopping_tips.map((t) => `<li>${esc(t)}</li>`).join('')}
+            ? `<div class="card flat" style="background:#09090b;border:1px solid rgba(255,255,255,0.07);padding:14px 16px">
+                <b class="xs muted" style="text-transform:uppercase;letter-spacing:0.05em">${t('rec_market_tips')}</b>
+                <ul style="padding-left:18px;margin:8px 0 0;line-height:1.6;font-size:12.5px;color:var(--text-2)">
+                  ${plan.shopping_tips.map((tip) => `<li>${esc(tip)}</li>`).join('')}
                 </ul>
               </div>`
             : ''
@@ -680,7 +670,7 @@ export function renderRecipes(container) {
   function openPreferenceModal() {
     const targetKcal = store.macros?.target || 1800;
     const { el, close } = openSheet(`
-      <h3 class="sheet-title">⚙️ ${t('rec_pref_modal_title')}</h3>
+      <h3 class="sheet-title">${t('rec_pref_modal_title')}</h3>
       <p class="muted small" style="margin-bottom:14px">${t('rec_pref_modal_sub')}</p>
 
       <div class="stack" style="gap:12px">
@@ -701,7 +691,7 @@ export function renderRecipes(container) {
         <div class="field">
           <label>${t('rec_diet_focus')}</label>
           <div class="chips" id="pref-focus-chips" style="margin-top:4px">
-            ${getPreferences().map((p) => `<button type="button" class="chip ${selectedPreference === p.id ? 'active' : ''}" data-p="${p.id}">${p.icon} ${p.label}</button>`).join('')}
+            ${getPreferences().map((p) => `<button type="button" class="chip ${selectedPreference === p.id ? 'active' : ''}" data-p="${p.id}">${p.label}</button>`).join('')}
           </div>
         </div>
 
@@ -808,14 +798,6 @@ export function renderRecipes(container) {
             const prefLabel = getPreferences().find((p) => p.id === selectedPreference)?.label || selectedPreference;
             toast(getLang() === 'en' ? `Plan adapted to: ${prefLabel}!` : `Menu diselaraskan mengikut: ${prefLabel}!`, 'success');
             if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
-            render();
-          });
-        });
-
-        // View mode switcher: Day vs Meal
-        container.querySelectorAll('.plan-view-btn').forEach((btn) => {
-          btn.addEventListener('click', () => {
-            planViewMode = btn.dataset.vm;
             render();
           });
         });

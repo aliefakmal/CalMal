@@ -76,7 +76,7 @@ function renderTopbar() {
     <div class="topbar-actions">
       <!-- Universal Language Switcher Pill -->
       <button type="button" class="lang-pill-btn" id="topbar-lang-toggle" title="Switch Language / Tukar Bahasa (EN / BM)">
-        <span class="lang-icon">🌐</span>
+        <span class="lang-icon">${icons.globe}</span>
         <span class="lang-cur">${lang.toUpperCase()}</span>
         <span class="lang-alt">${lang === 'en' ? 'BM' : 'EN'}</span>
       </button>
