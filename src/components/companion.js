@@ -98,22 +98,33 @@ export function companionBubble(who, text, { compact = false, state = 'idle', so
 export function bindCompanionEvents(container, onCoachSwitch) {
   container.querySelectorAll('.cbubble').forEach((el) => {
     const who = el.dataset.who || 'deku';
-    const soundKey = el.dataset.sound || 'greet';
-    const text = el.querySelector('.cbubble-text')?.textContent || '';
+    const textEl = el.querySelector('.cbubble-text');
 
-    el.querySelector('.btn-voice-trigger')?.addEventListener('click', (e) => {
+    el.querySelector('.btn-voice-trigger')?.addEventListener('click', async (e) => {
       e.stopPropagation();
-      soundboard.play(who, soundKey, text);
+      const res = await soundboard.play(who, 'shuffle');
+      if (res?.line && textEl) {
+        const isEn = store.settings?.language !== 'ms';
+        const lineText = isEn ? res.line.en : res.line.ms;
+        textEl.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+        textEl.style.opacity = '0';
+        textEl.style.transform = 'translateY(-2px)';
+        setTimeout(() => {
+          textEl.innerHTML = `<span style="display:block;font-size:11px;opacity:0.8;margin-bottom:2px">${esc(res.line.ja)}</span>${esc(lineText)}`;
+          textEl.style.opacity = '1';
+          textEl.style.transform = 'translateY(0)';
+        }, 150);
+      }
     });
 
-    el.querySelector('.btn-coach-switch')?.addEventListener('click', (e) => {
+    el.querySelector('.btn-coach-switch')?.addEventListener('click', async (e) => {
       e.stopPropagation();
       const nextCoach = who === 'bakugou' ? 'deku' : 'bakugou';
       if (store.profile) {
         store.saveProfile({ selectedCompanion: nextCoach });
         store.applyHeroTheme(nextCoach);
       }
-      soundboard.play(nextCoach, 'greet');
+      await soundboard.play(nextCoach, 'shuffle');
       onCoachSwitch?.(nextCoach);
     });
   });
@@ -137,7 +148,7 @@ export function showCompanion({ who = 'deku', text, title, duration = 7000, stat
     <div class="cp-body">
       <div class="cp-title row between">
         <span>${esc(title || (who === 'both' ? 'Deku & Bakugou' : CHARACTERS[who].short))}</span>
-        <button type="button" class="cp-audio-btn" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px">🔊</button>
+        <button type="button" class="cp-audio-btn" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px" title="Shuffle Voice Line">🔊</button>
       </div>
       <p>${esc(text)}</p>
     </div>
@@ -149,8 +160,21 @@ export function showCompanion({ who = 'deku', text, title, duration = 7000, stat
 
   soundboard.play(who, soundKey, text);
 
-  el.querySelector('.cp-audio-btn')?.addEventListener('click', () => {
-    soundboard.play(who, soundKey, text);
+  el.querySelector('.cp-audio-btn')?.addEventListener('click', async () => {
+    const res = await soundboard.play(who, 'shuffle');
+    if (res?.line) {
+      const isEn = store.settings?.language !== 'ms';
+      const lineText = isEn ? res.line.en : res.line.ms;
+      const p = el.querySelector('p');
+      if (p) {
+        p.style.transition = 'opacity 0.15s ease';
+        p.style.opacity = '0';
+        setTimeout(() => {
+          p.innerHTML = `<span style="display:block;font-size:11.5px;opacity:0.85;margin-bottom:2px">${esc(res.line.ja)}</span>${esc(lineText)}`;
+          p.style.opacity = '1';
+        }, 150);
+      }
+    }
   });
 
   const close = () => {

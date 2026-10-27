@@ -48,12 +48,104 @@ export const JAPANESE_VOICE_SCRIPTS = {
   },
 };
 
+export const VOICE_SHUFFLE_CATALOG = {
+  deku: [
+    {
+      file: 'deku_line1.mp3',
+      ja: '大丈夫！ここから後ろには絶対行かせないよ！',
+      romaji: 'Daijoubu! Koko kara ushiro ni wa zettai ikasenai yo!',
+      en: 'Don’t worry! I will never let anyone pass behind me!',
+      ms: 'Jangan risau! Saya takkan biarkan sesiapa lepasi garisan ini!',
+    },
+    {
+      file: 'deku_line2.mp3',
+      ja: 'だから走れぇぇ！限界を超えて行こう！',
+      romaji: 'Dakara hashireee! Genkai o koete ikou!',
+      en: 'So run!! Let’s break through our limits!',
+      ms: 'Sebab itu terus berlari!! Mari melepasi had kemampuan kita!',
+    },
+    {
+      file: 'deku_line3.mp3',
+      ja: 'デラウェア・デトロイト・スマッシュ！！',
+      romaji: 'Delaware Detroit SMASH!!',
+      en: 'Delaware Detroit SMASH!!',
+      ms: 'Delaware Detroit SMASH!!',
+    },
+    {
+      file: 'deku_line4.mp3',
+      ja: '更に向こうへ！プルス・ウルトラ！！',
+      romaji: 'Sara ni mukou e! PLUS ULTRA!!',
+      en: 'Go Beyond! PLUS ULTRA!!',
+      ms: 'Melangkah Lebih Jauh! PLUS ULTRA!!',
+    },
+    {
+      file: 'deku_line5.mp3',
+      ja: 'ワン・フォー・オール 100万%！！',
+      romaji: 'One For All Hyakuman Pāsento!!',
+      en: 'One For All 1,000,000%!!',
+      ms: 'One For All 1,000,000%!!',
+    },
+    {
+      file: 'deku_line6.mp3',
+      ja: 'スマァァッシュ！！',
+      romaji: 'SMAAASH!!',
+      en: 'SMAAASH!!',
+      ms: 'SMAAASH!!',
+    },
+  ],
+  bakugou: [
+    {
+      file: 'bakugou_line3.mp3',
+      ja: 'おいおいおい！サボってんじゃねぇぞ！',
+      romaji: 'Oi oi oi! Sabotten ja nee zo!',
+      en: 'Oi oi oi! Don’t you dare slack off!',
+      ms: 'Oi oi oi! Jangan berani bermalas-malasan!',
+    },
+    {
+      file: 'bakugou_line1.mp3',
+      ja: 'バカ！俺の背中追うなら本気出せ！',
+      romaji: 'Baka! Ore no senaka ou nara honki dase!',
+      en: 'Idiot! If you’re chasing my back, give it your all!',
+      ms: 'Bongok! Kalau nak kejar langkah aku, bersungguh-sungguhlah!',
+    },
+    {
+      file: 'bakugou_line2.mp3',
+      ja: '死ねぇぇ！！',
+      romaji: 'SHINEEEE!!',
+      en: 'SHINEEEE!! (Blast through!!)',
+      ms: 'LEBURKAN SEMUANYA!!',
+    },
+    {
+      file: 'bakugou_line4.mp3',
+      ja: '爆豪の勝利だ！当たり前だ、ついて来い！',
+      romaji: 'Bakugou no shouri da! Atarimae da, tsuite koi!',
+      en: 'Bakugo’s victory! That’s obvious, now follow me!',
+      ms: 'Kemenangan Bakugo! Dah tentulah, ikut aku!',
+    },
+    {
+      file: 'bakugou_line5.mp3',
+      ja: '消し飛べぇぇ！！',
+      romaji: 'Keshitobeee!!',
+      en: 'Blow away!!',
+      ms: 'Meletup hancur!!',
+    },
+    {
+      file: 'bakugou_line6.mp3',
+      ja: 'バカ！ついて来い！置いてくぞ！ぶっ飛ばして走れぇ！',
+      romaji: 'Baka! Tsuite koi! Oiteku zo! Buttobashite hashireee!',
+      en: 'Idiot! Keep up! I’ll leave you behind! Sprint like crazy!',
+      ms: 'Bongok! Ikut aku! Aku tinggal kau nanti! Lari sekuat hati!',
+    },
+  ],
+};
+
 class AudioService {
   constructor() {
     this.cache = new Map();
     this.audioContext = null;
     this.isMuted = false;
     this.voices = [];
+    this.lastShuffledIndex = { deku: -1, bakugou: -1 };
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = () => {
@@ -189,13 +281,68 @@ class AudioService {
   }
 
   /**
-   * Play sound effect or voice clip for a character
+   * Shuffle and play a random line for a character, avoiding consecutive repeats
    */
-  async play(character = 'deku', soundKey = 'greet', customText = '') {
-    if (store.settings?.soundEnabled === false || this.isMuted) return;
+  async playShuffled(character = 'deku') {
+    if (store.settings?.soundEnabled === false || this.isMuted) return null;
     this.init();
 
     const charKey = (character === 'baku' || character === 'bakugo') ? 'bakugou' : character;
+    const pool = VOICE_SHUFFLE_CATALOG[charKey] || VOICE_SHUFFLE_CATALOG.deku;
+    if (!pool.length) return null;
+
+    // Pick a random line different from the previous one
+    let nextIdx = Math.floor(Math.random() * pool.length);
+    if (pool.length > 1 && nextIdx === this.lastShuffledIndex[charKey]) {
+      nextIdx = (nextIdx + 1 + Math.floor(Math.random() * (pool.length - 1))) % pool.length;
+    }
+    this.lastShuffledIndex[charKey] = nextIdx;
+    const pickedLine = pool[nextIdx];
+
+    // Trigger haptic feedback
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      if (charKey === 'bakugou') navigator.vibrate([40, 25, 70]);
+      else navigator.vibrate(20);
+    }
+
+    const primaryPath = `/assets/companions/${charKey}/audio/${pickedLine.file}`;
+    const fallbackPath = `/assets/companions/${charKey}/audio/${charKey}_voice.mp3`;
+
+    for (const p of [primaryPath, fallbackPath]) {
+      try {
+        let audio = this.cache.get(p);
+        if (!audio) {
+          audio = new Audio(p);
+          audio.preload = 'auto';
+          this.cache.set(p, audio);
+        }
+        audio.currentTime = 0;
+        await audio.play();
+        return { success: true, character: charKey, line: pickedLine, index: nextIdx };
+      } catch {
+        // Continue to fallback
+      }
+    }
+
+    // High-precision Web Audio procedural FX + Speech Synthesis fallback
+    this.playSyntheticHeroSFX(charKey, 'greet');
+    this.speakJapanese(charKey, 'greet');
+    return { success: true, character: charKey, line: pickedLine, index: nextIdx };
+  }
+
+  /**
+   * Play sound effect or voice clip for a character
+   */
+  async play(character = 'deku', soundKey = 'greet', customText = '') {
+    if (store.settings?.soundEnabled === false || this.isMuted) return null;
+    this.init();
+
+    const charKey = (character === 'baku' || character === 'bakugo') ? 'bakugou' : character;
+
+    // If caller wants shuffle or greet (general tap on voice icon), use shuffle engine
+    if (soundKey === 'shuffle' || soundKey === 'greet' || !soundKey) {
+      return this.playShuffled(charKey);
+    }
 
     // Trigger haptic vibration if supported
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -206,6 +353,7 @@ class AudioService {
     const candidatePaths = [
       `/assets/companions/${charKey}/audio/${charKey}_${soundKey}.mp3`,
       charKey === 'bakugou' ? `/assets/companions/bakugou/audio/baku_${soundKey}.mp3` : null,
+      `/assets/companions/${charKey}/audio/${charKey}_line1.mp3`,
       `/assets/companions/${charKey}/audio/${charKey}_voice.mp3`,
     ].filter(Boolean);
 
@@ -219,8 +367,8 @@ class AudioService {
         }
         audio.currentTime = 0;
         await audio.play();
-        return; // Successfully played audio
-      } catch (err) {
+        return { success: true, character: charKey, soundKey };
+      } catch {
         // Continue to next candidate or fallback
       }
     }
@@ -228,6 +376,7 @@ class AudioService {
     // High-precision Web Audio procedural FX + Speech Synthesis fallback
     this.playSyntheticHeroSFX(charKey, soundKey);
     this.speakJapanese(charKey, soundKey);
+    return { success: true, character: charKey, soundKey };
   }
 
   setMute(muted) {
