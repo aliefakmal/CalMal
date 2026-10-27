@@ -73,7 +73,7 @@ export const VOICE_SHUFFLE_CATALOG = {
     },
     {
       file: 'deku_line4.mp3',
-      ja: '更に向こうへ！プルス・ウルトラ！！',
+      ja: 'さらに向こうへ！プルス・ウルトラ！！',
       romaji: 'Sara ni mukou e! PLUS ULTRA!!',
       en: 'Go Beyond! PLUS ULTRA!!',
       ms: 'Melangkah Lebih Jauh! PLUS ULTRA!!',
@@ -87,26 +87,19 @@ export const VOICE_SHUFFLE_CATALOG = {
     },
     {
       file: 'deku_line6.mp3',
-      ja: 'スマァァッシュ！！',
-      romaji: 'SMAAASH!!',
-      en: 'SMAAASH!!',
-      ms: 'SMAAASH!!',
+      ja: 'お疲れ様です！今日もよく頑張ったね！',
+      romaji: 'Otsukaresama desu! Kyou mo yoku ganbatta ne!',
+      en: 'Thank you for your hard work! You gave it your all today!',
+      ms: 'Tahniah atas usaha keras! Awak dah bersungguh-sungguh hari ini!',
     },
   ],
   bakugou: [
     {
-      file: 'bakugou_line3.mp3',
-      ja: 'おいおいおい！サボってんじゃねぇぞ！',
-      romaji: 'Oi oi oi! Sabotten ja nee zo!',
-      en: 'Oi oi oi! Don’t you dare slack off!',
-      ms: 'Oi oi oi! Jangan berani bermalas-malasan!',
-    },
-    {
       file: 'bakugou_line1.mp3',
-      ja: 'バカ！俺の背中追うなら本気出せ！',
-      romaji: 'Baka! Ore no senaka ou nara honki dase!',
-      en: 'Idiot! If you’re chasing my back, give it your all!',
-      ms: 'Bongok! Kalau nak kejar langkah aku, bersungguh-sungguhlah!',
+      ja: 'おいおいおい！上に上がれば関係ねぇ！',
+      romaji: 'Oi oi oi! Ue ni agareba kankei nee!',
+      en: 'Oi oi oi! Keep climbing to the top, no excuses!',
+      ms: 'Oi oi oi! Takde alasan, panjat sampai atas!',
     },
     {
       file: 'bakugou_line2.mp3',
@@ -116,25 +109,32 @@ export const VOICE_SHUFFLE_CATALOG = {
       ms: 'LEBURKAN SEMUANYA!!',
     },
     {
+      file: 'bakugou_line3.mp3',
+      ja: 'おいおいおい！サボってんじゃねぇぞ！',
+      romaji: 'Oi oi oi! Sabotten ja nee zo!',
+      en: 'Oi oi oi! Don’t you dare slack off!',
+      ms: 'Oi oi oi! Jangan berani bermalas-malasan!',
+    },
+    {
       file: 'bakugou_line4.mp3',
-      ja: '爆豪の勝利だ！当たり前だ、ついて来い！',
-      romaji: 'Bakugou no shouri da! Atarimae da, tsuite koi!',
-      en: 'Bakugo’s victory! That’s obvious, now follow me!',
-      ms: 'Kemenangan Bakugo! Dah tentulah, ikut aku!',
+      ja: 'バカ！俺の背中追うなら本気出せ！',
+      romaji: 'Baka! Ore no senaka ou nara honki dase!',
+      en: 'Idiot! If you’re chasing my back, give it your all!',
+      ms: 'Bongok! Kalau nak kejar langkah aku, bersungguh-sungguhlah!',
     },
     {
       file: 'bakugou_line5.mp3',
-      ja: '消し飛べぇぇ！！',
-      romaji: 'Keshitobeee!!',
-      en: 'Blow away!!',
-      ms: 'Meletup hancur!!',
+      ja: '爆豪の勝利だ！当たり前だ、ついて来い！',
+      romaji: 'Bakugou no shouri da! Atarimae da, tsuite koi!',
+      en: 'Bakugo’s victory! That’s obvious, now follow me!',
+      ms: 'Kemenangan mutlak Bakugo! Ikut aku!',
     },
     {
       file: 'bakugou_line6.mp3',
-      ja: 'バカ！ついて来い！置いてくぞ！ぶっ飛ばして走れぇ！',
-      romaji: 'Baka! Tsuite koi! Oiteku zo! Buttobashite hashireee!',
-      en: 'Idiot! Keep up! I’ll leave you behind! Sprint like crazy!',
-      ms: 'Bongok! Ikut aku! Aku tinggal kau nanti! Lari sekuat hati!',
+      ja: 'ついて来い！置いてくぞ！ぶっ飛ばして走れぇ！',
+      romaji: 'Tsuite koi! Oiteku zo! Buttobashite hashireee!',
+      en: 'Keep up! I’ll leave you behind! Sprint like crazy!',
+      ms: 'Ikut aku! Aku tinggal kau nanti! Lari sekuat hati!',
     },
   ],
 };
@@ -254,16 +254,13 @@ class AudioService {
       const voices = this.voices.length ? this.voices : window.speechSynthesis.getVoices();
       const jaVoice = voices.find((v) => v.lang.startsWith('ja') || v.lang.includes('JP'));
 
-      // If Japanese voice exists, use authentic Kanji/Kana; if not, use phonetic Romaji
-      const spokenText = jaVoice ? scriptObj.ja : scriptObj.romaji;
-      const utter = new SpeechSynthesisUtterance(spokenText);
+      // Strict requirement: Never speak Japanese anime lines in an English robotic voice
+      if (!jaVoice) return;
 
-      if (jaVoice) {
-        utter.voice = jaVoice;
-        utter.lang = 'ja-JP';
-      } else {
-        utter.lang = 'en-US';
-      }
+      const spokenText = scriptObj.ja;
+      const utter = new SpeechSynthesisUtterance(spokenText);
+      utter.voice = jaVoice;
+      utter.lang = 'ja-JP';
 
       if (character === 'bakugou') {
         utter.rate = 1.15; // Aggressive, explosive pace
@@ -305,10 +302,13 @@ class AudioService {
       else navigator.vibrate(20);
     }
 
-    const primaryPath = `/assets/companions/${charKey}/audio/${pickedLine.file}`;
-    const fallbackPath = `/assets/companions/${charKey}/audio/${charKey}_voice.mp3`;
+    const version = 'v=4';
+    const primaryPath = `/assets/companions/${charKey}/audio/${pickedLine.file}?${version}`;
+    const rawPrimaryPath = `/assets/companions/${charKey}/audio/${pickedLine.file}`;
+    const fallbackPath = `/assets/companions/${charKey}/audio/${charKey}_voice.mp3?${version}`;
 
-    for (const p of [primaryPath, fallbackPath]) {
+    // 1. Try HTMLAudioElement
+    for (const p of [primaryPath, rawPrimaryPath, fallbackPath]) {
       try {
         let audio = this.cache.get(p);
         if (!audio) {
@@ -320,11 +320,29 @@ class AudioService {
         await audio.play();
         return { success: true, character: charKey, line: pickedLine, index: nextIdx };
       } catch {
-        // Continue to fallback
+        // Continue to Web Audio fetch fallback
       }
     }
 
-    // High-precision Web Audio procedural FX + Speech Synthesis fallback
+    // 2. Web Audio API Direct Buffer Playback (Bypasses any media tag issues)
+    try {
+      if (this.audioContext) {
+        const resp = await fetch(primaryPath);
+        if (resp.ok) {
+          const arrayBuf = await resp.arrayBuffer();
+          const audioBuf = await this.audioContext.decodeAudioData(arrayBuf);
+          const srcNode = this.audioContext.createBufferSource();
+          srcNode.buffer = audioBuf;
+          srcNode.connect(this.audioContext.destination);
+          srcNode.start(0);
+          return { success: true, character: charKey, line: pickedLine, index: nextIdx };
+        }
+      }
+    } catch {
+      // Continue to synth fallback
+    }
+
+    // 3. Procedural Hero SFX + Japanese-only speech synthesis
     this.playSyntheticHeroSFX(charKey, 'greet');
     this.speakJapanese(charKey, 'greet');
     return { success: true, character: charKey, line: pickedLine, index: nextIdx };
@@ -350,11 +368,13 @@ class AudioService {
       else navigator.vibrate(15);
     }
 
+    const version = 'v=4';
     const candidatePaths = [
+      `/assets/companions/${charKey}/audio/${charKey}_${soundKey}.mp3?${version}`,
       `/assets/companions/${charKey}/audio/${charKey}_${soundKey}.mp3`,
-      charKey === 'bakugou' ? `/assets/companions/bakugou/audio/baku_${soundKey}.mp3` : null,
-      `/assets/companions/${charKey}/audio/${charKey}_line1.mp3`,
-      `/assets/companions/${charKey}/audio/${charKey}_voice.mp3`,
+      charKey === 'bakugou' ? `/assets/companions/bakugou/audio/baku_${soundKey}.mp3?${version}` : null,
+      `/assets/companions/${charKey}/audio/${charKey}_line1.mp3?${version}`,
+      `/assets/companions/${charKey}/audio/${charKey}_voice.mp3?${version}`,
     ].filter(Boolean);
 
     for (const filePath of candidatePaths) {
@@ -373,7 +393,7 @@ class AudioService {
       }
     }
 
-    // High-precision Web Audio procedural FX + Speech Synthesis fallback
+    // High-precision Web Audio procedural FX + Japanese-only Speech Synthesis fallback
     this.playSyntheticHeroSFX(charKey, soundKey);
     this.speakJapanese(charKey, soundKey);
     return { success: true, character: charKey, soundKey };

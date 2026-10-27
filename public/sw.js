@@ -1,9 +1,10 @@
-// CalMal service worker — offline-first app shell caching.
-const CACHE = 'calmal-v2';
+// CalMal service worker — offline-first app shell caching with network-first audio.
+const CACHE = 'calmal-v4';
 const SHELL = ['/', '/index.html', '/calmal-logo.png', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', '/favicon.png', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
 });
 
 self.addEventListener('activate', (e) => {
@@ -22,6 +23,22 @@ self.addEventListener('fetch', (e) => {
   // Never cache AI / product APIs.
   if (url.hostname.includes('googleapis.com') && !url.hostname.includes('fonts')) return;
   if (url.hostname.includes('openfoodfacts.org')) return;
+
+  // Audio assets: Network first so new anime voice clips always load instantly
+  if (url.pathname.includes('/companions/') || /\.(mp3|wav|ogg)$/.test(url.pathname)) {
+    e.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
 
   // Navigation: network first, fall back to cached shell.
   if (req.mode === 'navigate') {
