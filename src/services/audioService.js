@@ -287,8 +287,8 @@ class AudioService {
         case 'nav': {
           // Melodic ascending two-tone anime menu chime (C6 1046.5Hz -> G6 1567.98Hz)
           const notes = [
-            { freq: 1046.5, time: 0, dur: 0.035, vol: 0.045 },
-            { freq: 1567.98, time: 0.026, dur: 0.048, vol: 0.055 }
+            { freq: 1046.5, time: 0, dur: 0.035, vol: 0.18 },
+            { freq: 1567.98, time: 0.026, dur: 0.048, vol: 0.24 }
           ];
           notes.forEach(({ freq, time, dur, vol }) => {
             const osc = ctx.createOscillator();
@@ -309,9 +309,9 @@ class AudioService {
         case 'confirm': {
           // Triumphant 3-note ascending anime data confirm arpeggio (D6 -> F#6 -> A6)
           const notes = [
-            { freq: 1174.66, time: 0, dur: 0.035, vol: 0.05 },
-            { freq: 1479.98, time: 0.032, dur: 0.04, vol: 0.055 },
-            { freq: 1760.00, time: 0.068, dur: 0.075, vol: 0.065 }
+            { freq: 1174.66, time: 0, dur: 0.035, vol: 0.18 },
+            { freq: 1479.98, time: 0.032, dur: 0.04, vol: 0.22 },
+            { freq: 1760.00, time: 0.068, dur: 0.075, vol: 0.28 }
           ];
           notes.forEach(({ freq, time, dur, vol }) => {
             const osc = ctx.createOscillator();
@@ -337,7 +337,7 @@ class AudioService {
           osc.type = 'sine';
           osc.frequency.setValueAtTime(1100, now);
           osc.frequency.exponentialRampToValueAtTime(1760, now + 0.024);
-          gain.gain.setValueAtTime(0.055, now);
+          gain.gain.setValueAtTime(0.22, now);
           gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.026);
           osc.connect(gain);
           gain.connect(ctx.destination);
@@ -353,7 +353,7 @@ class AudioService {
           osc.type = 'sine';
           osc.frequency.setValueAtTime(1500, now);
           osc.frequency.exponentialRampToValueAtTime(900, now + 0.024);
-          gain.gain.setValueAtTime(0.045, now);
+          gain.gain.setValueAtTime(0.18, now);
           gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.026);
           osc.connect(gain);
           gain.connect(ctx.destination);
@@ -369,7 +369,7 @@ class AudioService {
           osc.type = 'triangle';
           osc.frequency.setValueAtTime(1320, now);
           osc.frequency.exponentialRampToValueAtTime(1650, now + 0.02);
-          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.setValueAtTime(0.20, now);
           gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.022);
           osc.connect(gain);
           gain.connect(ctx.destination);
@@ -385,7 +385,7 @@ class AudioService {
           osc.type = 'sine';
           osc.frequency.setValueAtTime(980, now);
           osc.frequency.exponentialRampToValueAtTime(650, now + 0.032);
-          gain.gain.setValueAtTime(0.045, now);
+          gain.gain.setValueAtTime(0.18, now);
           gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.035);
           osc.connect(gain);
           gain.connect(ctx.destination);
@@ -402,7 +402,7 @@ class AudioService {
           osc.type = 'sine';
           osc.frequency.setValueAtTime(1760, now);
           osc.frequency.exponentialRampToValueAtTime(1200, now + 0.025);
-          gain.gain.setValueAtTime(0.055, now);
+          gain.gain.setValueAtTime(0.22, now);
           gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.028);
           osc.connect(gain);
           gain.connect(ctx.destination);
@@ -414,6 +414,17 @@ class AudioService {
     } catch {
       // Audio synthesis handled gracefully
     }
+  }
+
+  /**
+   * Check if voice or dialogue audio is currently playing
+   */
+  isPlayingVoice() {
+    return !!(
+      (this.currentAudio && !this.currentAudio.paused && !this.currentAudio.ended) ||
+      this.currentSourceNode ||
+      (typeof window !== 'undefined' && window.speechSynthesis?.speaking)
+    );
   }
 
   /**
@@ -439,6 +450,9 @@ class AudioService {
       try {
         window.speechSynthesis.cancel();
       } catch { /* noop */ }
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false } }));
     }
   }
 
@@ -622,15 +636,21 @@ class AudioService {
         // Auto-stop tracking when finished
         audio.onended = () => {
           if (this.currentAudio === audio) this.currentAudio = null;
+          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false } }));
         };
         audio.onpause = () => {
           if (this.currentAudio === audio) this.currentAudio = null;
+          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false } }));
         };
         audio.onerror = () => {
           if (this.currentAudio === audio) this.currentAudio = null;
+          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false } }));
         };
 
         await audio.play();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: true, character: charKey } }));
+        }
         return;
       } catch {
         // try next
@@ -650,8 +670,12 @@ class AudioService {
           this.currentSourceNode = srcNode;
           srcNode.onended = () => {
             if (this.currentSourceNode === srcNode) this.currentSourceNode = null;
+            if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false } }));
           };
           srcNode.start(0);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: true, character: charKey } }));
+          }
           return;
         }
       }

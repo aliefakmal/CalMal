@@ -105,18 +105,69 @@
   font-size: 13px;
   font-weight: 800;
   letter-spacing: -0.01em;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
+  flex-wrap: nowrap;
 }
-.cbubble-name span {
+.cbubble-coach-title {
   font-size: 11px;
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 1;
 }
+.cbubble-coach-title b {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.cbubble-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.cbubble-actions button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s var(--ease);
+}
+.cbubble .btn-voice-stop {
+  color: var(--muted);
+  border: 1px solid transparent;
+}
+.cbubble .btn-voice-stop:hover {
+  color: #ff453a;
+  background: rgba(255, 69, 58, 0.15);
+  border-color: rgba(255, 69, 58, 0.3);
+}
+.cbubble.is-playing .btn-voice-stop {
+  color: #ff453a;
+  background: rgba(255, 69, 58, 0.2);
+  border-color: rgba(255, 69, 58, 0.45);
+  box-shadow: 0 0 10px rgba(255, 69, 58, 0.35);
+  animation: pulseStop 1.4s infinite ease-in-out;
+}
+.cbubble.is-playing .btn-voice-trigger {
+  color: var(--hero-accent);
+  background: rgba(255, 255, 255, 0.12);
+}
+@keyframes pulseStop {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.08); filter: brightness(1.25); }
+}
+
 .cbubble-deku .cbubble-name { color: var(--deku); }
 .cbubble-bakugou .cbubble-name { color: var(--baku); }
 .cbubble-text-wrap {

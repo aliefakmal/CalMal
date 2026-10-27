@@ -79,13 +79,16 @@ export function companionBubble(who, text, { compact = false, state = 'idle', so
   return `<div class="cbubble cbubble-${who} ${compact ? 'compact' : ''}" data-who="${who}" data-sound="${soundKey}">
     ${avatar(who, compact ? 40 : 48, state)}
     <div class="cbubble-body" style="cursor:pointer" title="Tap to reload anime voice line">
-      <div class="cbubble-name row between">
-        <span>${c.short} <small style="opacity:0.75;font-weight:normal">(${c.role})</small></span>
-        <div class="row" style="gap:4px;align-items:center">
-          <button type="button" class="btn-voice-trigger btn btn-icon btn-ghost btn-xs" title="Play Authentic Anime Voice" aria-label="Play Voice SFX" style="width:28px;height:28px;padding:0;touch-action:manipulation">
+      <div class="cbubble-name row between" style="align-items:center;gap:6px">
+        <span class="cbubble-coach-title"><b>${c.short}</b> <small style="opacity:0.75;font-weight:600">(${c.role})</small></span>
+        <div class="cbubble-actions row" style="gap:4px;align-items:center;flex-shrink:0">
+          <button type="button" class="btn-voice-trigger btn btn-icon btn-ghost btn-xs" title="Play Voice / Mainkan Suara" aria-label="Play Voice SFX" style="width:28px;height:28px;padding:0;touch-action:manipulation">
             ${icons.sound || '🔊'}
           </button>
-          <button type="button" class="btn-voice-reload btn btn-icon btn-ghost btn-xs" title="Reload Voice Line & Quote" aria-label="Reload Voice Line" style="width:28px;height:28px;padding:0;touch-action:manipulation">
+          <button type="button" class="btn-voice-stop btn btn-icon btn-ghost btn-xs" title="Stop Voice / Hentikan Suara" aria-label="Stop Voice SFX" style="width:28px;height:28px;padding:0;touch-action:manipulation">
+            ${icons.stop}
+          </button>
+          <button type="button" class="btn-voice-reload btn btn-icon btn-ghost btn-xs" title="Reload Voice Line & Quote / Muat Semula Dialog" aria-label="Reload Voice Line" style="width:28px;height:28px;padding:0;touch-action:manipulation">
             ${icons.refresh}
           </button>
           ${
@@ -141,23 +144,48 @@ export function bindCompanionEvents(container, onCoachSwitch) {
       }
     }
 
-    // 1. Click on Sound icon -> instant reload quote + play audio
+    // 1. Click on Sound icon -> if playing, stop; if stopped, play/shuffle
     el.querySelector('.btn-voice-trigger')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      triggerShuffle();
+      if (soundboard.isPlayingVoice()) {
+        soundboard.stopAll();
+        soundboard.playUISound('cancel');
+        el.classList.remove('is-playing');
+      } else {
+        triggerShuffle();
+      }
     });
 
-    // 2. Click on Reload icon -> instant reload quote + play audio
+    // 2. Click on Stop icon -> instant stop voice
+    el.querySelector('.btn-voice-stop')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      soundboard.stopAll();
+      soundboard.playUISound('cancel');
+      el.classList.remove('is-playing');
+    });
+
+    // 3. Click on Reload icon -> instant reload quote + play audio
     el.querySelector('.btn-voice-reload')?.addEventListener('click', (e) => {
       e.stopPropagation();
       triggerShuffle();
     });
 
-    // 3. Click on the bubble body -> instant reload quote + play audio
+    // 4. Click on the bubble body -> instant reload quote + play audio
     el.querySelector('.cbubble-body')?.addEventListener('click', (e) => {
       if (e.target.closest('button')) return;
       triggerShuffle();
     });
+
+    // Listen to global voice state events to highlight active playing state
+    const onVoiceState = (ev) => {
+      const isPlaying = ev.detail?.isPlaying;
+      if (isPlaying) {
+        el.classList.add('is-playing');
+      } else {
+        el.classList.remove('is-playing');
+      }
+    };
+    window.addEventListener('calmal:voice-state', onVoiceState);
 
     // 4. Switch coach
     el.querySelector('.btn-coach-switch')?.addEventListener('click', (e) => {
