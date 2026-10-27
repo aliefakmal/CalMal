@@ -166,6 +166,253 @@ class AudioService {
       window.addEventListener('pagehide', () => this.stopAll());
       window.addEventListener('beforeunload', () => this.stopAll());
       window.addEventListener('hashchange', () => this.stopAll());
+      this.setupUIListeners();
+    }
+  }
+
+  /**
+   * Unlock AudioContext on initial touch/click and automatically wire anime UI SFX
+   * to all interactive buttons, links, inputs, and toggles across the web app.
+   */
+  setupUIListeners() {
+    if (typeof document === 'undefined') return;
+
+    // Unlock AudioContext on first gesture (conforms to browser autoplay policies)
+    const unlockAudio = () => {
+      this.init();
+      window.removeEventListener('pointerdown', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+    };
+    window.addEventListener('pointerdown', unlockAudio, { passive: true });
+    window.addEventListener('keydown', unlockAudio, { passive: true });
+
+    let lastSoundTime = 0;
+
+    // Use capturing click listener to catch all button interactions before stopPropagation
+    document.addEventListener('click', (e) => {
+      if (store.settings?.soundEnabled === false || this.isMuted) return;
+
+      const now = performance.now();
+      if (now - lastSoundTime < 35) return; // Prevent double-trigger on rapid bubbling
+
+      const target = e.target.closest('button, a, input, select, textarea, [role="button"], .chip, .nav-item, .side-item, .pill, .btn, .bento-card, .tab');
+      if (!target) return;
+
+      // Don't play on disabled elements
+      if (target.disabled || target.getAttribute('aria-disabled') === 'true' || target.classList.contains('disabled')) {
+        return;
+      }
+
+      // Check explicit data-sound attribute
+      const explicit = target.closest('[data-sound]')?.getAttribute('data-sound');
+      if (explicit === 'none' || explicit === 'false' || explicit === 'off') return;
+
+      lastSoundTime = now;
+
+      // Classify the interactive element to appropriate anime UI sound
+      let soundType = explicit || 'tap';
+
+      if (!explicit) {
+        const tag = target.tagName.toLowerCase();
+        const type = (target.type || '').toLowerCase();
+
+        if (type === 'checkbox' || type === 'radio') {
+          soundType = target.checked ? 'toggle-on' : 'toggle-off';
+        } else if (
+          target.classList.contains('nav-item') ||
+          target.classList.contains('side-item') ||
+          target.classList.contains('tab') ||
+          target.classList.contains('lang-pill-btn') ||
+          target.id === 'topbar-lang-toggle' ||
+          target.id === 'topbar-tutorial-btn' ||
+          (tag === 'a' && target.getAttribute('href')?.startsWith('#/'))
+        ) {
+          soundType = 'nav';
+        } else if (
+          type === 'submit' ||
+          target.classList.contains('btn-primary') ||
+          target.classList.contains('btn-success') ||
+          target.classList.contains('nav-fab') ||
+          target.id?.includes('save') ||
+          target.id?.includes('confirm') ||
+          target.id === 'btn-quick-scan'
+        ) {
+          soundType = 'confirm';
+        } else if (
+          target.classList.contains('chip') ||
+          target.classList.contains('water-btn') ||
+          target.dataset.act === 'add' ||
+          target.dataset.act === 'sub'
+        ) {
+          soundType = 'stepper';
+        } else if (
+          target.classList.contains('btn-danger') ||
+          target.classList.contains('sheet-close') ||
+          target.classList.contains('modal-close') ||
+          target.classList.contains('cp-close') ||
+          target.id?.includes('delete') ||
+          target.id?.includes('close')
+        ) {
+          soundType = 'cancel';
+        }
+      }
+
+      this.playUISound(soundType);
+    }, { capture: true, passive: true });
+  }
+
+  /**
+   * Procedural Anime UI Sound Effects (No human voices, 0ms latency, Web Audio API)
+   * Types: 'tap', 'nav', 'confirm', 'toggle', 'toggle-on', 'toggle-off', 'stepper', 'cancel'
+   */
+  playUISound(type = 'tap') {
+    if (store.settings?.soundEnabled === false || this.isMuted) return;
+    this.init();
+    if (!this.audioContext) return;
+
+    if (this.audioContext.state === 'suspended') {
+      this.audioContext.resume().then(() => this._synthUISound(type)).catch(() => {});
+    } else {
+      this._synthUISound(type);
+    }
+  }
+
+  _synthUISound(type) {
+    try {
+      const ctx = this.audioContext;
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      switch (type) {
+        case 'nav': {
+          // Melodic ascending two-tone anime menu chime (C6 1046.5Hz -> G6 1567.98Hz)
+          const notes = [
+            { freq: 1046.5, time: 0, dur: 0.035, vol: 0.045 },
+            { freq: 1567.98, time: 0.026, dur: 0.048, vol: 0.055 }
+          ];
+          notes.forEach(({ freq, time, dur, vol }) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + time);
+            osc.frequency.exponentialRampToValueAtTime(freq * 1.04, now + time + dur);
+            gain.gain.setValueAtTime(vol, now + time);
+            gain.gain.exponentialRampToValueAtTime(0.0005, now + time + dur);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + time);
+            osc.stop(now + time + dur + 0.005);
+          });
+          break;
+        }
+
+        case 'confirm': {
+          // Triumphant 3-note ascending anime data confirm arpeggio (D6 -> F#6 -> A6)
+          const notes = [
+            { freq: 1174.66, time: 0, dur: 0.035, vol: 0.05 },
+            { freq: 1479.98, time: 0.032, dur: 0.04, vol: 0.055 },
+            { freq: 1760.00, time: 0.068, dur: 0.075, vol: 0.065 }
+          ];
+          notes.forEach(({ freq, time, dur, vol }) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + time);
+            osc.frequency.exponentialRampToValueAtTime(freq * 1.06, now + time + dur);
+            gain.gain.setValueAtTime(vol, now + time);
+            gain.gain.exponentialRampToValueAtTime(0.0005, now + time + dur);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + time);
+            osc.stop(now + time + dur + 0.005);
+          });
+          break;
+        }
+
+        case 'toggle':
+        case 'toggle-on': {
+          // Crisp high-tech switch snap (upward pitch 1100Hz -> 1760Hz)
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1100, now);
+          osc.frequency.exponentialRampToValueAtTime(1760, now + 0.024);
+          gain.gain.setValueAtTime(0.055, now);
+          gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.026);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.028);
+          break;
+        }
+
+        case 'toggle-off': {
+          // Soft mechanical down-click (downward pitch 1500Hz -> 900Hz)
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1500, now);
+          osc.frequency.exponentialRampToValueAtTime(900, now + 0.024);
+          gain.gain.setValueAtTime(0.045, now);
+          gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.026);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.028);
+          break;
+        }
+
+        case 'stepper': {
+          // Light digital counter tick (1320Hz -> 1650Hz, 22ms)
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(1320, now);
+          osc.frequency.exponentialRampToValueAtTime(1650, now + 0.02);
+          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.022);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.024);
+          break;
+        }
+
+        case 'cancel': {
+          // Gentle descending dismiss tone (980Hz -> 650Hz, 35ms)
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(980, now);
+          osc.frequency.exponentialRampToValueAtTime(650, now + 0.032);
+          gain.gain.setValueAtTime(0.045, now);
+          gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.035);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.038);
+          break;
+        }
+
+        case 'tap':
+        default: {
+          // Anime HUD glass cursor tap: clean sine sweep 1760Hz -> 1200Hz (26ms)
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1760, now);
+          osc.frequency.exponentialRampToValueAtTime(1200, now + 0.025);
+          gain.gain.setValueAtTime(0.055, now);
+          gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.028);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.03);
+          break;
+        }
+      }
+    } catch {
+      // Audio synthesis handled gracefully
     }
   }
 

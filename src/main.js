@@ -15,6 +15,7 @@ import { renderRecipes } from './screens/recipes.js';
 import { renderProfile } from './screens/profile.js';
 import { openPageTutorial } from './utils/tutorials.js';
 import { initPwaInstall, isStandalone, promptInstall, subscribeInstallState } from './utils/pwaInstall.js';
+import { soundboard } from './services/audioService.js';
 
 function getRoutes() {
   return {

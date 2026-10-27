@@ -458,8 +458,8 @@ export function renderProfile(container) {
     container.querySelector('#sound-toggle')?.addEventListener('change', (e) => {
       store.saveSettings({ soundEnabled: e.target.checked });
       soundboard.setMute(!e.target.checked);
-      toast(`Hero SFX & Voice: ${e.target.checked ? 'Enabled' : 'Muted'}.`, 'info');
-      if (e.target.checked) soundboard.play(profile.selectedCompanion || 'deku', 'greet');
+      toast(`Hero SFX: ${e.target.checked ? 'Enabled' : 'Muted'}.`, 'info');
+      if (e.target.checked) soundboard.playUISound('confirm');
     });
 
     // Toggle Notifications
