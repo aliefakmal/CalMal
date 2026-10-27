@@ -1335,15 +1335,37 @@
 }
 
 .topbar-actions .btn-guide-pill,
-.topbar-actions .lang-pill-btn {
+.topbar-actions .lang-pill-btn,
+.topbar-actions .btn-install-pill {
   height: 30px;
   box-sizing: border-box;
-  padding: 0 10px;
+  padding: 0 9px;
 }
 
 .topbar-actions .btn-guide-pill {
   gap: 5px;
   font-size: 11.5px;
+}
+
+.topbar-actions .btn-install-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.32);
+  border-radius: 999px;
+  color: #34d399;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+
+.topbar-actions .btn-install-pill:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(16, 185, 129, 0.5);
+  transform: translateY(-1px);
 }
 
 

@@ -14,6 +14,7 @@ import { renderActivity } from './screens/activity.js';
 import { renderRecipes } from './screens/recipes.js';
 import { renderProfile } from './screens/profile.js';
 import { openPageTutorial } from './utils/tutorials.js';
+import { initPwaInstall, isStandalone, promptInstall, subscribeInstallState } from './utils/pwaInstall.js';
 
 function getRoutes() {
   return {
@@ -60,7 +61,7 @@ function renderNav(active) {
   });
 
   document.getElementById('sidebar').innerHTML = `
-    <a class="brand" href="#/home"><img src="/icon.svg" alt="" />CalMal</a>
+    <a class="brand" href="#/home"><img src="/calmal-logo.png" alt="CalMal Logo" /><span>CalMal</span></a>
     ${['home', 'scan', 'activity', 'recipes', 'profile']
       .map((k) => `<a href="#/${k}" id="side-${k}" class="side-item ${active === k ? 'active' : ''}">${k === 'scan' ? icons.camera : routes[k].icon}<span>${k === 'scan' ? t('dash_scan_btn') : routes[k].label}</span></a>`)
       .join('')}
@@ -71,9 +72,10 @@ function renderTopbar() {
   const online = navigator.onLine;
   const rec = tracker.isActive();
   const lang = getLang();
+  const standalone = isStandalone();
 
   document.getElementById('topbar').innerHTML = `
-    <a class="brand" href="#/home"><img src="/icon.svg" alt="" />CalMal</a>
+    <a class="brand" href="#/home"><img src="/calmal-logo.png" alt="CalMal Logo" /><span>CalMal</span></a>
     <div class="topbar-actions">
       <!-- Universal Page Tutorial Button -->
       <button type="button" class="btn-guide-pill" id="topbar-tutorial-btn" title="${lang === 'en' ? 'Page Guide & Tutorial' : 'Panduan & Tutorial Halaman'}">
@@ -87,6 +89,14 @@ function renderTopbar() {
         <span class="lang-cur">${lang.toUpperCase()}</span>
         <span class="lang-alt">${lang === 'en' ? 'BM' : 'EN'}</span>
       </button>
+
+      <!-- Add to Home Screen Option (Hidden once running in Standalone) -->
+      ${!standalone ? `
+        <button type="button" class="btn-install-pill" id="topbar-install-btn" title="${lang === 'en' ? 'Add CalMal to Home Screen' : 'Pasang CalMal ke Skrin Utama'}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>${lang === 'en' ? 'Install' : 'Pasang'}</span>
+        </button>
+      ` : ''}
 
       ${rec ? `<a class="pill-status rec" href="#/activity" id="rec-pill"><span class="dot"></span>${t('topbar_recording')}</a>` : ''}
       <span class="pill-status ${online ? '' : 'offline'}" title="${online ? t('topbar_online') : t('topbar_offline_desc')}">
@@ -103,6 +113,11 @@ function renderTopbar() {
 
   document.getElementById('topbar-lang-toggle')?.addEventListener('click', () => {
     toggleLang();
+    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+  });
+
+  document.getElementById('topbar-install-btn')?.addEventListener('click', () => {
+    promptInstall();
     if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
   });
 }
@@ -149,10 +164,12 @@ tracker.subscribe(() => {
 
 store.subscribe((type) => { if (type === 'reset') route(); });
 onLangChange(() => route());
+initPwaInstall();
+subscribeInstallState(() => renderTopbar());
 
 route();
 startReminderLoop();
 
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }

@@ -10,6 +10,7 @@ import { openProfileEditor } from '../components/profileEditor.js';
 import { soundboard } from '../services/audioService.js';
 import { esc, fmtDate, todayKey } from '../utils/helpers.js';
 import { t, getLang, setLang } from '../utils/i18n.js';
+import { isStandalone, promptInstall } from '../utils/pwaInstall.js';
 
 
 export function renderProfile(container) {
@@ -137,6 +138,34 @@ export function renderProfile(container) {
               <span>🇲🇾 Bahasa Melayu</span>
             </button>
           </div>
+        </div>
+
+        <!-- Install CalMal App Card (Add to Home Screen) -->
+        <div class="card stack" style="border:1px solid var(--border-soft);background:var(--surface-2)">
+          <div class="card-title row between" style="align-items:center">
+            <span class="row" style="gap:8px;align-items:center">
+              <img src="/calmal-logo.png" alt="CalMal Logo" style="width:26px;height:26px;border-radius:7px;object-fit:cover;border:1px solid rgba(255,255,255,0.12)" />
+              <span>${isEn ? 'Home Screen App' : 'Aplikasi Skrin Utama'}</span>
+            </span>
+            <span class="badge ${isStandalone() ? 'ok' : 'primary'}">
+              ${isStandalone() ? (isEn ? 'Installed' : 'Dipasang') : (isEn ? 'Ready to Install' : 'Sedia Dipasang')}
+            </span>
+          </div>
+          <p class="small muted" style="line-height:1.45;margin-bottom:2px">
+            ${isEn
+              ? 'Add CalMal to your phone Home Screen for instant launch, full screen view without browser bars, and reliable offline access.'
+              : 'Pasang CalMal ke Skrin Utama telefon untuk mod skrin penuh tanpa bar carian pelayar, akses pantas, dan sokongan luar talian.'}
+          </p>
+          ${isStandalone()
+            ? `<div class="row" style="gap:6px;align-items:center;color:var(--ok);font-size:12.5px;font-weight:600;padding:4px 0">
+                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                 <span>${isEn ? 'Running in standalone full-screen mode' : 'Sedang berjalan dalam mod skrin utama penuh'}</span>
+               </div>`
+            : `<button type="button" class="btn btn-primary btn-block" id="btn-install-profile" style="margin-top:4px">
+                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                 <span>${isEn ? 'Add to Home Screen' : 'Pasang ke Skrin Utama'}</span>
+               </button>`
+          }
         </div>
 
         <!-- Hero Rank & License Status Card -->
@@ -431,6 +460,12 @@ export function renderProfile(container) {
         setLang(lang);
         toast(lang === 'en' ? 'Language changed to English!' : 'Bahasa ditukar ke Bahasa Melayu!', 'success');
       });
+    });
+
+    // Install to Home Screen Trigger
+    container.querySelector('#btn-install-profile')?.addEventListener('click', () => {
+      promptInstall();
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
     });
 
     // Edit Profile Modal Trigger

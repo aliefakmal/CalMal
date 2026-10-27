@@ -34,7 +34,7 @@ export function renderOnboarding(container, onComplete) {
     container.innerHTML = `
       <div class="stack" style="max-width:540px;margin:20px auto 40px">
         <div class="center" style="margin-bottom:8px">
-          <img src="/icon.svg" alt="CalMal Logo" style="width:68px;height:68px;margin:0 auto 12px;border-radius:18px;box-shadow:0 8px 30px rgba(255,255,255,0.15)" />
+          <img src="/calmal-logo.png" alt="CalMal Logo" style="width:72px;height:72px;margin:0 auto 12px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.18);object-fit:cover" />
           <h1 class="page-title">Welcome to CalMal</h1>
           <p class="page-sub">AI-powered calorie tracker, Strava-grade GPS running, and anime coaching with Deku & Bakugou.</p>
         </div>

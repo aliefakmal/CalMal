@@ -1,6 +1,6 @@
 // CalMal service worker — offline-first app shell caching.
-const CACHE = 'calmal-v1';
-const SHELL = ['/', '/index.html', '/icon.svg', '/manifest.webmanifest'];
+const CACHE = 'calmal-v2';
+const SHELL = ['/', '/index.html', '/calmal-logo.png', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', '/favicon.png', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
