@@ -664,38 +664,387 @@ export function openPrintModal(plan) {
 
 export function openMarketGuideModal() {
   const isEn = getLang() === 'en';
-  const tips = getShoppingTips();
 
-  openSheet(`
-    <div class="guide-modal-sheet">
-      <div class="row between" style="align-items:flex-start;margin-bottom:12px">
-        <div style="flex:1;padding-right:12px">
-          <div class="row" style="gap:6px;align-items:center;margin-bottom:4px">
-            <span class="badge ok">${isEn ? 'Market Guide' : 'Panduan Pasar'}</span>
-            <span class="xs muted">${isEn ? 'Malaysian Grocers & Wet Markets' : 'Pasar Pagi & Pasar Raya'}</span>
-          </div>
-          <h3 style="font-size:17px;font-weight:800;color:#fff;margin:0;line-height:1.3">${isEn ? 'Grocery & Market Shopping Tips' : 'Tips Pasar & Bahan Masakan'}</h3>
-          <p class="xs muted" style="margin:4px 0 0;line-height:1.4">${isEn ? 'Smart strategies to buy fresh proteins and budget-friendly greens in Malaysia:' : 'Cara bijak membeli bahan segar, tinggi protein dan jimat di Malaysia:'}</p>
+  const topics = [
+    {
+      id: 'protein',
+      icon: '🥩',
+      pill: isEn ? '🥩 Fresh Proteins' : '🥩 Protein Segar',
+      badge: isEn ? 'Morning Market · Save ~30%' : 'Pasar Pagi · Jimat ~30%',
+      title: isEn ? 'Fresh Chicken Breast & Local Fish' : 'Dada Ayam & Ikan Tempatan di Pasar Pagi',
+      desc: isEn
+        ? 'Buy fresh chicken breast, local sea bass (siakap), mackerel (kembung), and eggs at morning wet markets for peak freshness and lowest cost.'
+        : 'Beli dada ayam segar tanpa kulit, ikan siakap, kembung dan telur di pasar basah pagi untuk kualiti segar dan harga jauh lebih murah berbanding pasar raya.',
+      type: 'checklist',
+      items: [
+        { name: isEn ? 'Skinless Chicken Breast' : 'Dada Ayam Segar (Tanpa Kulit)', badge: isEn ? '165 kcal · 31g Protein' : '165 kcal · 31g Protein' },
+        { name: isEn ? 'Fresh Sea Bass (Siakap)' : 'Ikan Siakap Tempatan', badge: isEn ? 'Lean & High Potassium' : 'Isi Putih & Rendah Lemak' },
+        { name: isEn ? 'Local Mackerel (Kembung)' : 'Ikan Kembung Tempatan', badge: isEn ? 'Omega-3 Rich' : 'Kaya Omega-3 & Jimat' },
+        { name: isEn ? 'Grade A / Kampung Eggs' : 'Telur Ayam Gred A / Kampung', badge: isEn ? 'Complete Protein' : 'Protein Lengkap & Kenyang' },
+      ],
+      protip: isEn
+        ? 'Shop between 7:30–9:00 AM. Look for bright clear eyes and vibrant red gills. Ask the fishmonger to clean and gut on the spot!'
+        : 'Datang jam 7:30–9:00 pagi. Pilih ikan dengan mata cembung jernih dan insang merah cerah. Minta peniaga potong dan bersihkan terus!',
+    },
+    {
+      id: 'veggies',
+      icon: '🌿',
+      pill: isEn ? '🌿 Local Herbs & Greens' : '🌿 Ulam & Sayuran',
+      badge: isEn ? 'High Satiety · Micronutrients' : 'Kaya Mikronutrien · Kenyang Lama',
+      title: isEn ? 'Fresh Local Greens & Satiety Herbs' : 'Ulam-Ulaman Kampung & Sayur Hijau',
+      desc: isEn
+        ? 'Incorporate local traditional herbs like pegaga, ulam raja, cucumbers, and okra for vital micronutrients and long-lasting fullness.'
+        : 'Amalkan ulam tradisional seperti pegaga, ulam raja, bendi celur dan timun kampung untuk serat tinggi, vitamin C, dan kawalan lapar.',
+      type: 'checklist',
+      items: [
+        { name: isEn ? 'Ulam Raja (King’s Salad)' : 'Ulam Raja Segar', badge: isEn ? 'Calcium & Antioxidants' : 'Kalsium & Antioksidan (RM1 seikat)' },
+        { name: isEn ? 'Daun Pegaga (Centella)' : 'Daun Pegaga Kampung', badge: isEn ? 'Blood Flow & Collagen' : 'Serat & Kolagen Alami' },
+        { name: isEn ? 'Fresh Okra / Bendi (Blanched)' : 'Bendi Segar (Celur/Rebus)', badge: isEn ? 'Blood Sugar Control' : 'Kawal Paras Gula Darah' },
+        { name: isEn ? 'Crisp Kampung Cucumbers' : 'Timun Kampung Rangup', badge: isEn ? '95% Water · Low Calorie' : '95% Air · Sangat Mengenyangkan' },
+      ],
+      protip: isEn
+        ? 'Local ulam is often RM1–RM2 per bunch at morning stalls. Soak in a bowl of ice-cold water for 5 minutes before serving for maximum crispiness!'
+        : 'Ulam raja dan pegaga biasanya hanya RM1–RM2 seikat di gerai kampung. Rendam dalam semangkuk air berais 5 minit untuk rangup segar bermakna!',
+    },
+    {
+      id: 'spices',
+      icon: '🌶️',
+      pill: isEn ? '🌶️ Bold Spices & Broths' : '🌶️ Rempah & Kurang Minyak',
+      badge: isEn ? 'Zero Hidden Fats' : 'Rasa Padu · Kawal Santan',
+      title: isEn ? 'Bold Aromatic Spices, Less Palm Oil & Santan' : 'Rempah Asli, Kurangkan Santan Pekat & Minyak',
+      desc: isEn
+        ? 'Harness fresh turmeric, ginger, lemongrass, and chili for bold Malaysian flavor without heavy palm oil or thick coconut cream.'
+        : 'Gunakan kunyit hidup, serai wangi, halia, dan cili padi untuk rasa lauk Melayu yang padu tanpa memerlukan minyak atau santan pekat.',
+      type: 'compare',
+      compare: {
+        badTitle: isEn ? 'Heavy Santan / Deep Fried' : 'Gulai Santan Pekat / Goreng Minyak',
+        badDesc: isEn ? '+380 kcal excess saturated fat' : '+380 kcal lemak tepu & minyak lebihan',
+        goodTitle: isEn ? 'Singgang / Asam Pedas / Bakar' : 'Singgang / Asam Pedas / Ayam Bakar',
+        goodDesc: isEn ? '+110 kcal · Saves ~270 kcal per dish!' : '+110 kcal · Jimat ~270 kcal setiap hidangan!',
+      },
+      protip: isEn
+        ? 'Cook singgang, sup utara, or grilled dishes where fresh aromatics create deep savory broth without needing a single drop of cooking oil!'
+        : 'Masakan singgang Kelantan, sup ayam utara dan lauk bakar serai langsung tidak memerlukan minyak masak, tapi rasanya sangat menyelerakan!',
+    },
+    {
+      id: 'carbs',
+      icon: '🌾',
+      pill: isEn ? '🌾 Half Rice & Oats' : '🌾 Karbo Pintar & Nasi',
+      badge: isEn ? 'Insulin Spike Control' : 'Kawal Lonjakan Gula & Mengantuk',
+      title: isEn ? 'Half-Portion Rice & Complex Carbohydrates' : 'Amalkan Nasi Separuh & Karbohidrat Kompleks',
+      desc: isEn
+        ? 'Choose wholemeal bread, whole rolled oats, or reduce white rice to half a portion to control glucose spikes and prevent afternoon sluggishness.'
+        : 'Pilih roti mil gandum penuh, rolled oats, atau amalkan konsep "nasi separuh" (1/2 cawan) untuk kawal lonjakan insulin dan elak mengantuk.',
+      type: 'checklist',
+      items: [
+        { name: isEn ? 'Practice "Nasi Separuh" (1/2 Cup)' : 'Minta "Nasi Separuh" (1/2 Cawan)', badge: isEn ? 'Saves 140 kcal instantly' : 'Jimat 140 kcal serta-merta' },
+        { name: isEn ? '100% Wholemeal Bread' : 'Roti Mil Gandum Penuh', badge: isEn ? 'High fiber · Slower digestion' : 'Serat tinggi & kenyang lama' },
+        { name: isEn ? 'Whole Rolled Oats' : 'Rolled Oats Tradisional', badge: isEn ? 'Beta-glucan heart health' : 'Beta-glukan untuk jantung' },
+        { name: isEn ? 'Steamed Sweet Potato' : 'Ubi Keledek Manis Rebus', badge: isEn ? 'Vitamin A & Complex Carb' : 'Karbo kompleks bertenaga' },
+      ],
+      protip: isEn
+        ? 'When ordering mixed rice at economic rice or nasi campur stalls, ask for "nasi separuh" upfront before taking your protein and greens.'
+        : 'Semasa memesan nasi campur atau nasi kandar, biasakan minta "nasi separuh" atau "suku pinggan" terlebih dahulu sebelum ambil lauk protein dan ulam.',
+    },
+    {
+      id: 'hydration',
+      icon: '💧',
+      pill: isEn ? '💧 Zero-Sugar Drinks' : '💧 Minuman Bebas Gula',
+      badge: isEn ? 'Zero Sugar · High Impact' : 'Sifar Gula · Jimat Kalori',
+      title: isEn ? 'Plain Water, Teh O Kosong & Sugar-Free Drinks' : 'Air Kosong & Teh O Kosong Tanpa Gula',
+      desc: isEn
+        ? 'Sweetened condensed milk in Teh Tarik and iced Milo is the biggest hidden calorie trap in Malaysia. Switch to zero-sugar drinks for rapid fat loss.'
+        : 'Susu pekat manis dalam Teh Tarik & Milo ais adalah penyumbang kalori tersembunyi terbesar di Malaysia. Tukar ke minuman bebas gula untuk hasil ketara.',
+      type: 'drink_switch',
+      drinkData: {
+        badDrink: isEn ? 'Teh Tarik Kaw / Milo Ais Manis' : 'Teh Tarik Kaw / Milo Ais Manis',
+        badMeta: isEn ? '160–180 kcal · 24g gula (4 sudu teh)' : '160–180 kcal · 24g gula (4 sudu gula)',
+        goodDrink: isEn ? 'Teh O Kosong / Chinese Tea / Kopi O' : 'Teh O Kosong / Teh Cina / Kopi O Kosong',
+        goodMeta: isEn ? '0 kcal · 0g gula · Penyerapan optimum' : '0 kcal · 0g gula · Penyerapan optimum',
+        weeklySave: isEn ? '~2,240 kcal saved/week (2 cups a day = ~300g pure fat burn!)' : '~2,240 kcal dijimatkan seminggu (bersamaan bakar lemak ~300g seminggu!)',
+      },
+      protip: isEn
+        ? 'Carry a chilled 1L water bottle everywhere. If craving refreshing sweetness, opt for fresh young coconut water with zero added syrup.'
+        : 'Bawa botol air sejuk 1L ke mana sahaja. Jika teringin rasa manis yang menyegarkan, pilih air kelapa muda segar tanpa sirap gula tambahan.',
+    },
+  ];
+
+  let currentStep = 0;
+  const checkedItems = new Set();
+
+  function copyMarketListToClipboard() {
+    let text = isEn ? '🛒 *CALMAL FRESH MALAYSIAN MARKET SHOPPING LIST*\n\n' : '🛒 *SENARAI BELANJA PASAR SEGAR CALMAL*\n\n';
+    text += isEn ? '🥩 *Fresh Proteins:*\n• Skinless chicken breast\n• Fresh sea bass (siakap) / mackerel (kembung)\n• Grade A / kampung eggs\n\n' : '🥩 *Protein Segar:*\n• Dada ayam segar tanpa kulit\n• Ikan siakap segar / ikan kembung tempatan\n• Telur ayam gred A / kampung\n\n';
+    text += isEn ? '🌿 *Local Greens & Ulam:*\n• Ulam raja & daun pegaga (RM1–RM2)\n• Bendi segar (celur) & timun kampung\n• Bayam hijau / sawi\n\n' : '🌿 *Ulam & Sayur Segar:*\n• Ulam raja & daun pegaga segar\n• Bendi segar & timun kampung rangup\n• Bayam hijau / sawi\n\n';
+    text += isEn ? '🌾 *Smart Carbs:*\n• Wholemeal bread & rolled oats\n• Basmati / brown rice & sweet potatoes\n\n' : '🌾 *Karbohidrat Pintar:*\n• Roti mil gandum penuh (wholemeal)\n• Rolled oats & beras basmati / perang\n• Ubi keledek manis rebus\n\n';
+    text += isEn ? '🌶️ *Spices & Aromatics:*\n• Fresh turmeric, ginger, lemongrass, garlic & chili\n\n' : '🌶️ *Rempah Asli:*\n• Kunyit hidup, serai wangi, halia muda, bawang putih & cili padi\n\n';
+    text += isEn ? '💧 *Hydration:*\n• Plain water, Teh O Kosong / Chinese tea\n\n' : '💧 *Minuman Sihat:*\n• Air kosong, Teh O Kosong & Kopi O tanpa gula\n\n';
+    text += isEn ? '💡 *Market Pro-Tips:*\n1. Shop morning market 7:30–9:00 AM\n2. Request half-portion rice (nasi separuh)\n3. Ditch condensed milk beverages\n\n' : '💡 *Petua Pintar CalMal:*\n1. Beli di pasar pagi jam 7:30–9:00 pagi\n2. Minta nasi separuh di gerai makan\n3. Tukar teh tarik manis ke teh o kosong\n\n';
+    text += isEn ? '✨ *Generated with CalMal Nutrition App*' : '✨ *Dijana dengan CalMal Nutrition App*';
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        toast(isEn ? 'Market shopping list copied to clipboard!' : 'Senarai belanja pasar berjaya disalin ke Clipboard! Sedia untuk WhatsApp/Notes.', 'success');
+        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([15, 30]);
+      }).catch(() => {
+        fallbackCopyText(text);
+      });
+    } else {
+      fallbackCopyText(text);
+    }
+  }
+
+  const { el, close } = openSheet(`
+    <div class="market-interactive-sheet">
+      <!-- Top Bar -->
+      <div class="market-interactive-top">
+        <div class="row" style="gap:6px;align-items:center">
+          <span class="badge ok">${isEn ? 'Market Guide' : 'Panduan Pasar'}</span>
+          <span class="tutorial-step-indicator" id="market-step-num">1 / ${topics.length}</span>
         </div>
-        <button type="button" class="btn btn-icon btn-ghost btn-sm" data-close aria-label="${t('close')}">
-          ${icons.close}
-        </button>
+        <div class="row" style="gap:6px;align-items:center">
+          <button type="button" class="btn btn-icon btn-ghost btn-sm" id="btn-copy-market-list" title="${isEn ? 'Copy Shopping List' : 'Salin Senarai Belanja'}">
+            ${icons.copy}
+          </button>
+          <button type="button" class="btn btn-icon btn-ghost btn-sm" data-close aria-label="${t('close')}">
+            ${icons.close}
+          </button>
+        </div>
       </div>
 
-      <div class="guide-modal-steps">
-        ${tips.map((tip, idx) => `
-          <div class="guide-modal-step-item">
-            <div class="guide-step-num">${idx + 1}</div>
-            <div class="guide-step-text">${esc(tip)}</div>
-          </div>
+      <!-- Segmented Story Progress Bar (Tap any segment) -->
+      <div class="market-progress-bars" id="market-progress-bars" title="Tap to jump to step">
+        ${topics.map((_, i) => `<div class="m-bar ${i === 0 ? 'active' : ''}" data-idx="${i}"></div>`).join('')}
+      </div>
+
+      <!-- Category Filter Pills (Horizontal snap scroll) -->
+      <div class="market-cat-dock" id="market-cat-dock">
+        ${topics.map((tp, i) => `
+          <button type="button" class="market-cat-pill ${i === 0 ? 'active' : ''}" data-idx="${i}">
+            <span>${tp.pill}</span>
+          </button>
         `).join('')}
       </div>
 
-      <button type="button" class="btn btn-primary btn-block" data-close style="margin-top:8px">
-        <span>${isEn ? 'Got It' : 'Faham'}</span>
+      <!-- Main Slide Card Mount -->
+      <div id="market-slide-mount"></div>
+
+      <!-- Bottom Interactive Controls -->
+      <div class="market-actions-row">
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-market-prev" style="flex:1">
+          ${icons.chevronLeft}
+          <span>${t('previous')}</span>
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-market-next" style="flex:1.5">
+          <span id="market-next-text">${t('next')}</span>
+          ${icons.chevronRight}
+        </button>
+      </div>
+
+      <button type="button" class="btn btn-ghost btn-block btn-xs" id="btn-market-copy-footer" style="color:var(--deku);margin-top:2px;gap:6px">
+        ${icons.copy} <span>${isEn ? 'Copy Full Market List (WhatsApp)' : 'Salin Senarai Belanja Penuh (WhatsApp)'}</span>
       </button>
     </div>
   `);
+
+  function renderCurrentSlide() {
+    const tp = topics[currentStep];
+    const mount = el.querySelector('#market-slide-mount');
+    const stepNumEl = el.querySelector('#market-step-num');
+    const nextTextEl = el.querySelector('#market-next-text');
+    const prevBtn = el.querySelector('#btn-market-prev');
+
+    if (stepNumEl) stepNumEl.textContent = `${currentStep + 1} / ${topics.length}`;
+
+    // Update progress bars
+    el.querySelectorAll('.m-bar').forEach((bar, idx) => {
+      bar.classList.toggle('completed', idx < currentStep);
+      bar.classList.toggle('active', idx === currentStep);
+    });
+
+    // Update category pills
+    el.querySelectorAll('.market-cat-pill').forEach((pill, idx) => {
+      const isActive = idx === currentStep;
+      pill.classList.toggle('active', isActive);
+      if (isActive) {
+        pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      }
+    });
+
+    // Update Next button label
+    if (nextTextEl) {
+      nextTextEl.textContent = currentStep === topics.length - 1 ? (isEn ? 'Got It' : 'Faham & Selesai') : t('next');
+    }
+
+    if (prevBtn) {
+      prevBtn.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
+    }
+
+    // Render interactive widget based on type
+    let widgetHtml = '';
+    if (tp.type === 'checklist') {
+      widgetHtml = `
+        <div class="market-interactive-widget">
+          <div class="market-widget-label">
+            <span>${isEn ? 'Tap to mark items to buy:' : 'Sentuh bahan untuk tanda semak beli:'}</span>
+            <span class="xs muted">${isEn ? 'Checklist' : 'Senarai Semak'}</span>
+          </div>
+          <div class="market-checklist-grid">
+            ${tp.items.map((it, idx) => {
+              const key = `${tp.id}-${idx}`;
+              const isChecked = checkedItems.has(key);
+              return `
+                <div class="market-check-item ${isChecked ? 'checked' : ''}" data-key="${key}">
+                  <div class="market-check-left">
+                    <div class="market-check-circle">${icons.check}</div>
+                    <span class="market-check-name">${esc(it.name)}</span>
+                  </div>
+                  <span class="market-check-badge">${esc(it.badge)}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    } else if (tp.type === 'compare') {
+      widgetHtml = `
+        <div class="market-interactive-widget">
+          <div class="market-widget-label">
+            <span>${isEn ? 'Calorie & Fat Comparison:' : 'Perbandingan Kalori & Lemak:'}</span>
+            <span class="badge ok">${isEn ? 'Save ~270 kcal' : 'Jimat ~270 kcal'}</span>
+          </div>
+          <div class="market-compare-grid">
+            <div class="market-compare-card bad">
+              <b style="font-size:11.5px">❌ ${esc(tp.compare.badTitle)}</b>
+              <span class="xs" style="opacity:0.9">${esc(tp.compare.badDesc)}</span>
+            </div>
+            <div class="market-compare-card good">
+              <b style="font-size:11.5px">✓ ${esc(tp.compare.goodTitle)}</b>
+              <span class="xs" style="opacity:0.9">${esc(tp.compare.goodDesc)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (tp.type === 'drink_switch') {
+      widgetHtml = `
+        <div class="market-interactive-widget">
+          <div class="market-widget-label">
+            <span>${isEn ? 'Zero-Sugar Switch Impact:' : 'Kesan Pertukaran Minuman Bebas Gula:'}</span>
+            <span class="badge ok">${isEn ? 'Zero Sugar' : 'Sifar Gula'}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="market-drink-row" style="border:1px solid rgba(239,68,68,0.25)">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span>🧋</span>
+                <div>
+                  <b style="color:#fca5a5;font-size:12px">${esc(tp.drinkData.badDrink)}</b>
+                  <div class="xs muted">${esc(tp.drinkData.badMeta)}</div>
+                </div>
+              </div>
+            </div>
+            <div class="market-drink-row" style="border:1px solid rgba(16,185,129,0.3);background:rgba(16,185,129,0.08)">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span>🍵</span>
+                <div>
+                  <b style="color:#6ee7b7;font-size:12px">${esc(tp.drinkData.goodDrink)}</b>
+                  <div class="xs" style="color:#34d399">${esc(tp.drinkData.goodMeta)}</div>
+                </div>
+              </div>
+            </div>
+            <div class="card flat" style="background:rgba(16,185,129,0.12);border:1px dashed #10b981;padding:8px 10px;border-radius:8px">
+              <b class="xs" style="color:#34d399">🔥 ${isEn ? 'Weekly Calorie Deficit:' : 'Penjimatan Kalori Mingguan:'}</b>
+              <div class="xs" style="color:#e4e4e7;margin-top:2px">${esc(tp.drinkData.weeklySave)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    if (mount) {
+      mount.innerHTML = `
+        <div class="market-slide-card">
+          <div class="market-card-head">
+            <div class="market-icon-bubble">${tp.icon}</div>
+            <div style="flex:1">
+              <span class="badge ok" style="font-size:10px;padding:2px 7px;margin-bottom:4px;display:inline-block">${esc(tp.badge)}</span>
+              <h4 class="market-card-title">${esc(tp.title)}</h4>
+              <p class="market-card-desc">${esc(tp.desc)}</p>
+            </div>
+          </div>
+
+          ${widgetHtml}
+
+          <div class="market-protip-box">
+            <span>💡</span>
+            <div><b>${isEn ? 'Market Pro-Tip:' : 'Petua Pasar:'}</b> ${esc(tp.protip)}</div>
+          </div>
+        </div>
+      `;
+
+      // Bind checklist clicks
+      mount.querySelectorAll('.market-check-item').forEach((item) => {
+        item.addEventListener('click', () => {
+          const key = item.dataset.key;
+          if (checkedItems.has(key)) {
+            checkedItems.delete(key);
+            item.classList.remove('checked');
+          } else {
+            checkedItems.add(key);
+            item.classList.add('checked');
+            if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+          }
+        });
+      });
+    }
+  }
+
+  // Bind top progress bars
+  el.querySelectorAll('.m-bar').forEach((bar) => {
+    bar.addEventListener('click', () => {
+      currentStep = Number(bar.dataset.idx);
+      renderCurrentSlide();
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(8);
+    });
+  });
+
+  // Bind category pills
+  el.querySelectorAll('.market-cat-pill').forEach((pill) => {
+    pill.addEventListener('click', () => {
+      currentStep = Number(pill.dataset.idx);
+      renderCurrentSlide();
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(8);
+    });
+  });
+
+  // Bind next and prev
+  el.querySelector('#btn-market-next')?.addEventListener('click', () => {
+    if (currentStep < topics.length - 1) {
+      currentStep++;
+      renderCurrentSlide();
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+    } else {
+      close();
+    }
+  });
+
+  el.querySelector('#btn-market-prev')?.addEventListener('click', () => {
+    if (currentStep > 0) {
+      currentStep--;
+      renderCurrentSlide();
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+    }
+  });
+
+  // Copy shopping list buttons
+  el.querySelector('#btn-copy-market-list')?.addEventListener('click', () => {
+    copyMarketListToClipboard();
+  });
+  el.querySelector('#btn-market-copy-footer')?.addEventListener('click', () => {
+    copyMarketListToClipboard();
+  });
+
+  // Initial render
+  renderCurrentSlide();
 }
 
 export function renderGuideButton(id, label = '') {
@@ -711,6 +1060,10 @@ export function renderGuideButton(id, label = '') {
 
 export function openGuideModal(guideId) {
   const isEn = getLang() === 'en';
+  if (guideId === 'market') {
+    openMarketGuideModal();
+    return;
+  }
   let title = '';
   let desc = '';
   let steps = [];
@@ -726,16 +1079,6 @@ export function openGuideModal(guideId) {
         t('guide_planner_s4'),
         t('guide_planner_s5'),
         t('guide_planner_s6'),
-      ];
-      break;
-    case 'market':
-      title = t('guide_market_title');
-      desc = t('guide_market_desc');
-      steps = [
-        t('guide_market_s1'),
-        t('guide_market_s2'),
-        t('guide_market_s3'),
-        t('guide_market_s4'),
       ];
       break;
     case 'generator':
