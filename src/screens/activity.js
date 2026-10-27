@@ -1,4 +1,4 @@
-// Skrin Penjejak Aktiviti Bergaya Strava (pelan §3.4) — Lokasi Langsung, Peta OpenStreetMap, Polyline & Metrik Strava
+// Skrin Penjejak Aktiviti Bergaya Strava — Lokasi Langsung, Peta OpenStreetMap, Polyline & Metrik Strava
 import L from 'leaflet';
 import * as tracker from '../services/gpsTracker.js';
 import { store } from '../services/store.js';
@@ -7,6 +7,7 @@ import { toast, confirmSheet, routeThumbSVG, openSheet } from '../components/ui.
 import { formatPace, formatDuration, metLabel, metForSpeed } from '../utils/calc.js';
 import { onActivityFinished } from '../services/companionService.js';
 import { esc, fmtTime } from '../utils/helpers.js';
+import { t, getLang } from '../utils/i18n.js';
 
 export function renderActivity(container) {
   let map = null;
@@ -23,19 +24,20 @@ export function renderActivity(container) {
     const history = store.state.activities;
     const liveLoc = stats.liveLocation;
     const perm = stats.permissionStatus;
+    const isEn = getLang() === 'en';
 
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="eyebrow">Outdoor GPS</span>
-          <h1 class="page-title">Activity</h1>
+          <span class="eyebrow">${t('act_eyebrow')}</span>
+          <h1 class="page-title">${t('act_title')}</h1>
         </div>
         <div class="row" style="gap:8px;flex-wrap:wrap">
           ${
             stats.status === 'idle'
               ? `<label class="chip ${isSim ? 'active' : ''}" id="sim-toggle-btn" style="cursor:pointer">
                   <input type="checkbox" id="sim-checkbox" class="hidden" ${isSim ? 'checked' : ''} />
-                  <span>Simulation Mode</span>
+                  <span>${isEn ? 'Simulation Mode' : 'Mod Simulasi'}</span>
                 </label>`
               : ''
           }
@@ -48,14 +50,14 @@ export function renderActivity(container) {
           ? `<div class="card" style="border-left:4px solid var(--danger);margin-bottom:12px;background:#150a0a">
               <div class="row between" style="gap:10px">
                 <div style="flex:1">
-                  <b style="color:var(--danger)">Location Access Denied</b>
+                  <b style="color:var(--danger)">${isEn ? 'Location Access Denied' : 'Akses Lokasi Ditolak'}</b>
                   <p class="small muted" style="margin-top:2px;line-height:1.4">
-                    Browser blocked GPS access. Please allow location permissions in your browser site settings.
+                    ${isEn ? 'Browser blocked GPS access. Please allow location permissions in your browser site settings.' : 'Pelayar menyekat akses GPS. Sila benarkan kebenaran lokasi dalam tetapan pelayar anda.'}
                   </p>
                 </div>
                 <button type="button" class="btn btn-sm btn-secondary" id="btn-request-location-manual">
                   ${icons.crosshair}
-                  <span>Retry</span>
+                  <span>${isEn ? 'Retry' : 'Cuba Semula'}</span>
                 </button>
               </div>
             </div>`
@@ -63,14 +65,14 @@ export function renderActivity(container) {
           ? `<div class="card" style="border-left:4px solid var(--deku);margin-bottom:12px">
               <div class="row between" style="gap:10px">
                 <div style="flex:1">
-                  <b>Detect Live GPS Location</b>
+                  <b>${isEn ? 'Detect Live GPS Location' : 'Kesan Lokasi GPS Langsung'}</b>
                   <p class="small muted" style="margin-top:2px;line-height:1.4">
-                    Enable location access to pinpoint your position on the map.
+                    ${isEn ? 'Enable location access to pinpoint your position on the map.' : 'Benarkan akses lokasi untuk mengesan kedudukan anda di atas peta.'}
                   </p>
                 </div>
                 <button type="button" class="btn btn-sm btn-primary" id="btn-request-location-manual">
                   ${icons.crosshair}
-                  <span>Detect Location</span>
+                  <span>${isEn ? 'Detect Location' : 'Kesan Lokasi'}</span>
                 </button>
               </div>
             </div>`
@@ -82,7 +84,7 @@ export function renderActivity(container) {
         <div id="strava-map"></div>
 
         <!-- Floating Recenter Button -->
-        <button type="button" class="strava-recenter-btn" id="btn-recenter-map" title="Recenter to my current location" aria-label="Recenter map to GPS location">
+        <button type="button" class="strava-recenter-btn" id="btn-recenter-map" title="${isEn ? 'Recenter to my current location' : 'Pusatkan ke lokasi saya'}" aria-label="Recenter map to GPS location">
           ${icons.crosshair}
         </button>
 
@@ -90,9 +92,9 @@ export function renderActivity(container) {
         <div class="strava-floating-hud">
           <div class="strava-hud-pill">
             <span class="badge ${stats.status === 'running' ? 'live' : stats.status === 'paused' ? 'warn' : 'ok'}">
-              ${stats.status === 'running' ? 'RECORDING' : stats.status === 'paused' ? 'PAUSED' : 'READY'}
+              ${stats.status === 'running' ? (isEn ? 'RECORDING' : 'MERAKAM') : stats.status === 'paused' ? (isEn ? 'PAUSED' : 'DIJEDA') : (isEn ? 'READY' : 'SEDIA')}
             </span>
-            <span class="num">${stats.status === 'running' ? metLabel(stats.speedKmh) : liveLoc ? `GPS ±${liveLoc.accuracy}m` : 'Acquiring GPS...'}</span>
+            <span class="num">${stats.status === 'running' ? metLabel(stats.speedKmh) : liveLoc ? `GPS ±${liveLoc.accuracy}m` : (isEn ? 'Acquiring GPS...' : 'Mengesan GPS...')}</span>
           </div>
           <div class="strava-hud-pill num">
             ${stats.speedKmh.toFixed(1)} km/h
@@ -103,31 +105,31 @@ export function renderActivity(container) {
       <!-- Primary Strava Metrics (4 Columns) -->
       <div class="grid grid-2 md-grid-4" style="margin-bottom:16px">
         <div class="stat">
-          <span>Distance</span>
+          <span>${t('act_distance')}</span>
           <b class="num" id="hud-dist">${stats.distanceKm.toFixed(2)}<small>km</small></b>
         </div>
         <div class="stat">
-          <span>Elapsed Time</span>
+          <span>${t('act_duration')}</span>
           <b class="num" id="hud-time">${formatDuration(stats.elapsedSec)}</b>
         </div>
         <div class="stat">
-          <span>Avg Pace</span>
+          <span>${t('act_pace')}</span>
           <b class="num" id="hud-pace">${formatPace(stats.pace)}<small>/km</small></b>
         </div>
         <div class="stat">
-          <span>MET Burn</span>
+          <span>${t('act_calories')}</span>
           <b class="num" id="hud-kcal" style="color:var(--ok)">${Math.round(stats.kcal)}<small>kcal</small></b>
         </div>
       </div>
 
       <div class="grid grid-2" style="margin-bottom:16px">
         <div class="stat">
-          <span>Elevation Gain</span>
+          <span>${isEn ? 'Elevation Gain' : 'Kenaikan Ketinggian'}</span>
           <b class="num" id="hud-elev">+${Math.round(stats.elevGain)}<small>m</small></b>
         </div>
         <div class="stat">
-          <span>Est. Steps</span>
-          <b class="num" id="hud-steps">${stats.steps}<small>step</small></b>
+          <span>${isEn ? 'Est. Steps' : 'Anggaran Langkah'}</span>
+          <b class="num" id="hud-steps">${stats.steps}<small>${isEn ? 'step' : 'langkah'}</small></b>
         </div>
       </div>
 
@@ -137,31 +139,31 @@ export function renderActivity(container) {
           stats.status === 'idle'
             ? `<button type="button" class="btn btn-primary btn-lg btn-block" id="btn-start-run">
                 ${icons.play}
-                <span>Start Run Session</span>
+                <span>${t('act_start')}</span>
               </button>`
             : stats.status === 'running'
             ? `<div class="grid grid-2">
                 <button type="button" class="btn btn-secondary btn-lg" id="btn-pause-run">
                   ${icons.pause}
-                  <span>Pause</span>
+                  <span>${t('act_pause')}</span>
                 </button>
                 <button type="button" class="btn btn-primary btn-lg" id="btn-finish-run">
                   ${icons.stop}
-                  <span>Finish & Save</span>
+                  <span>${t('act_finish')}</span>
                 </button>
               </div>`
             : `<div class="grid grid-3">
                 <button type="button" class="btn btn-secondary" id="btn-resume-run">
                   ${icons.play}
-                  <span>Resume</span>
+                  <span>${t('act_resume')}</span>
                 </button>
                 <button type="button" class="btn btn-primary" id="btn-finish-run">
                   ${icons.check}
-                  <span>Finish</span>
+                  <span>${t('act_finish')}</span>
                 </button>
                 <button type="button" class="btn btn-danger" id="btn-discard-run">
                   ${icons.trash}
-                  <span>Discard</span>
+                  <span>${t('act_discard')}</span>
                 </button>
               </div>`
         }
@@ -170,8 +172,8 @@ export function renderActivity(container) {
       <!-- Past Activity History -->
       <div class="card">
         <div class="card-title row between">
-          <span>Your Run History</span>
-          <span class="muted">${history.length} sessions saved</span>
+          <span>${t('act_history')}</span>
+          <span class="muted">${history.length} ${isEn ? 'sessions saved' : 'sesi disimpan'}</span>
         </div>
 
         <div class="list">
@@ -179,18 +181,18 @@ export function renderActivity(container) {
             history.length === 0
               ? `<div class="empty">
                   ${icons.run}
-                  <p>No running records saved yet.</p>
-                  <span class="small muted">Tap "Start Run Session" to track your distance, time, pace, and live GPS route!</span>
+                  <p>${t('act_no_runs')}</p>
+                  <span class="small muted">${isEn ? 'Tap "Start Run Session" to track your distance, time, pace, and live GPS route!' : 'Tekan "Mula Lari / Jalan" untuk menjejak jarak, masa, pace dan laluan GPS anda!'}</span>
                 </div>`
               : history
                   .map(
                     (act) => `
-                <div class="list-item" data-id="${act.id}" style="cursor:pointer;${inspectingActivityId === act.id ? 'border:1px solid #3897f0;background:#141b24' : ''}" title="Tap to preview route on map">
+                <div class="list-item" data-id="${act.id}" style="cursor:pointer;${inspectingActivityId === act.id ? 'border:1px solid #3897f0;background:#141b24' : ''}" title="${isEn ? 'Tap to preview route on map' : 'Sentuh untuk lihat laluan di peta'}">
                   <div class="thumb" style="width:80px;height:54px;background:#0d0d0e;border:1px solid var(--border);padding:3px;border-radius:6px">
                     ${routeThumbSVG(act.segments, { w: 80, h: 54, stroke: 2.2 })}
                   </div>
                   <div class="li-main">
-                    <div class="li-title">${esc(act.type || 'Run')} ${act.simulated ? '<span class="badge">Simulated</span>' : ''}</div>
+                    <div class="li-title">${esc(act.type || 'Run')} ${act.simulated ? `<span class="badge">${isEn ? 'Simulated' : 'Simulasi'}</span>` : ''}</div>
                     <div class="li-sub">
                       <span class="num">${act.distanceKm.toFixed(2)} km</span> · 
                       <span class="num">${formatDuration(act.durationSec)}</span> · 
@@ -201,7 +203,7 @@ export function renderActivity(container) {
                     <b class="num" style="color:var(--ok)">-${act.kcal} <span class="xs muted">kcal</span></b>
                     <small>${fmtTime(act.startedAt)}</small>
                   </div>
-                  <button class="btn btn-icon btn-ghost btn-sm del-history-btn" data-id="${act.id}" title="Delete record" aria-label="Delete record" style="color:var(--danger)">
+                  <button class="btn btn-icon btn-ghost btn-sm del-history-btn" data-id="${act.id}" title="${t('delete')}" aria-label="Delete record" style="color:var(--danger)">
                     ${icons.trash}
                   </button>
                 </div>`
@@ -213,7 +215,7 @@ export function renderActivity(container) {
 
       <div class="center" style="margin-top:14px">
         <button type="button" class="btn btn-ghost btn-xs" id="btn-show-activity-sources" style="color:var(--text-muted);font-size:11px">
-          Sources & Attributions
+          ${isEn ? 'Sources & Attributions' : 'Sumber & Rujukan'}
         </button>
       </div>
     `;

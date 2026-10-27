@@ -6,6 +6,7 @@ import { dashboardMessage } from '../services/companionService.js';
 import { openMealEditor } from '../components/mealEditor.js';
 import { formatPace, formatDuration, calcSuggestedDailyTarget } from '../utils/calc.js';
 import { esc, fmtTime, todayKey } from '../utils/helpers.js';
+import { t } from '../utils/i18n.js';
 
 export function renderDashboard(container) {
   let unsub = null;
@@ -41,13 +42,12 @@ export function renderDashboard(container) {
           <div class="row" style="gap:8px;align-items:center;margin-bottom:2px">
             <span class="eyebrow">Level ${heroRank.level} · ${esc(heroRank.title)}</span>
             <span class="badge ok" style="font-size:10px;padding:2px 7px">${heroRank.pct}% EXP</span>
-          </div>
-          <h1 class="page-title">Hi, ${esc(p.name)}!</h1>
+          </div>          <h1 class="page-title">Hi, ${esc(p.name)}!</h1>
         </div>
         <div class="row" style="gap:8px">
           <a href="#/scan" class="btn btn-sm btn-primary" id="btn-quick-scan">
             ${icons.camera}
-            <span>Scan Food</span>
+            <span>${t('dash_scan_btn')}</span>
           </a>
         </div>
       </div>
@@ -59,13 +59,13 @@ export function renderDashboard(container) {
           <!-- Card 1: Calorie Balance Ring -->
           <div class="card center bento-card bento-ring-card">
             <div class="card-title row between" style="width:100%;margin-bottom:4px">
-              <span>Net Calorie Balance</span>
+              <span>${t('dash_calorie_balance')}</span>
               <div class="row" style="gap:6px;align-items:center">
-                <button type="button" class="btn btn-xs btn-ghost" id="btn-adjust-target" title="Adjust daily calorie target" style="padding:2px 8px;font-size:11px;border:1px solid var(--border-soft);cursor:pointer">
+                <button type="button" class="btn btn-xs btn-ghost" id="btn-adjust-target" title="${t('dash_adjust')}" style="padding:2px 8px;font-size:11px;border:1px solid var(--border-soft);cursor:pointer">
                   ${icons.edit}
-                  <span>Adjust</span>
+                  <span>${t('dash_adjust')}</span>
                 </button>
-                <span class="badge ${isOver ? 'bad' : 'ok'}">${isOver ? 'SURPLUS' : 'ON TARGET'}</span>
+                <span class="badge ${isOver ? 'bad' : 'ok'}">${isOver ? t('dash_surplus') : t('dash_on_target')}</span>
               </div>
             </div>
 
@@ -76,7 +76,7 @@ export function renderDashboard(container) {
                   ${Math.abs(s.remaining)}
                 </div>
                 <div class="ring-label">
-                  ${isOver ? 'kcal over' : 'kcal remaining'}
+                  ${isOver ? t('dash_kcal_over') : t('dash_kcal_remaining')}
                 </div>
               </div>
             </div>
@@ -84,24 +84,24 @@ export function renderDashboard(container) {
             <!-- Formula: Target - In + Out = Remaining -->
             <div class="equation" style="width:100%">
               <div class="eq-cell">
-                <span>Target</span>
+                <span>${t('dash_target')}</span>
                 <b class="num">${s.target}</b>
               </div>
               <div class="eq-cell">
-                <span>Food (In)</span>
+                <span>${t('dash_food_in')}</span>
                 <b class="num">${s.kin}</b>
               </div>
               <div class="eq-cell">
-                <span>Burned</span>
+                <span>${t('dash_burned')}</span>
                 <b class="num" style="color:var(--ok)">+${s.kout}</b>
               </div>
             </div>
 
             <!-- Weekly Calorie Bank Pill -->
             <div class="row between xs muted" style="width:100%;margin-top:10px;padding-top:8px;border-top:1px solid var(--border-soft)">
-              <span>Weekly Calorie Bank:</span>
+              <span>${t('dash_weekly_bank')}</span>
               <b class="num" style="color:${weekly.bankRemaining >= 0 ? 'var(--ok)' : 'var(--danger)'}">
-                ${weekly.bankRemaining >= 0 ? '+' : ''}${weekly.bankRemaining} kcal ${weekly.bankRemaining >= 0 ? 'Deficit' : 'Surplus'}
+                ${weekly.bankRemaining >= 0 ? '+' : ''}${weekly.bankRemaining} kcal ${weekly.bankRemaining >= 0 ? t('dash_deficit') : t('dash_surplus')}
               </b>
             </div>
           </div>
@@ -111,24 +111,24 @@ export function renderDashboard(container) {
             <!-- Macros 3-Tile Row -->
             <div class="card bento-card" style="padding:16px">
               <div class="card-title row between" style="margin-bottom:10px">
-                <span>Macronutrients</span>
-                <span class="xs muted">Daily Goals</span>
+                <span>${t('dash_macros')}</span>
+                <span class="xs muted">${t('dash_daily_goals')}</span>
               </div>
               <div class="macro-mini-tiles">
                 <div class="macro-mini-tile tile-p">
-                  <span class="m-label">Protein</span>
+                  <span class="m-label">${t('dash_protein')}</span>
                   <b class="m-val num">${Math.round(s.protein)}<small>g</small></b>
                   <div class="m-sub xs muted">/ ${s.macros.protein}g</div>
                   <div class="m-bar"><div class="m-bar-fill" style="width:${Math.min(100, (s.protein / (s.macros.protein || 1)) * 100)}%"></div></div>
                 </div>
                 <div class="macro-mini-tile tile-c">
-                  <span class="m-label">Carbs</span>
+                  <span class="m-label">${t('dash_carbs')}</span>
                   <b class="m-val num">${Math.round(s.carbs)}<small>g</small></b>
                   <div class="m-sub xs muted">/ ${s.macros.carbs}g</div>
                   <div class="m-bar"><div class="m-bar-fill" style="width:${Math.min(100, (s.carbs / (s.macros.carbs || 1)) * 100)}%"></div></div>
                 </div>
                 <div class="macro-mini-tile tile-f">
-                  <span class="m-label">Fat</span>
+                  <span class="m-label">${t('dash_fat')}</span>
                   <b class="m-val num">${Math.round(s.fat)}<small>g</small></b>
                   <div class="m-sub xs muted">/ ${s.macros.fat}g</div>
                   <div class="m-bar"><div class="m-bar-fill" style="width:${Math.min(100, (s.fat / (s.macros.fat || 1)) * 100)}%"></div></div>
@@ -139,12 +139,12 @@ export function renderDashboard(container) {
             <!-- Water Tracker Card (Customizable Any Amount) -->
             <div class="card bento-card water-widget" style="padding:16px">
               <div class="row between" style="margin-bottom:8px">
-                <div class="row" style="gap:8px;align-items:center;cursor:pointer" id="btn-water-header" title="Click to adjust any water amount">
+                <div class="row" style="gap:8px;align-items:center;cursor:pointer" id="btn-water-header" title="${t('dash_custom_water')}">
                   <div class="water-icon-circle">${icons.droplet}</div>
                   <div>
                     <div class="row" style="gap:6px;align-items:center">
-                      <span class="small bold" style="color:#fff">Water Hydration</span>
-                      <button type="button" class="btn btn-xs btn-ghost" id="btn-custom-water" title="Pilih sebarang jumlah air" style="padding:1px 6px;font-size:10px;border:1px solid var(--border-soft)">Custom</button>
+                      <span class="small bold" style="color:#fff">${t('dash_water_title')}</span>
+                      <button type="button" class="btn btn-xs btn-ghost" id="btn-custom-water" style="padding:1px 6px;font-size:10px;border:1px solid var(--border-soft)">${t('dash_custom_water')}</button>
                     </div>
                     <div class="xs muted">${water} / ${waterTarget} ml (${waterPct}%)</div>
                   </div>
@@ -183,22 +183,22 @@ export function renderDashboard(container) {
           <!-- Meal Log Card -->
           <div class="card bento-card">
             <div class="card-title row between" style="flex-wrap:wrap;gap:8px">
-              <span>Today's Logged Meals</span>
+              <span>${t('dash_today_meals')}</span>
               <div class="row" style="gap:6px">
-                <button type="button" class="btn btn-xs btn-secondary" id="btn-copy-yesterday" title="Salin semua hidangan semalam ke hari ini">
+                <button type="button" class="btn btn-xs btn-secondary" id="btn-copy-yesterday" title="${t('dash_copy_yesterday')}">
                   ${icons.refresh}
-                  <span>Copy Yesterday</span>
+                  <span>${t('dash_copy_yesterday')}</span>
                 </button>
                 <button class="btn btn-sm btn-ghost" id="btn-manual-add">
                   ${icons.plus}
-                  <span>Add Manually</span>
+                  <span>${t('dash_add_manual')}</span>
                 </button>
               </div>
             </div>
 
             <!-- 1-Tap Malaysian Quick Chips -->
             <div style="margin-bottom:10px;padding:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-soft);border-radius:8px">
-              <span class="xs bold muted" style="display:block;margin-bottom:4px;letter-spacing:0.04em">1-TAP QUICK LOG:</span>
+              <span class="xs bold muted" style="display:block;margin-bottom:4px;letter-spacing:0.04em">${t('dash_quick_tap')}</span>
               <div class="chips" style="gap:5px;flex-wrap:wrap">
                 <button type="button" class="chip btn-quick-malay" data-name="Kopi O Kosong" data-kcal="5" data-p="0.3" data-c="0.8" data-f="0.1" data-w="220">+ Kopi O (5 kcal)</button>
                 <button type="button" class="chip btn-quick-malay" data-name="Telur Separuh Masak (2 Biji)" data-kcal="140" data-p="12" data-c="1" data-f="10" data-w="110">+ 2 Telur (140 kcal)</button>
@@ -213,8 +213,8 @@ export function renderDashboard(container) {
                 s.meals.length === 0
                   ? `<div class="empty">
                       ${icons.bowl}
-                      <p>No meals logged yet today.</p>
-                      <span class="small muted">Snap a photo of your meal or tap a Quick Log chip above!</span>
+                      <p>${t('dash_no_meals')}</p>
+                      <span class="small muted">${t('dash_no_meals_sub')}</span>
                     </div>`
                   : s.meals
                       .map(
@@ -235,10 +235,10 @@ export function renderDashboard(container) {
                         <small>${fmtTime(m.time || m.date)}</small>
                       </div>
                       <div class="row" style="gap:4px;margin-left:6px">
-                        <button class="btn btn-icon btn-ghost btn-sm edit-meal-btn" data-id="${m.id}" title="Edit" aria-label="Edit meal">
+                        <button class="btn btn-icon btn-ghost btn-sm edit-meal-btn" data-id="${m.id}" title="${t('edit')}" aria-label="Edit meal">
                           ${icons.edit}
                         </button>
-                        <button class="btn btn-icon btn-ghost btn-sm del-meal-btn" data-id="${m.id}" title="Delete" aria-label="Delete meal" style="color:var(--danger)">
+                        <button class="btn btn-icon btn-ghost btn-sm del-meal-btn" data-id="${m.id}" title="${t('delete')}" aria-label="Delete meal" style="color:var(--danger)">
                           ${icons.trash}
                         </button>
                       </div>
@@ -253,10 +253,10 @@ export function renderDashboard(container) {
           <!-- Activity / GPS Runs Card -->
           <div class="card bento-card">
             <div class="card-title row between">
-              <span>Today's Activities & Runs</span>
+              <span>${t('dash_recent_activity')}</span>
               <a href="#/activity" class="btn btn-sm btn-ghost">
                 ${icons.run}
-                <span>Start Run</span>
+                <span>${t('dash_start_activity')}</span>
               </a>
             </div>
 
@@ -265,8 +265,8 @@ export function renderDashboard(container) {
                 s.acts.length === 0
                   ? `<div class="empty">
                       ${icons.run}
-                      <p>No activities logged today.</p>
-                      <span class="small muted">Record an outdoor run or walk to track your burned calories and route.</span>
+                      <p>${t('dash_no_activity')}</p>
+                      <span class="small muted">${t('dash_no_activity_sub')}</span>
                     </div>`
                   : s.acts
                       .map(
@@ -313,10 +313,10 @@ export function renderDashboard(container) {
     const { el: sheet, close } = openSheet(`
       <div class="sheet-head row between" style="margin-bottom:12px">
         <div>
-          <span class="eyebrow">Hydration Tracker</span>
-          <h3 style="margin:2px 0 0;font-size:18px;font-weight:800">Adjust Water Intake</h3>
+          <span class="eyebrow">${t('dash_hydration_tracker')}</span>
+          <h3 style="margin:2px 0 0;font-size:18px;font-weight:800">${t('dash_water_adjust_title')}</h3>
         </div>
-        <button type="button" class="btn btn-icon btn-ghost btn-sm" data-close aria-label="Close">
+        <button type="button" class="btn btn-icon btn-ghost btn-sm" data-close aria-label="${t('close')}">
           ${icons.close}
         </button>
       </div>
@@ -324,13 +324,13 @@ export function renderDashboard(container) {
       <div class="stack" style="gap:14px">
         <div class="card flat" style="padding:12px;background:var(--surface-2);border-radius:12px">
           <div class="row between">
-            <span class="muted">Today's Intake:</span>
+            <span class="muted">${t('dash_todays_intake')}</span>
             <b class="num" style="font-size:18px;color:#3897f0">${currentWater} ml <small class="muted">/ ${currentTarget} ml</small></b>
           </div>
         </div>
 
         <div>
-          <span class="xs bold muted" style="display:block;margin-bottom:6px;letter-spacing:0.04em">QUICK ADD (+):</span>
+          <span class="xs bold muted" style="display:block;margin-bottom:6px;letter-spacing:0.04em">${t('dash_quick_add')}</span>
           <div class="grid grid-4" style="gap:6px">
             <button type="button" class="btn btn-secondary btn-sm btn-water-quick" data-add="100">+100 ml</button>
             <button type="button" class="btn btn-secondary btn-sm btn-water-quick" data-add="250">+250 ml</button>
@@ -340,7 +340,7 @@ export function renderDashboard(container) {
         </div>
 
         <div>
-          <span class="xs bold muted" style="display:block;margin-bottom:6px;letter-spacing:0.04em">QUICK REMOVE (-):</span>
+          <span class="xs bold muted" style="display:block;margin-bottom:6px;letter-spacing:0.04em">${t('dash_quick_remove')}</span>
           <div class="grid grid-3" style="gap:6px">
             <button type="button" class="btn btn-ghost btn-sm btn-water-quick" data-add="-100" style="border:1px solid var(--border-soft);color:var(--text-muted)">-100 ml</button>
             <button type="button" class="btn btn-ghost btn-sm btn-water-quick" data-add="-250" style="border:1px solid var(--border-soft);color:var(--text-muted)">-250 ml</button>
@@ -351,7 +351,7 @@ export function renderDashboard(container) {
         <div class="divider"></div>
 
         <div class="field">
-          <label for="input-custom-water-ml">Custom Amount (ml):</label>
+          <label for="input-custom-water-ml">${t('dash_custom_amount')}</label>
           <div class="input-suffix">
             <input class="input num" id="input-custom-water-ml" type="number" min="10" max="5000" step="50" value="300" placeholder="e.g. 350" />
             <span>ml</span>
@@ -359,21 +359,21 @@ export function renderDashboard(container) {
         </div>
 
         <div class="grid grid-3" style="gap:6px">
-          <button type="button" class="btn btn-primary" id="btn-custom-add-water">+ Add</button>
-          <button type="button" class="btn btn-secondary" id="btn-custom-sub-water">- Remove</button>
-          <button type="button" class="btn btn-ghost" id="btn-custom-set-water" style="border:1px solid var(--border-soft)">Set Total</button>
+          <button type="button" class="btn btn-primary" id="btn-custom-add-water">${t('dash_add')}</button>
+          <button type="button" class="btn btn-secondary" id="btn-custom-sub-water">${t('dash_remove')}</button>
+          <button type="button" class="btn btn-ghost" id="btn-custom-set-water" style="border:1px solid var(--border-soft)">${t('dash_set_total')}</button>
         </div>
 
         <div class="divider"></div>
 
         <div class="field">
-          <label for="input-water-goal-ml">Daily Water Target:</label>
+          <label for="input-water-goal-ml">${t('dash_daily_water_target')}</label>
           <div class="row" style="gap:8px">
             <div class="input-suffix" style="flex:1">
               <input class="input num" id="input-water-goal-ml" type="number" min="500" max="6000" step="100" value="${currentTarget}" />
               <span>ml</span>
             </div>
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-save-water-goal">Save Goal</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-save-water-goal">${t('dash_save_goal')}</button>
           </div>
         </div>
       </div>
@@ -438,10 +438,10 @@ export function renderDashboard(container) {
       const { el: sheet, close } = openSheet(`
         <div class="sheet-head row between" style="margin-bottom:14px">
           <div>
-            <span class="eyebrow">Goal Calibration</span>
-            <h3 style="margin:2px 0 0;font-size:18px;font-weight:800">Adjust Calorie Target</h3>
+            <span class="eyebrow">${t('dash_goal_calibration')}</span>
+            <h3 style="margin:2px 0 0;font-size:18px;font-weight:800">${t('dash_adjust_modal_title')}</h3>
           </div>
-          <button type="button" class="btn btn-icon btn-ghost btn-sm" data-close aria-label="Close">
+          <button type="button" class="btn btn-icon btn-ghost btn-sm" data-close aria-label="${t('close')}">
             ${icons.close}
           </button>
         </div>
@@ -449,32 +449,32 @@ export function renderDashboard(container) {
         <div class="stack" style="gap:14px">
           <div class="card flat" style="padding:12px;background:var(--surface-2);border-radius:12px">
             <div class="row between small" style="margin-bottom:6px">
-              <span class="muted">Formula Recommendation:</span>
+              <span class="muted">${t('dash_formula_recommendation')}</span>
               <b class="num">${suggestedTarget} kcal</b>
             </div>
             <div class="row between small">
-              <span class="muted">Active Calorie Target:</span>
-              <b class="num" style="color:var(--hero-accent)">${currentTarget} kcal ${isCustom ? '(Custom)' : '(Suggested)'}</b>
+              <span class="muted">${t('dash_active_target')}</span>
+              <b class="num" style="color:var(--hero-accent)">${currentTarget} kcal ${isCustom ? `(${t('dash_custom_water')})` : `(${t('dash_suggested_target').replace(':', '')})`}</b>
             </div>
           </div>
 
           <div class="field">
-            <label for="input-custom-target">Custom Daily Calorie Target (kcal):</label>
+            <label for="input-custom-target">${t('dash_custom_daily_target')}</label>
             <div class="input-suffix">
               <input class="input num" id="input-custom-target" type="number" min="800" max="6000" step="50" value="${currentTarget}" placeholder="e.g. 2000" />
               <span>kcal</span>
             </div>
-            <span class="xs muted">You can set any custom calorie goal or reset back to the recommended formula value.</span>
+            <span class="xs muted">${t('dash_custom_target_hint')}</span>
           </div>
 
           <div class="stack" style="gap:8px;margin-top:6px">
             <button type="button" class="btn btn-primary btn-block" id="btn-save-custom-target">
               ${icons.check}
-              <span>Save Calorie Target</span>
+              <span>${t('dash_save_calorie_target')}</span>
             </button>
             <button type="button" class="btn btn-secondary btn-block" id="btn-reset-suggested-target">
               ${icons.refresh}
-              <span>Reset to Suggested (${suggestedTarget} kcal)</span>
+              <span>${t('dash_reset_suggested')} (${suggestedTarget} kcal)</span>
             </button>
           </div>
         </div>
@@ -558,7 +558,7 @@ export function renderDashboard(container) {
     // 5. Add Manual Meal
     container.querySelector('#btn-manual-add')?.addEventListener('click', () => {
       openMealEditor({}, {
-        title: 'Add Meal',
+        title: t('me_title_quick'),
         onSaved: () => render(),
       });
     });
@@ -571,7 +571,7 @@ export function renderDashboard(container) {
         if (meal) {
           openMealEditor(meal, {
             existingId: id,
-            title: 'Edit Meal',
+            title: t('me_title_edit'),
             onSaved: () => render(),
           });
         }

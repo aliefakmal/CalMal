@@ -6,6 +6,7 @@ import { generateRecipe, generateMealPlan } from '../services/gemini.js';
 import { DIET_FILTERS, PLANNER_QUESTIONS } from '../constants/prompts.js';
 import { compressImage, esc, round1 } from '../utils/helpers.js';
 import { store } from '../services/store.js';
+import { t, getLang, getDaysNames } from '../utils/i18n.js';
 
 // Pool Menu Makanan Sihat Malaysia (Mengikut Waktu & Kategori Preferences)
 export const MALAYSIAN_MEAL_POOL = {
@@ -58,49 +59,65 @@ export const MALAYSIAN_MEAL_POOL = {
   ]
 };
 
+export function getPreferences() {
+  return [
+    { id: 'all', label: t('pref_all'), icon: '✨' },
+    { id: 'protein', label: t('pref_protein'), icon: '💪' },
+    { id: 'oil', label: t('pref_oil'), icon: '🥗' },
+    { id: 'budget', label: t('pref_budget'), icon: '💰' },
+    { id: 'quick', label: t('pref_quick'), icon: '⚡' },
+    { id: 'lowcarb', label: t('pref_lowcarb'), icon: '🌾' },
+    { id: 'melayu', label: t('pref_melayu'), icon: '🇲🇾' },
+    { id: 'mamak', label: t('pref_mamak'), icon: '🍛' },
+  ];
+}
+
 export const PREFERENCES = [
-  { id: 'all', label: 'Semua Pilihan', icon: '✨' },
-  { id: 'protein', label: 'Tinggi Protein', icon: '💪' },
-  { id: 'oil', label: 'Kurang Minyak / Sup', icon: '🥗' },
-  { id: 'budget', label: 'Bajet Jimat (<RM10)', icon: '💰' },
-  { id: 'quick', label: 'Cepat & Mudah (<15m)', icon: '⚡' },
-  { id: 'lowcarb', label: 'Rendah Karbo', icon: '🌾' },
-  { id: 'melayu', label: 'Lauk Melayu', icon: '🇲🇾' },
-  { id: 'mamak', label: 'Mamak Sihat', icon: '🍛' },
+  { id: 'all', label: 'All Suggestions', icon: '✨' },
+  { id: 'protein', label: 'High Protein', icon: '💪' },
+  { id: 'oil', label: 'Less Oil / Soup', icon: '🥗' },
+  { id: 'budget', label: 'Budget (< RM10)', icon: '💰' },
+  { id: 'quick', label: 'Quick (< 15m)', icon: '⚡' },
+  { id: 'lowcarb', label: 'Low Carb', icon: '🌾' },
+  { id: 'melayu', label: 'Malay Traditional', icon: '🇲🇾' },
+  { id: 'mamak', label: 'Healthy Mamak', icon: '🍛' },
 ];
 
 export function getMealTypeInfo(type = '') {
-  const t = (type || '').toLowerCase();
-  if (t.includes('sarapan') || t.includes('breakfast')) {
-    return { id: 'breakfast', label: 'Sarapan', icon: '🌅', colorClass: 'breakfast' };
+  const isEn = getLang() === 'en';
+  const str = (type || '').toLowerCase();
+  if (str.includes('sarapan') || str.includes('breakfast')) {
+    return { id: 'breakfast', label: isEn ? 'Breakfast' : 'Sarapan', icon: '🌅', colorClass: 'breakfast' };
   }
-  if (t.includes('tengah hari') || t.includes('lunch') || t.includes('siang')) {
-    return { id: 'lunch', label: 'Makan Tengah Hari', icon: '☀️', colorClass: 'lunch' };
+  if (str.includes('tengah hari') || str.includes('lunch') || str.includes('siang')) {
+    return { id: 'lunch', label: isEn ? 'Lunch' : 'Makan Tengah Hari', icon: '☀️', colorClass: 'lunch' };
   }
-  if (t.includes('malam') || t.includes('dinner')) {
-    return { id: 'dinner', label: 'Makan Malam', icon: '🌙', colorClass: 'dinner' };
+  if (str.includes('malam') || str.includes('dinner')) {
+    return { id: 'dinner', label: isEn ? 'Dinner' : 'Makan Malam', icon: '🌙', colorClass: 'dinner' };
   }
-  if (t.includes('snek') || t.includes('snack') || t.includes('petang') || t.includes('afternoon')) {
-    return { id: 'snack', label: 'Snek', icon: '🍎', colorClass: 'snack' };
+  if (str.includes('snek') || str.includes('snack') || str.includes('petang') || str.includes('afternoon')) {
+    return { id: 'snack', label: isEn ? 'Snack' : 'Snek', icon: '🍎', colorClass: 'snack' };
   }
-  return { id: 'other', label: type || 'Hidangan', icon: '🍽️', colorClass: 'other' };
+  return { id: 'other', label: type || (isEn ? 'Meal' : 'Hidangan'), icon: '🍽️', colorClass: 'other' };
 }
 
 export function getNormalizedDayName(day = '') {
   const d = String(day).trim();
   const lower = d.toLowerCase();
-  if (lower.startsWith('mon') || lower === 'isnin') return 'Isnin';
-  if (lower.startsWith('tue') || lower === 'selasa') return 'Selasa';
-  if (lower.startsWith('wed') || lower === 'rabu') return 'Rabu';
-  if (lower.startsWith('thu') || lower === 'khamis') return 'Khamis';
-  if (lower.startsWith('fri') || lower === 'jumaat') return 'Jumaat';
-  if (lower.startsWith('sat') || lower === 'sabtu') return 'Sabtu';
-  if (lower.startsWith('sun') || lower === 'ahad') return 'Ahad';
+  const isEn = getLang() === 'en';
+  if (lower.startsWith('mon') || lower === 'isnin') return isEn ? 'Monday' : 'Isnin';
+  if (lower.startsWith('tue') || lower === 'selasa') return isEn ? 'Tuesday' : 'Selasa';
+  if (lower.startsWith('wed') || lower === 'rabu') return isEn ? 'Wednesday' : 'Rabu';
+  if (lower.startsWith('thu') || lower === 'khamis') return isEn ? 'Thursday' : 'Khamis';
+  if (lower.startsWith('fri') || lower === 'jumaat') return isEn ? 'Friday' : 'Jumaat';
+  if (lower.startsWith('sat') || lower === 'sabtu') return isEn ? 'Saturday' : 'Sabtu';
+  if (lower.startsWith('sun') || lower === 'ahad') return isEn ? 'Sunday' : 'Ahad';
   return d;
 }
 
 export function generateSmartPlan(pref = 'all', targetKcal = 1800, mealCount = 2) {
-  const daysName = ['Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu', 'Ahad'];
+  const isEn = getLang() === 'en';
+  const daysName = getDaysNames();
   
   function pickMeal(category, dayIdx) {
     const list = MALAYSIAN_MEAL_POOL[category] || MALAYSIAN_MEAL_POOL.lunch;
@@ -111,22 +128,26 @@ export function generateSmartPlan(pref = 'all', targetKcal = 1800, mealCount = 2
 
   const days = daysName.map((day, idx) => {
     let meals = [];
+    const bType = isEn ? 'Breakfast' : 'Sarapan';
+    const lType = isEn ? 'Lunch' : 'Makan Tengah Hari';
+    const dType = isEn ? 'Dinner' : 'Makan Malam';
+    const sType = isEn ? 'Snack' : 'Snek';
+
     if (mealCount === 2) {
-      // Makan Tengah Hari & Makan Malam (seperti skrin asal pengguna)
       const l = pickMeal('lunch', idx);
       const d = pickMeal('dinner', idx);
       meals = [
-        { type: 'Makan Tengah Hari', name: l.name, kcal: l.kcal, protein_g: l.protein_g },
-        { type: 'Makan Malam', name: d.name, kcal: d.kcal, protein_g: d.protein_g },
+        { type: lType, name: l.name, kcal: l.kcal, protein_g: l.protein_g },
+        { type: dType, name: d.name, kcal: d.kcal, protein_g: d.protein_g },
       ];
     } else if (mealCount === 3) {
       const b = pickMeal('breakfast', idx);
       const l = pickMeal('lunch', idx);
       const d = pickMeal('dinner', idx);
       meals = [
-        { type: 'Sarapan', name: b.name, kcal: b.kcal, protein_g: b.protein_g },
-        { type: 'Makan Tengah Hari', name: l.name, kcal: l.kcal, protein_g: l.protein_g },
-        { type: 'Makan Malam', name: d.name, kcal: d.kcal, protein_g: d.protein_g },
+        { type: bType, name: b.name, kcal: b.kcal, protein_g: b.protein_g },
+        { type: lType, name: l.name, kcal: l.kcal, protein_g: l.protein_g },
+        { type: dType, name: d.name, kcal: d.kcal, protein_g: d.protein_g },
       ];
     } else {
       const b = pickMeal('breakfast', idx);
@@ -134,10 +155,10 @@ export function generateSmartPlan(pref = 'all', targetKcal = 1800, mealCount = 2
       const s = pickMeal('snack', idx);
       const d = pickMeal('dinner', idx);
       meals = [
-        { type: 'Sarapan', name: b.name, kcal: b.kcal, protein_g: b.protein_g },
-        { type: 'Makan Tengah Hari', name: l.name, kcal: l.kcal, protein_g: l.protein_g },
-        { type: 'Snek', name: s.name, kcal: s.kcal, protein_g: s.protein_g },
-        { type: 'Makan Malam', name: d.name, kcal: d.kcal, protein_g: d.protein_g },
+        { type: bType, name: b.name, kcal: b.kcal, protein_g: b.protein_g },
+        { type: lType, name: l.name, kcal: l.kcal, protein_g: l.protein_g },
+        { type: sType, name: s.name, kcal: s.kcal, protein_g: s.protein_g },
+        { type: dType, name: d.name, kcal: d.kcal, protein_g: d.protein_g },
       ];
     }
 
@@ -145,16 +166,24 @@ export function generateSmartPlan(pref = 'all', targetKcal = 1800, mealCount = 2
     return { day, total_kcal, meals };
   });
 
-  const prefLabel = PREFERENCES.find((p) => p.id === pref)?.label || 'Seimbang';
+  const prefLabel = getPreferences().find((p) => p.id === pref)?.label || (isEn ? 'Balanced' : 'Seimbang');
   return {
-    summary: `Pelan 7-Hari gaya Malaysia diselaraskan mengikut sasaran ~${targetKcal} kcal sehari dengan fokus: ${prefLabel}.`,
+    summary: isEn
+      ? `7-Day Malaysian style meal plan aligned with ~${targetKcal} kcal daily target focusing on: ${prefLabel}.`
+      : `Pelan 7-Hari gaya Malaysia diselaraskan mengikut sasaran ~${targetKcal} kcal sehari dengan fokus: ${prefLabel}.`,
     preference: pref,
     days,
-    shopping_tips: [
-      'Beli dada ayam segar dan ikan tempatan (siakap / kembung) di pasar pagi untuk kualiti segar dan harga jimat.',
-      'Amalkan ulam-ulaman segar tempatan seperti pegaga, timun, bendi dan raja untuk mikronutrien serta serat kenyang.',
-      'Kawal santan dan lebihkan herba rempah ratus seperti kunyit, halia, serai dan cili untuk rasa sedap tanpa kalori tersembunyi.',
-    ],
+    shopping_tips: isEn
+      ? [
+          'Buy fresh chicken breast and local fish (sea bass / mackerel) at morning markets for freshness and best value.',
+          'Incorporate local fresh herbs and greens like pegaga, cucumbers, and okra for micronutrients and satiety.',
+          'Moderate rich gravies and highlight turmeric, ginger, lemongrass, and chili for bold Malaysian flavor without excess calories.',
+        ]
+      : [
+          'Beli dada ayam segar dan ikan tempatan (siakap / kembung) di pasar pagi untuk kualiti segar dan harga jimat.',
+          'Amalkan ulam-ulaman segar tempatan seperti pegaga, timun, bendi dan raja untuk mikronutrien serta serat kenyang.',
+          'Kawal santan dan lebihkan herba rempah ratus seperti kunyit, halia, serai dan cili untuk rasa sedap tanpa kalori tersembunyi.',
+        ],
   };
 }
 
@@ -182,8 +211,8 @@ export function renderRecipes(container) {
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="eyebrow">AI Nutrition & Malaysian Culinary Kitchen</span>
-          <h1 class="page-title">Recipes & Meal Plans</h1>
+          <span class="eyebrow">${t('rec_eyebrow')}</span>
+          <h1 class="page-title">${t('rec_title')}</h1>
         </div>
       </div>
 
@@ -191,15 +220,15 @@ export function renderRecipes(container) {
       <div class="segmented" id="recipe-tabs" style="margin-bottom:16px">
         <button type="button" data-t="planner" class="${tab === 'planner' ? 'active' : ''}">
           ${icons.sparkles}
-          <span>7-Day Plan</span>
+          <span>${t('rec_tab_planner')}</span>
         </button>
         <button type="button" data-t="recipe" class="${tab === 'recipe' ? 'active' : ''}">
           ${icons.chef}
-          <span>Recipe Generator</span>
+          <span>${t('rec_tab_generator')}</span>
         </button>
         <button type="button" data-t="saved" class="${tab === 'saved' ? 'active' : ''}">
           ${icons.bowl}
-          <span>Saved (${store.state.recipes.length})</span>
+          <span>${t('rec_tab_saved')} (${store.state.recipes.length})</span>
         </button>
       </div>
 
@@ -214,7 +243,7 @@ export function renderRecipes(container) {
       <div class="stack fade-up">
         <div class="card stack">
           <div class="card-title">
-            <span>Dietary Filter</span>
+            <span>${t('rec_diet_focus')}</span>
             <span class="xs muted">Halal / Health Focus</span>
           </div>
           <div class="chips" id="diet-chips">
@@ -222,17 +251,17 @@ export function renderRecipes(container) {
           </div>
 
           <div class="field" style="margin-top:4px">
-            <label for="recipe-input">Your Request / Ingredients</label>
-            <textarea class="textarea" id="recipe-input" placeholder="e.g. I have chicken breast, spinach and light coconut milk. Suggest a healthy, high-protein meal...">${esc(recipeTextRequest)}</textarea>
+            <label for="recipe-input">${t('rec_request_placeholder')}</label>
+            <textarea class="textarea" id="recipe-input" placeholder="${t('rec_request_placeholder')}">${esc(recipeTextRequest)}</textarea>
           </div>
 
           <div class="row between" style="align-items:center">
             <input type="file" id="recipe-img-file" accept="image/*" class="hidden" />
             <button type="button" class="btn btn-sm btn-ghost" id="btn-add-ing-img">
               ${icons.camera}
-              <span>${ingredientImage ? 'Change Ingredient Photo' : 'Fridge / Ingredients Photo'}</span>
+              <span>${ingredientImage ? 'Change Photo' : 'Fridge / Ingredients Photo'}</span>
             </button>
-            ${ingredientImage ? '<span class="badge ok">1 photo attached</span>' : ''}
+            ${ingredientImage ? '<span class="badge ok">1 photo</span>' : ''}
           </div>
 
           ${
@@ -246,7 +275,7 @@ export function renderRecipes(container) {
 
           <button type="button" class="btn btn-primary btn-block" id="btn-gen-recipe" style="margin-top:6px" ${isGenerating ? 'disabled' : ''}>
             ${isGenerating ? '<span class="spinner"></span>' : icons.sparkles}
-            <span>${isGenerating ? 'Gemini is Crafting Recipe...' : 'Generate Recipe with AI'}</span>
+            <span>${isGenerating ? t('rec_generating') : t('rec_generate_ai')}</span>
           </button>
         </div>
 
@@ -272,17 +301,17 @@ export function renderRecipes(container) {
         <!-- Nutrition Metrics -->
         <div class="equation">
           <div class="eq-cell">
-            <span>Calories</span>
+            <span>${t('me_calories')}</span>
             <b class="num">${n.calories_kcal || 0}</b>
             <span class="xs muted">kcal</span>
           </div>
           <div class="eq-cell">
-            <span>Protein</span>
+            <span>${t('me_protein')}</span>
             <b class="num">${round1(n.protein_g || 0)}</b>
             <span class="xs muted">g</span>
           </div>
           <div class="eq-cell">
-            <span>Carbs / Fat</span>
+            <span>${t('me_carbs')} / ${t('me_fat')}</span>
             <b class="num">${round1(n.carbs_g || 0)}/${round1(n.fat_g || 0)}</b>
             <span class="xs muted">g</span>
           </div>
@@ -291,14 +320,14 @@ export function renderRecipes(container) {
         <div class="divider"></div>
 
         <div>
-          <b class="small" style="text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Ingredients:</b>
+          <b class="small" style="text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">${t('rec_ingredients')}</b>
           <ul style="padding-left:20px;margin:8px 0;line-height:1.6;font-size:14px">
             ${(r.ingredients || []).map((ing) => `<li>${esc(typeof ing === 'string' ? ing : `${ing.amount || ''} ${ing.name || ''}`)}</li>`).join('')}
           </ul>
         </div>
 
         <div>
-          <b class="small" style="text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Cooking Instructions:</b>
+          <b class="small" style="text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">${t('rec_instructions')}</b>
           <ol style="padding-left:20px;margin:8px 0;line-height:1.6;font-size:14px">
             ${(r.steps || []).map((st) => `<li>${esc(st)}</li>`).join('')}
           </ol>
@@ -309,11 +338,11 @@ export function renderRecipes(container) {
         <div class="grid grid-2" style="margin-top:8px">
           <button type="button" class="btn btn-secondary" id="btn-save-recipe">
             ${icons.plus}
-            <span>Save Recipe</span>
+            <span>${t('rec_save_recipe')}</span>
           </button>
           <button type="button" class="btn btn-primary" id="btn-log-recipe-meal">
             ${icons.check}
-            <span>Log This Meal</span>
+            <span>${t('scan_log_meal')}</span>
           </button>
         </div>
       </div>
@@ -356,16 +385,16 @@ export function renderRecipes(container) {
           <div class="row between" style="margin-top:14px">
             <button type="button" class="btn btn-ghost btn-sm" id="btn-step-prev" ${currentStep === 0 ? 'disabled' : ''}>
               ${icons.chevronLeft}
-              <span>Previous</span>
+              <span>${t('previous')}</span>
             </button>
             ${
               currentStep === PLANNER_QUESTIONS.length - 1
                 ? `<button type="button" class="btn btn-primary" id="btn-submit-planner" ${!mcqAnswers[q.id] || isGeneratingPlan ? 'disabled' : ''}>
                     ${isGeneratingPlan ? '<span class="spinner"></span>' : icons.sparkles}
-                    <span>${isGeneratingPlan ? 'Generating 7-Day Plan...' : 'Generate 7-Day Plan'}</span>
+                    <span>${isGeneratingPlan ? t('rec_generating') : t('rec_generate_ai')}</span>
                   </button>`
                 : `<button type="button" class="btn btn-secondary btn-sm" id="btn-step-next" ${!mcqAnswers[q.id] ? 'disabled' : ''}>
-                    <span>Next</span>
+                    <span>${t('next')}</span>
                     ${icons.chevronRight}
                   </button>`
             }
@@ -373,7 +402,7 @@ export function renderRecipes(container) {
 
           <div class="divider" style="margin:12px 0 8px"></div>
           <button type="button" class="btn btn-ghost btn-sm btn-block" id="btn-quick-default-plan" style="color:var(--deku);gap:6px">
-            ⚡ <span>Gunakan Cadangan Pantas (1-Tap Serta-merta)</span>
+            ⚡ <span>${t('rec_quick_default')}</span>
           </button>
         </div>
       </div>
@@ -401,10 +430,10 @@ export function renderRecipes(container) {
 
         <div class="plan-meal-actions">
           <button type="button" class="plan-action-btn primary btn-log-meal" data-didx="${dayIdx}" data-midx="${mealIdx}" title="Log into today's diary">
-            <span>+</span> <span>Log Meal</span>
+            <span>+</span> <span>${t('rec_log_meal')}</span>
           </button>
           <button type="button" class="plan-action-btn btn-swap-meal" data-didx="${dayIdx}" data-midx="${mealIdx}" title="Swap with alternative dish">
-            <span>🔄</span> <span>Tukar Lauk</span>
+            <span>🔄</span> <span>${t('rec_swap_dish')}</span>
           </button>
         </div>
       </div>
@@ -462,11 +491,11 @@ export function renderRecipes(container) {
 
   function renderMealModeView(plan) {
     const mealFilters = [
-      { id: 'all', label: 'Semua Menu', icon: '🍽️' },
-      { id: 'breakfast', label: 'Sarapan', icon: '🌅' },
-      { id: 'lunch', label: 'Makan Tengah Hari', icon: '☀️' },
-      { id: 'dinner', label: 'Makan Malam', icon: '🌙' },
-      { id: 'snack', label: 'Snek', icon: '🍎' },
+      { id: 'all', label: t('rec_all_meals'), icon: '🍽️' },
+      { id: 'breakfast', label: t('rec_breakfast'), icon: '🌅' },
+      { id: 'lunch', label: t('rec_lunch'), icon: '☀️' },
+      { id: 'dinner', label: t('rec_dinner'), icon: '🌙' },
+      { id: 'snack', label: t('rec_snack'), icon: '🍎' },
     ];
 
     // Gather all meals with their corresponding day information
@@ -497,7 +526,7 @@ export function renderRecipes(container) {
           ${
             allFilteredMeals.length === 0
               ? `<div class="empty" style="padding:20px;text-align:center;color:var(--muted);font-size:13px">
-                  Tiada hidangan untuk waktu makan ini dalam pelan semasa.
+                  ${t('rec_no_meals_filter')}
                 </div>`
               : allFilteredMeals.map((item) => renderMealCard(item.meal, item.dayIdx, item.mealIdx, true, item.dayName)).join('')
           }
@@ -512,7 +541,7 @@ export function renderRecipes(container) {
         <!-- Day Selector Horizontal Scroll -->
         <div class="plan-filter-scroll" id="day-selector-scroll">
           <button type="button" class="plan-pill ${selectedDayIndex === -1 ? 'active' : ''}" data-didx="-1">
-            <span>🗓️ Semua Hari</span>
+            <span>🗓️ ${t('rec_all_days')}</span>
           </button>
           ${(plan.days || []).map((d, idx) => {
             const dName = getNormalizedDayName(d.day);
@@ -539,15 +568,15 @@ export function renderRecipes(container) {
         <div class="plan-header-card">
           <div class="row between" style="align-items:flex-start">
             <div>
-              <span class="eyebrow">Pelan Pemakanan 7-Hari</span>
-              <h2 style="font-size:20px;font-weight:800;color:#fff;margin:2px 0 4px">Jadual Menu Sihat</h2>
-              <p class="xs muted" style="line-height:1.4">${esc(plan.summary || 'Pelan pemakanan seimbang mengikut cita rasa tempatan Malaysia.')}</p>
+              <span class="eyebrow">${t('rec_tab_planner')}</span>
+              <h2 style="font-size:20px;font-weight:800;color:#fff;margin:2px 0 4px">${t('rec_schedule_title')}</h2>
+              <p class="xs muted" style="line-height:1.4">${esc(plan.summary || t('rec_schedule_sub'))}</p>
             </div>
             <div class="row" style="gap:6px">
-              <button type="button" class="btn btn-sm btn-ghost" id="btn-pref-modal" title="Tetapan Preferences & Sasaran">
-                <span>⚙️</span> <span>Preferences</span>
+              <button type="button" class="btn btn-sm btn-ghost" id="btn-pref-modal" title="Preferences & Targets">
+                <span>⚙️</span> <span>${getLang() === 'ms' ? 'Keutamaan' : 'Preferences'}</span>
               </button>
-              <button type="button" class="btn btn-sm btn-ghost" id="btn-print-plan" title="Cetak / Simpan PDF">
+              <button type="button" class="btn btn-sm btn-ghost" id="btn-print-plan" title="Print / PDF">
                 ${icons.printer}
               </button>
             </div>
@@ -556,13 +585,13 @@ export function renderRecipes(container) {
           <!-- Active Preferences Bar -->
           <div style="display:flex;flex-direction:column;gap:6px;margin-top:2px">
             <div class="row between" style="align-items:center">
-              <span class="xs bold muted" style="text-transform:uppercase;letter-spacing:0.04em">Pilihan Preferences:</span>
+              <span class="xs bold muted" style="text-transform:uppercase;letter-spacing:0.04em">${t('rec_preferences')}</span>
               <button type="button" class="btn btn-xs btn-ghost" id="btn-refresh-suggestions" style="color:var(--deku);font-size:11px;padding:2px 8px;gap:4px">
-                <span>🔄</span> <span>Rombak Menu Baru</span>
+                <span>🔄</span> <span>${t('rec_refresh')}</span>
               </button>
             </div>
             <div class="plan-filter-scroll" id="pref-chips">
-              ${PREFERENCES.map((p) => `
+              ${getPreferences().map((p) => `
                 <button type="button" class="plan-pref-chip ${selectedPreference === p.id ? 'active' : ''}" data-pref="${p.id}">
                   <span>${p.icon}</span> <span>${p.label}</span>
                 </button>
@@ -573,10 +602,10 @@ export function renderRecipes(container) {
           <!-- View Mode Switcher: Ikut Hari vs Ikut Waktu Makan -->
           <div class="plan-view-switch" style="margin-top:4px">
             <button type="button" class="plan-view-btn ${planViewMode === 'day' ? 'active' : ''}" data-vm="day">
-              <span>📅</span> <span>Ikut Hari (Day by Day)</span>
+              <span>📅</span> <span>${t('rec_view_day')}</span>
             </button>
             <button type="button" class="plan-view-btn ${planViewMode === 'meal' ? 'active' : ''}" data-vm="meal">
-              <span>🍽️</span> <span>Ikut Waktu Makan / Menu</span>
+              <span>🍽️</span> <span>${t('rec_view_meal')}</span>
             </button>
           </div>
         </div>
@@ -588,7 +617,7 @@ export function renderRecipes(container) {
         ${
           plan.shopping_tips && plan.shopping_tips.length
             ? `<div class="card flat" style="background:#09090b;border:1px solid rgba(255,255,255,0.07);padding:12px 14px">
-                <b class="xs muted" style="text-transform:uppercase;letter-spacing:0.05em">🛒 Tips Pasar & Jimat Belanja:</b>
+                <b class="xs muted" style="text-transform:uppercase;letter-spacing:0.05em">🛒 ${t('rec_market_tips')}</b>
                 <ul style="padding-left:18px;margin:6px 0 0;line-height:1.55;font-size:12px;color:var(--text-2)">
                   ${plan.shopping_tips.map((t) => `<li>${esc(t)}</li>`).join('')}
                 </ul>
@@ -605,7 +634,7 @@ export function renderRecipes(container) {
       <div class="stack fade-up">
         <div class="card">
           <div class="card-title">
-            <span>Your Recipe Collection</span>
+            <span>${t('rec_saved_collection')}</span>
             <span class="muted">${list.length} recipes</span>
           </div>
 
@@ -614,8 +643,8 @@ export function renderRecipes(container) {
               list.length === 0
                 ? `<div class="empty">
                     ${icons.chef}
-                    <p>No saved recipes yet.</p>
-                    <span class="small muted">Generate healthy recipes in the "Recipe Generator" tab and save them here!</span>
+                    <p>${t('rec_no_saved')}</p>
+                    <span class="small muted">${t('rec_no_saved_sub')}</span>
                   </div>`
                 : list
                     .map(
@@ -651,34 +680,34 @@ export function renderRecipes(container) {
   function openPreferenceModal() {
     const targetKcal = store.macros?.target || 1800;
     const { el, close } = openSheet(`
-      <h3 class="sheet-title">⚙️ Preferences & Sasaran Menu</h3>
-      <p class="muted small" style="margin-bottom:14px">Ubah suai keutamaan hidangan dan sasaran kalori harian anda.</p>
+      <h3 class="sheet-title">⚙️ ${t('rec_pref_modal_title')}</h3>
+      <p class="muted small" style="margin-bottom:14px">${t('rec_pref_modal_sub')}</p>
 
       <div class="stack" style="gap:12px">
         <div class="field">
-          <label>Sasaran Kalori Harian (kcal)</label>
+          <label>${t('rec_target_label')}</label>
           <input class="input num" id="pref-kcal-target" type="number" value="${targetKcal}" min="1000" max="4500" step="50" />
         </div>
 
         <div class="field">
-          <label>Kekerapan Hidangan Sehari</label>
+          <label>${t('rec_meals_per_day')}</label>
           <div class="segmented" id="pref-meal-count" style="margin-top:4px">
-            <button type="button" data-c="2" class="${currentMealPlan?.days?.[0]?.meals?.length === 2 ? 'active' : ''}">2 Kali (Siang & Malam)</button>
-            <button type="button" data-c="3" class="${currentMealPlan?.days?.[0]?.meals?.length === 3 ? 'active' : ''}">3 Kali (+ Sarapan)</button>
-            <button type="button" data-c="4" class="${currentMealPlan?.days?.[0]?.meals?.length === 4 ? 'active' : ''}">3 Kali + Snek</button>
+            <button type="button" data-c="2" class="${currentMealPlan?.days?.[0]?.meals?.length === 2 ? 'active' : ''}">${t('rec_2_meals')}</button>
+            <button type="button" data-c="3" class="${currentMealPlan?.days?.[0]?.meals?.length === 3 ? 'active' : ''}">${t('rec_3_meals')}</button>
+            <button type="button" data-c="4" class="${currentMealPlan?.days?.[0]?.meals?.length === 4 ? 'active' : ''}">${t('rec_4_meals')}</button>
           </div>
         </div>
 
         <div class="field">
-          <label>Fokus Diet Utama</label>
+          <label>${t('rec_diet_focus')}</label>
           <div class="chips" id="pref-focus-chips" style="margin-top:4px">
-            ${PREFERENCES.map((p) => `<button type="button" class="chip ${selectedPreference === p.id ? 'active' : ''}" data-p="${p.id}">${p.icon} ${p.label}</button>`).join('')}
+            ${getPreferences().map((p) => `<button type="button" class="chip ${selectedPreference === p.id ? 'active' : ''}" data-p="${p.id}">${p.icon} ${p.label}</button>`).join('')}
           </div>
         </div>
 
         <div class="grid grid-2" style="margin-top:8px;gap:10px">
-          <button class="btn btn-ghost" data-close>Batal</button>
-          <button class="btn btn-primary" id="btn-save-pref">Simpan & Jana Semula</button>
+          <button class="btn btn-ghost" data-close>${t('cancel')}</button>
+          <button class="btn btn-primary" id="btn-save-pref">${t('rec_save_recalc')}</button>
         </div>
       </div>
     `);
@@ -699,142 +728,142 @@ export function renderRecipes(container) {
       });
     });
 
-    el.querySelector('#btn-save-pref').addEventListener('click', () => {
-      const newTarget = Number(el.querySelector('#pref-kcal-target').value) || targetKcal;
-      selectedPreference = tempPref;
-      currentMealPlan = generateSmartPlan(selectedPreference, newTarget, mealCount);
-      store.saveMealPlan(currentMealPlan);
-      toast('Preferences disimpan & menu baru telah dijana!', 'success');
-      close();
-      render();
-    });
-  }
-
-  function swapMeal(dayIdx, mealIdx) {
-    if (!currentMealPlan?.days?.[dayIdx]?.meals?.[mealIdx]) return;
-    const oldMeal = currentMealPlan.days[dayIdx].meals[mealIdx];
-    const typeInfo = getMealTypeInfo(oldMeal.type);
-    const pool = MALAYSIAN_MEAL_POOL[typeInfo.id] || MALAYSIAN_MEAL_POOL.lunch;
-
-    // Filter alternatives
-    const alternatives = pool.filter((m) => m.name !== oldMeal.name);
-    const picked = alternatives[Math.floor(Math.random() * alternatives.length)] || pool[0];
-
-    currentMealPlan.days[dayIdx].meals[mealIdx] = {
-      type: oldMeal.type,
-      name: picked.name,
-      kcal: picked.kcal,
-      protein_g: picked.protein_g,
-    };
-
-    // Recalculate day total kcal
-    currentMealPlan.days[dayIdx].total_kcal = currentMealPlan.days[dayIdx].meals.reduce((sum, m) => sum + (Number(m.kcal) || 0), 0);
-
-    store.saveMealPlan(currentMealPlan);
-    toast(`Lauk ditukar kepada: ${picked.name.slice(0, 35)}...`, 'success');
-    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(12);
-    render();
-  }
-
-  function logPlanMeal(dayIdx, mealIdx) {
-    const m = currentMealPlan?.days?.[dayIdx]?.meals?.[mealIdx];
-    if (!m) return;
-    const typeInfo = getMealTypeInfo(m.type);
-    const kVal = Number(m.kcal) || 0;
-    const pVal = Number(m.protein_g) || 0;
-    const cVal = Math.round((kVal * 0.45) / 4);
-    const fVal = Math.round((kVal * 0.25) / 9);
-
-    store.addMeal({
-      name: m.name,
-      kcal: kVal,
-      protein: pVal,
-      carbs: cVal,
-      fat: fVal,
-      weight_g: 350,
-      mealType: typeInfo.id === 'breakfast' ? 'Breakfast' : typeInfo.id === 'dinner' ? 'Dinner' : typeInfo.id === 'snack' ? 'Snack' : 'Lunch',
-    });
-
-    toast(`Berjaya log: ${m.name.slice(0, 30)} (+${kVal} kcal)!`, 'success');
-    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([15, 30]);
-  }
-
-  function bindEvents() {
-    container.querySelectorAll('#recipe-tabs button').forEach((b) => {
-      b.addEventListener('click', () => {
-        tab = b.dataset.t;
+      el.querySelector('#btn-save-pref').addEventListener('click', () => {
+        const newTarget = Number(el.querySelector('#pref-kcal-target').value) || targetKcal;
+        selectedPreference = tempPref;
+        currentMealPlan = generateSmartPlan(selectedPreference, newTarget, mealCount);
+        store.saveMealPlan(currentMealPlan);
+        toast(getLang() === 'en' ? 'Preferences saved & new meal plan generated!' : 'Preferences disimpan & menu baru telah dijana!', 'success');
+        close();
         render();
       });
-    });
+    }
 
-    if (tab === 'planner') {
-      // Preference chips click (Instantly adapts the plan)
-      container.querySelectorAll('#pref-chips button').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          selectedPreference = btn.dataset.pref;
+    function swapMeal(dayIdx, mealIdx) {
+      if (!currentMealPlan?.days?.[dayIdx]?.meals?.[mealIdx]) return;
+      const oldMeal = currentMealPlan.days[dayIdx].meals[mealIdx];
+      const typeInfo = getMealTypeInfo(oldMeal.type);
+      const pool = MALAYSIAN_MEAL_POOL[typeInfo.id] || MALAYSIAN_MEAL_POOL.lunch;
+
+      // Filter alternatives
+      const alternatives = pool.filter((m) => m.name !== oldMeal.name);
+      const picked = alternatives[Math.floor(Math.random() * alternatives.length)] || pool[0];
+
+      currentMealPlan.days[dayIdx].meals[mealIdx] = {
+        type: oldMeal.type,
+        name: picked.name,
+        kcal: picked.kcal,
+        protein_g: picked.protein_g,
+      };
+
+      // Recalculate day total kcal
+      currentMealPlan.days[dayIdx].total_kcal = currentMealPlan.days[dayIdx].meals.reduce((sum, m) => sum + (Number(m.kcal) || 0), 0);
+
+      store.saveMealPlan(currentMealPlan);
+      toast(getLang() === 'en' ? `Swapped dish to: ${picked.name.slice(0, 32)}...` : `Lauk ditukar kepada: ${picked.name.slice(0, 32)}...`, 'success');
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(12);
+      render();
+    }
+
+    function logPlanMeal(dayIdx, mealIdx) {
+      const m = currentMealPlan?.days?.[dayIdx]?.meals?.[mealIdx];
+      if (!m) return;
+      const typeInfo = getMealTypeInfo(m.type);
+      const kVal = Number(m.kcal) || 0;
+      const pVal = Number(m.protein_g) || 0;
+      const cVal = Math.round((kVal * 0.45) / 4);
+      const fVal = Math.round((kVal * 0.25) / 9);
+
+      store.addMeal({
+        name: m.name,
+        kcal: kVal,
+        protein: pVal,
+        carbs: cVal,
+        fat: fVal,
+        weight_g: 350,
+        mealType: typeInfo.id === 'breakfast' ? 'Breakfast' : typeInfo.id === 'dinner' ? 'Dinner' : typeInfo.id === 'snack' ? 'Snack' : 'Lunch',
+      });
+
+      toast(getLang() === 'en' ? `Logged: ${m.name.slice(0, 30)} (+${kVal} kcal)` : `Berjaya log: ${m.name.slice(0, 30)} (+${kVal} kcal)!`, 'success');
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([15, 30]);
+    }
+
+    function bindEvents() {
+      container.querySelectorAll('#recipe-tabs button').forEach((b) => {
+        b.addEventListener('click', () => {
+          tab = b.dataset.t;
+          render();
+        });
+      });
+
+      if (tab === 'planner') {
+        // Preference chips click (Instantly adapts the plan)
+        container.querySelectorAll('#pref-chips button').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            selectedPreference = btn.dataset.pref;
+            const targetKcal = store.macros?.target || 1800;
+            const mealCount = currentMealPlan?.days?.[0]?.meals?.length || 2;
+            currentMealPlan = generateSmartPlan(selectedPreference, targetKcal, mealCount);
+            store.saveMealPlan(currentMealPlan);
+            const prefLabel = getPreferences().find((p) => p.id === selectedPreference)?.label || selectedPreference;
+            toast(getLang() === 'en' ? `Plan adapted to: ${prefLabel}!` : `Menu diselaraskan mengikut: ${prefLabel}!`, 'success');
+            if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+            render();
+          });
+        });
+
+        // View mode switcher: Day vs Meal
+        container.querySelectorAll('.plan-view-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            planViewMode = btn.dataset.vm;
+            render();
+          });
+        });
+
+        // Day selector click (Ikut Hari)
+        container.querySelectorAll('#day-selector-scroll button').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            selectedDayIndex = Number(btn.dataset.didx);
+            render();
+          });
+        });
+
+        // Meal filter click (Ikut Waktu Makan)
+        container.querySelectorAll('#meal-filter-scroll button').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            selectedMealFilter = btn.dataset.mf;
+            render();
+          });
+        });
+
+        // Refresh / Regenerate suggestions button
+        container.querySelector('#btn-refresh-suggestions')?.addEventListener('click', () => {
           const targetKcal = store.macros?.target || 1800;
           const mealCount = currentMealPlan?.days?.[0]?.meals?.length || 2;
           currentMealPlan = generateSmartPlan(selectedPreference, targetKcal, mealCount);
           store.saveMealPlan(currentMealPlan);
-          const prefLabel = PREFERENCES.find((p) => p.id === selectedPreference)?.label || selectedPreference;
-          toast(`Menu diselaraskan mengikut: ${prefLabel}!`, 'success');
-          if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+          toast(getLang() === 'en' ? 'New 7-day meal plan generated!' : 'Cadangan menu 7-hari baru telah dijana!', 'success');
+          if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([15, 25]);
           render();
         });
-      });
 
-      // View mode switcher: Day vs Meal
-      container.querySelectorAll('.plan-view-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          planViewMode = btn.dataset.vm;
+        // Preferences modal trigger
+        container.querySelector('#btn-pref-modal')?.addEventListener('click', () => {
+          openPreferenceModal();
+        });
+
+        // Print / PDF
+        container.querySelector('#btn-print-plan')?.addEventListener('click', () => {
+          window.print();
+        });
+
+        // Quick 1-tap default plan from MCQ page
+        container.querySelector('#btn-quick-default-plan')?.addEventListener('click', () => {
+          currentMealPlan = generateSmartPlan('all', store.macros?.target || 1800, 2);
+          store.saveMealPlan(currentMealPlan);
+          toast(getLang() === 'en' ? '7-Day meal plan loaded!' : 'Pelan 7-Hari berjaya dimuatkan!', 'success');
           render();
         });
-      });
-
-      // Day selector click (Ikut Hari)
-      container.querySelectorAll('#day-selector-scroll button').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          selectedDayIndex = Number(btn.dataset.didx);
-          render();
-        });
-      });
-
-      // Meal filter click (Ikut Waktu Makan)
-      container.querySelectorAll('#meal-filter-scroll button').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          selectedMealFilter = btn.dataset.mf;
-          render();
-        });
-      });
-
-      // Refresh / Regenerate suggestions button
-      container.querySelector('#btn-refresh-suggestions')?.addEventListener('click', () => {
-        const targetKcal = store.macros?.target || 1800;
-        const mealCount = currentMealPlan?.days?.[0]?.meals?.length || 2;
-        currentMealPlan = generateSmartPlan(selectedPreference, targetKcal, mealCount);
-        store.saveMealPlan(currentMealPlan);
-        toast('Cadangan menu 7-hari baru telah dijana!', 'success');
-        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([15, 25]);
-        render();
-      });
-
-      // Preferences modal trigger
-      container.querySelector('#btn-pref-modal')?.addEventListener('click', () => {
-        openPreferenceModal();
-      });
-
-      // Print / PDF
-      container.querySelector('#btn-print-plan')?.addEventListener('click', () => {
-        window.print();
-      });
-
-      // Quick 1-tap default plan from MCQ page
-      container.querySelector('#btn-quick-default-plan')?.addEventListener('click', () => {
-        currentMealPlan = generateSmartPlan('all', store.macros?.target || 1800, 2);
-        store.saveMealPlan(currentMealPlan);
-        toast('Pelan 7-Hari berjaya dimuatkan!', 'success');
-        render();
-      });
 
       // MCQ navigation if in survey mode
       container.querySelectorAll('.mcq-option').forEach((optBtn) => {

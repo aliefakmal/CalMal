@@ -4,6 +4,7 @@ import { store } from '../services/store.js';
 import { onMealLogged } from '../services/companionService.js';
 import { esc, MEAL_TYPES, mealTypeNow, round1, int } from '../utils/helpers.js';
 import { MALAYSIAN_FOODS, searchMalaysianFoods } from '../constants/malaysianFoods.js';
+import { t, getLang } from '../utils/i18n.js';
 
 export function openMealEditor(draft = {}, { existingId = null, title, onSaved } = {}) {
   const base = {
@@ -19,16 +20,17 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
   let manisMod = draft.manis || 'biasa'; // 'kosong' (-45 kcal) | 'kurang' (-25 kcal) | 'biasa' (0) | 'kaw' (+60 kcal)
 
   const quickSamples = MALAYSIAN_FOODS.slice(0, 8);
+  const lang = getLang();
 
   const { el, close } = openSheet(`
-    <h3 class="sheet-title">${esc(title || (existingId ? 'Edit Meal' : 'Quick Meal Entry'))}</h3>
-    <p class="muted small" style="margin-bottom:12px">Fine-tune portions, Malaysian gravy, rice & sweetness modifiers.</p>
+    <h3 class="sheet-title">${esc(title || (existingId ? t('me_title_edit') : t('me_title_quick')))}</h3>
+    <p class="muted small" style="margin-bottom:12px">${t('me_sub')}</p>
 
     <!-- Malaysian Quick-Tap Favorites (if creating or blank) -->
     ${
       !existingId && !draft.name
         ? `<div class="quick-chips-box" style="margin-bottom:12px">
-            <span class="label xs bold muted" style="text-transform:uppercase;letter-spacing:0.05em">Malaysian Favorites 1-Tap:</span>
+            <span class="label xs bold muted" style="text-transform:uppercase;letter-spacing:0.05em">${t('dash_quick_tap')}</span>
             <div class="chips" style="margin-top:6px;gap:6px;max-height:85px;overflow-y:auto">
               ${quickSamples.map(
                 (m, idx) => `<button type="button" class="chip btn-malay-chip" data-idx="${idx}">${m.name} (${m.kcal} kcal)</button>`
@@ -40,17 +42,22 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
 
     <div class="stack" style="gap:12px">
       <div class="field">
-        <label for="me-name">Dish Name (Offline Search Available)</label>
-        <input class="input" id="me-name" list="malaysian-foods-list" value="${esc(draft.name || '')}" placeholder="Search e.g., Nasi Lemak, Roti Canai, Teh Tarik..." autocomplete="off" />
+        <label for="me-name">${t('me_dish_name')}</label>
+        <input class="input" id="me-name" list="malaysian-foods-list" value="${esc(draft.name || '')}" placeholder="${t('me_search_placeholder')}" autocomplete="off" />
         <datalist id="malaysian-foods-list">
           ${MALAYSIAN_FOODS.map((f) => `<option value="${f.name}">${f.kcal} kcal · P:${f.protein}g C:${f.carbs}g F:${f.fat}g</option>`).join('')}
         </datalist>
       </div>
 
       <div class="field">
-        <label>Meal Time</label>
+        <label>${t('me_meal_time')}</label>
         <div class="segmented" id="me-type">
-          ${MEAL_TYPES.map((t) => `<button type="button" data-v="${t}" class="${(draft.mealType || mealTypeNow()) === t ? 'active' : ''}">${t}</button>`).join('')}
+          ${MEAL_TYPES.map((typeKey) => {
+            const label = lang === 'ms' 
+              ? (typeKey === 'Breakfast' ? 'Sarapan' : typeKey === 'Lunch' ? 'Tengah Hari' : typeKey === 'Dinner' ? 'Makan Malam' : 'Snek')
+              : typeKey;
+            return `<button type="button" data-v="${typeKey}" class="${(draft.mealType || mealTypeNow()) === typeKey ? 'active' : ''}">${label}</button>`;
+          }).join('')}
         </div>
       </div>
 
@@ -58,35 +65,35 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
       <div class="mod-card">
         <div class="row between" style="align-items:center">
           <span style="font-size:13px;font-weight:800;color:#fff;display:flex;align-items:center;gap:6px">
-            🇲🇾 Malaysian Modifiers
+            🇲🇾 ${t('me_modifiers_title')}
           </span>
-          <span class="xs muted">Auto-calibrated</span>
+          <span class="xs muted">${t('me_auto_calibrated')}</span>
         </div>
 
         <!-- Minimalist How-To-Use Guide -->
         <div class="mod-guide-box" id="mod-guide-box">
           <div class="mod-guide-header" id="btn-toggle-mod-guide" role="button" tabindex="0">
             <span style="font-size:11.5px;font-weight:700;color:#fff;display:flex;align-items:center;gap:5px">
-              <span>💡</span> <span>Cara Guna / How to Use</span>
+              <span>💡</span> <span>${t('me_how_to_use')}</span>
             </span>
-            <span class="xs muted" id="guide-toggle-icon" style="font-size:10px">Tutup ▲</span>
+            <span class="xs muted" id="guide-toggle-icon" style="font-size:10px">${t('me_guide_toggle_close')}</span>
           </div>
           <div class="mod-guide-content" id="mod-guide-body">
             <div style="font-size:11px;color:#d1d1d6;line-height:1.45;margin-bottom:6px">
-              Sentuh pilihan di bawah untuk melaraskan kalori secara automatik mengikut gaya hidangan Malaysia:
+              ${t('me_how_to_use_desc')}
             </div>
             <div class="grid grid-3" style="gap:5px">
               <div style="background:rgba(255,255,255,0.03);padding:5px 6px;border-radius:6px">
-                <b style="color:#fff;font-size:10.5px;display:block">🍲 Kuah</b>
-                <span style="font-size:9.5px;color:var(--muted)">Asing (-80 kcal) vs Banjir (+120 kcal)</span>
+                <b style="color:#fff;font-size:10.5px;display:block">🍲 ${lang === 'ms' ? 'Kuah' : 'Gravy'}</b>
+                <span style="font-size:9.5px;color:var(--muted)">${lang === 'ms' ? 'Asing (-80) vs Banjir (+120)' : 'Side (-80) vs Flood (+120)'}</span>
               </div>
               <div style="background:rgba(255,255,255,0.03);padding:5px 6px;border-radius:6px">
-                <b style="color:#fff;font-size:10.5px;display:block">🍚 Nasi</b>
-                <span style="font-size:9.5px;color:var(--muted)">Separuh (-100 kcal) vs Tambah (+150 kcal)</span>
+                <b style="color:#fff;font-size:10.5px;display:block">🍚 ${lang === 'ms' ? 'Nasi' : 'Rice'}</b>
+                <span style="font-size:9.5px;color:var(--muted)">${lang === 'ms' ? 'Separuh (-100) vs Tambah (+150)' : 'Half (-100) vs Extra (+150)'}</span>
               </div>
               <div style="background:rgba(255,255,255,0.03);padding:5px 6px;border-radius:6px">
-                <b style="color:#fff;font-size:10.5px;display:block">🥤 Minuman</b>
-                <span style="font-size:9.5px;color:var(--muted)">Kosong (-45) / Kurang (-25) / Kaw (+60)</span>
+                <b style="color:#fff;font-size:10.5px;display:block">🥤 ${lang === 'ms' ? 'Minuman' : 'Drinks'}</b>
+                <span style="font-size:9.5px;color:var(--muted)">${lang === 'ms' ? 'Kosong (-45) / Kurang (-25) / Kaw (+60)' : 'Zero (-45) / Less (-25) / Sweet (+60)'}</span>
               </div>
             </div>
           </div>
@@ -95,20 +102,20 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
         <!-- Kuah Modifier Row -->
         <div class="mod-row">
           <div class="mod-header">
-            <span>Pelaras Kuah (Gravy)</span>
-            <span class="mod-badge" id="kuah-label">${kuahMod === 'asing' ? '-80 kcal' : kuahMod === 'banjir' ? '+120 kcal' : 'Normal'}</span>
+            <span>${t('me_gravy')}</span>
+            <span class="mod-badge" id="kuah-label">${kuahMod === 'asing' ? '-80 kcal' : kuahMod === 'banjir' ? '+120 kcal' : t('normal')}</span>
           </div>
           <div class="mod-track">
             <button type="button" class="mod-btn btn-mod-kuah ${kuahMod === 'asing' ? 'active' : ''}" data-v="asing">
-              <span>Asing</span>
+              <span>${t('me_gravy_side')}</span>
               <small>-80 kcal</small>
             </button>
             <button type="button" class="mod-btn btn-mod-kuah ${kuahMod === 'biasa' ? 'active' : ''}" data-v="biasa">
-              <span>Biasa</span>
+              <span>${t('normal')}</span>
               <small>0 kcal</small>
             </button>
             <button type="button" class="mod-btn btn-mod-kuah ${kuahMod === 'banjir' ? 'active' : ''}" data-v="banjir">
-              <span>Banjir</span>
+              <span>${t('me_gravy_flood')}</span>
               <small>+120 kcal</small>
             </button>
           </div>
@@ -117,20 +124,20 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
         <!-- Nasi Modifier Row -->
         <div class="mod-row">
           <div class="mod-header">
-            <span>Sukatan Nasi (Rice Portion)</span>
-            <span class="mod-badge" id="nasi-label">${nasiMod === 'separuh' ? '-100 kcal' : nasiMod === 'tambah' ? '+150 kcal' : 'Normal'}</span>
+            <span>${t('me_rice')}</span>
+            <span class="mod-badge" id="nasi-label">${nasiMod === 'separuh' ? '-100 kcal' : nasiMod === 'tambah' ? '+150 kcal' : t('normal')}</span>
           </div>
           <div class="mod-track">
             <button type="button" class="mod-btn btn-mod-nasi ${nasiMod === 'separuh' ? 'active' : ''}" data-v="separuh">
-              <span>Separuh</span>
+              <span>${t('me_half_rice')}</span>
               <small>-100 kcal</small>
             </button>
             <button type="button" class="mod-btn btn-mod-nasi ${nasiMod === 'biasa' ? 'active' : ''}" data-v="biasa">
-              <span>Biasa</span>
+              <span>${t('normal')}</span>
               <small>0 kcal</small>
             </button>
             <button type="button" class="mod-btn btn-mod-nasi ${nasiMod === 'tambah' ? 'active' : ''}" data-v="tambah">
-              <span>Tambah</span>
+              <span>${t('me_extra_rice')}</span>
               <small>+150 kcal</small>
             </button>
           </div>
@@ -139,24 +146,24 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
         <!-- Minuman / Manis Modifier Row -->
         <div class="mod-row">
           <div class="mod-header">
-            <span>Tahap Manis / Susu (Drinks)</span>
-            <span class="mod-badge" id="manis-label">${manisMod === 'kosong' ? '-45 kcal' : manisMod === 'kurang' ? '-25 kcal' : manisMod === 'kaw' ? '+60 kcal' : 'Normal'}</span>
+            <span>${t('me_sweetness')}</span>
+            <span class="mod-badge" id="manis-label">${manisMod === 'kosong' ? '-45 kcal' : manisMod === 'kurang' ? '-25 kcal' : manisMod === 'kaw' ? '+60 kcal' : t('normal')}</span>
           </div>
           <div class="mod-track">
             <button type="button" class="mod-btn btn-mod-manis ${manisMod === 'kosong' ? 'active' : ''}" data-v="kosong">
-              <span>Kosong</span>
+              <span>${t('me_no_sugar')}</span>
               <small>-45 kcal</small>
             </button>
             <button type="button" class="mod-btn btn-mod-manis ${manisMod === 'kurang' ? 'active' : ''}" data-v="kurang">
-              <span>Kurang</span>
+              <span>${t('me_less_sweet')}</span>
               <small>-25 kcal</small>
             </button>
             <button type="button" class="mod-btn btn-mod-manis ${manisMod === 'biasa' ? 'active' : ''}" data-v="biasa">
-              <span>Biasa</span>
+              <span>${t('normal')}</span>
               <small>0 kcal</small>
             </button>
             <button type="button" class="mod-btn btn-mod-manis ${manisMod === 'kaw' ? 'active' : ''}" data-v="kaw">
-              <span>Kaw</span>
+              <span>${t('me_extra_sweet')}</span>
               <small>+60 kcal</small>
             </button>
           </div>
@@ -166,7 +173,7 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
       <!-- Portion Multiplier Slider Card -->
       <div class="portion-box">
         <div class="row between">
-          <span class="label">Overall Portion Multiplier</span>
+          <span class="label">${t('me_portion_multiplier')}</span>
           <b class="num portion-val" id="me-mult">1.00×</b>
         </div>
         <input type="range" id="me-range" min="0.25" max="2.5" step="0.05" value="1" aria-label="Portion multiplier" />
@@ -178,27 +185,27 @@ export function openMealEditor(draft = {}, { existingId = null, title, onSaved }
       <!-- Nutrition Breakdown Section -->
       <div class="stack" style="gap:8px">
         <div class="row between" style="align-items:center">
-          <span class="label bold small" style="margin:0">Nutrition Breakdown</span>
-          <button type="button" class="btn btn-ghost btn-xs" id="me-calc" title="Auto calculate calories from macros" style="font-size:11.5px;padding:3px 8px;gap:4px">
-            ✨ <span>Auto-sum macros</span>
+          <span class="label bold small" style="margin:0">${t('me_nutrition_title')}</span>
+          <button type="button" class="btn btn-ghost btn-xs" id="me-calc" title="${t('me_autosum')}" style="font-size:11.5px;padding:3px 8px;gap:4px">
+            ✨ <span>${t('me_autosum')}</span>
           </button>
         </div>
 
         <div class="grid grid-2" style="gap:10px">
-          <div class="field"><label for="me-kcal">Calories</label><div class="input-suffix"><input class="input num" id="me-kcal" type="number" inputmode="decimal" min="0" /><span>kcal</span></div></div>
-          <div class="field"><label for="me-weight">Serving Weight</label><div class="input-suffix"><input class="input num" id="me-weight" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
+          <div class="field"><label for="me-kcal">${t('me_calories')}</label><div class="input-suffix"><input class="input num" id="me-kcal" type="number" inputmode="decimal" min="0" /><span>kcal</span></div></div>
+          <div class="field"><label for="me-weight">${t('me_serving_weight')}</label><div class="input-suffix"><input class="input num" id="me-weight" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
         </div>
 
         <div class="grid grid-3" style="gap:8px">
-          <div class="field"><label for="me-protein">Protein</label><div class="input-suffix"><input class="input num" id="me-protein" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
-          <div class="field"><label for="me-carbs">Carbs</label><div class="input-suffix"><input class="input num" id="me-carbs" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
-          <div class="field"><label for="me-fat">Fat</label><div class="input-suffix"><input class="input num" id="me-fat" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
+          <div class="field"><label for="me-protein">${t('me_protein')}</label><div class="input-suffix"><input class="input num" id="me-protein" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
+          <div class="field"><label for="me-carbs">${t('me_carbs')}</label><div class="input-suffix"><input class="input num" id="me-carbs" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
+          <div class="field"><label for="me-fat">${t('me_fat')}</label><div class="input-suffix"><input class="input num" id="me-fat" type="number" inputmode="decimal" min="0" /><span>g</span></div></div>
         </div>
       </div>
 
       <div class="grid grid-2" style="margin-top:6px;gap:10px">
-        <button class="btn btn-ghost" data-close>Cancel</button>
-        <button class="btn btn-primary" id="me-save">${existingId ? 'Save Changes' : 'Log Meal'}</button>
+        <button class="btn btn-ghost" data-close>${t('cancel')}</button>
+        <button class="btn btn-primary" id="me-save">${existingId ? t('me_save_changes') : t('me_log_meal')}</button>
       </div>
     </div>
   `);

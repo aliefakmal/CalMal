@@ -4,6 +4,7 @@ import { icons } from './icons.js';
 import { openSheet, toast } from './ui.js';
 import { calcBMR, calcTDEE, calcDailyTarget, calcMacros, ACTIVITY_LEVELS, GOALS } from '../utils/calc.js';
 import { esc } from '../utils/helpers.js';
+import { t, getLang } from '../utils/i18n.js';
 
 export function openProfileEditor(onSaved) {
   const current = store.profile || {
@@ -40,13 +41,15 @@ export function openProfileEditor(onSaved) {
 
   const { bmr, tdee, targetKcal, macros } = calculatePreview();
 
+  const isEn = getLang() === 'en';
+
   const { el: sheet, close } = openSheet(`
     <div class="sheet-head row between" style="margin-bottom:12px">
       <div>
-        <span class="eyebrow">Personal Biometrics</span>
-        <h3 style="margin:2px 0 0;font-size:20px;font-weight:800">Edit Profile & Goals</h3>
+        <span class="eyebrow">${t('prof_eyebrow')}</span>
+        <h3 style="margin:2px 0 0;font-size:20px;font-weight:800">${t('prof_edit_btn')}</h3>
       </div>
-      <button type="button" class="btn btn-icon btn-ghost btn-sm" data-close aria-label="Close">
+      <button type="button" class="btn btn-icon btn-ghost btn-sm" data-close aria-label="${t('close')}">
         ${icons.close}
       </button>
     </div>
@@ -54,22 +57,22 @@ export function openProfileEditor(onSaved) {
     <form id="profile-edit-form" class="stack" style="gap:14px">
       <!-- Name -->
       <div class="field">
-        <label for="pe-name">Hero Alias / Name:</label>
+        <label for="pe-name">${isEn ? 'Hero Name / Alias:' : 'Nama / Gelaran Wira:'}</label>
         <input class="input" id="pe-name" value="${esc(formState.name)}" placeholder="Enter your name" required />
       </div>
 
       <!-- Gender & Coach Duo Row -->
       <div class="grid grid-2" style="gap:10px">
         <div class="field">
-          <label>Biological Gender:</label>
+          <label>${t('prof_gender')}:</label>
           <div class="segmented" style="height:42px">
-            <button type="button" class="btn-gender ${formState.gender === 'male' ? 'active' : ''}" data-g="male">Male</button>
-            <button type="button" class="btn-gender ${formState.gender === 'female' ? 'active' : ''}" data-g="female">Female</button>
+            <button type="button" class="btn-gender ${formState.gender === 'male' ? 'active' : ''}" data-g="male">${isEn ? 'Male' : 'Lelaki'}</button>
+            <button type="button" class="btn-gender ${formState.gender === 'female' ? 'active' : ''}" data-g="female">${isEn ? 'Female' : 'Perempuan'}</button>
           </div>
         </div>
 
         <div class="field">
-          <label>Hero Coach:</label>
+          <label>${t('prof_companion_title')}:</label>
           <div class="segmented" style="height:42px">
             <button type="button" class="btn-coach ${formState.selectedCompanion === 'deku' ? 'active' : ''}" data-c="deku" style="color:var(--deku)">
               <span>Deku</span>
@@ -84,22 +87,22 @@ export function openProfileEditor(onSaved) {
       <!-- Age, Height, Weight Grid -->
       <div class="grid grid-3" style="gap:10px">
         <div class="field">
-          <label for="pe-age">Age:</label>
+          <label for="pe-age">${t('prof_age')}:</label>
           <input class="input num" id="pe-age" type="number" min="10" max="100" value="${formState.age}" />
         </div>
         <div class="field">
-          <label for="pe-height">Height (cm):</label>
+          <label for="pe-height">${t('prof_height')} (cm):</label>
           <input class="input num" id="pe-height" type="number" min="100" max="250" value="${formState.height}" />
         </div>
         <div class="field">
-          <label for="pe-weight">Weight (kg):</label>
+          <label for="pe-weight">${t('prof_weight')} (kg):</label>
           <input class="input num" id="pe-weight" type="number" step="0.1" min="30" max="250" value="${formState.weight}" />
         </div>
       </div>
 
       <!-- Target Weight -->
       <div class="field">
-        <label for="pe-target-w">Target Goal Weight (kg):</label>
+        <label for="pe-target-w">${t('prof_target_weight')} (kg):</label>
         <div class="input-suffix">
           <input class="input num" id="pe-target-w" type="number" step="0.1" min="30" max="250" value="${formState.targetWeight}" />
           <span>kg</span>
@@ -108,7 +111,7 @@ export function openProfileEditor(onSaved) {
 
       <!-- Activity Level -->
       <div class="field">
-        <label for="pe-activity">Activity Level:</label>
+        <label for="pe-activity">${isEn ? 'Activity Level:' : 'Tahap Aktiviti Fizikal:'}</label>
         <select class="input" id="pe-activity">
           ${ACTIVITY_LEVELS.map(
             (a) => `<option value="${a.value}" ${Math.abs(formState.activity - a.value) < 0.01 ? 'selected' : ''}>${a.label} (${a.value}x)</option>`
@@ -118,7 +121,7 @@ export function openProfileEditor(onSaved) {
 
       <!-- Fitness Goal -->
       <div class="field">
-        <label for="pe-goal">Primary Fitness Goal:</label>
+        <label for="pe-goal">${t('prof_goal')}:</label>
         <select class="input" id="pe-goal">
           ${GOALS.map(
             (g) => `<option value="${g.value}" ${formState.goal === g.value ? 'selected' : ''}>${g.label} (${g.delta >= 0 ? '+' : ''}${g.delta} kcal)</option>`
@@ -129,7 +132,7 @@ export function openProfileEditor(onSaved) {
       <!-- Live Calorie & Macro Recalibration Box -->
       <div class="card flat" style="background:#09090b;border:1px solid rgba(255,255,255,0.12);padding:14px;border-radius:14px">
         <div class="row between" style="margin-bottom:8px">
-          <span class="small bold" style="text-transform:uppercase;letter-spacing:0.05em;color:var(--muted)">Recalculated Target:</span>
+          <span class="small bold" style="text-transform:uppercase;letter-spacing:0.05em;color:var(--muted)">${isEn ? 'Recalculated Target:' : 'Sasaran Dikalibrasi:'}</span>
           <span class="badge ok" id="preview-target-badge">${targetKcal} kcal/day</span>
         </div>
         <div class="equation" style="grid-template-columns:repeat(4, 1fr);font-size:12px">
@@ -142,11 +145,11 @@ export function openProfileEditor(onSaved) {
             <b class="num" id="prev-tdee">${tdee}</b>
           </div>
           <div class="eq-cell">
-            <span>Protein</span>
+            <span>${t('dash_protein')}</span>
             <b class="num" id="prev-p">${macros.protein}g</b>
           </div>
           <div class="eq-cell">
-            <span>Carbs/Fat</span>
+            <span>${t('dash_carbs')}/${t('dash_fat')}</span>
             <b class="num" id="prev-cf">${macros.carbs}/${macros.fat}g</b>
           </div>
         </div>
@@ -154,10 +157,10 @@ export function openProfileEditor(onSaved) {
 
       <!-- Action Buttons -->
       <div class="grid grid-2" style="margin-top:8px">
-        <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+        <button type="button" class="btn btn-secondary" data-close>${t('cancel')}</button>
         <button type="submit" class="btn btn-primary">
           ${icons.check}
-          <span>Save Changes</span>
+          <span>${t('save')}</span>
         </button>
       </div>
     </form>

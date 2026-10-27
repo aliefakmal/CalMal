@@ -4,6 +4,7 @@ import './styles/screens.css';
 
 import { store } from './services/store.js';
 import { icons } from './components/icons.js';
+import { t, getLang, toggleLang, onLangChange } from './utils/i18n.js';
 import { startReminderLoop } from './services/companionService.js';
 import * as tracker from './services/gpsTracker.js';
 import { renderOnboarding } from './screens/onboarding.js';
@@ -13,32 +14,36 @@ import { renderActivity } from './screens/activity.js';
 import { renderRecipes } from './screens/recipes.js';
 import { renderProfile } from './screens/profile.js';
 
-const ROUTES = {
-  home: { label: 'Dashboard', icon: icons.home, render: renderDashboard, title: 'Dashboard' },
-  activity: { label: 'Activity', icon: icons.run, render: renderActivity, title: 'Activity' },
-  scan: { label: 'Scan', icon: icons.scan, render: renderScanner, title: 'AI Food Scanner', fab: true },
-  recipes: { label: 'Recipes', icon: icons.chef, render: renderRecipes, title: 'AI Recipes' },
-  profile: { label: 'Profile', icon: icons.user, render: renderProfile, title: 'Profile' },
-};
+function getRoutes() {
+  return {
+    home: { label: t('nav_dashboard'), icon: icons.home, render: renderDashboard, title: t('nav_dashboard') },
+    activity: { label: t('nav_activity'), icon: icons.run, render: renderActivity, title: t('nav_activity') },
+    scan: { label: t('nav_scan'), icon: icons.scan, render: renderScanner, title: 'AI Food Scanner', fab: true },
+    recipes: { label: t('nav_recipes'), icon: icons.chef, render: renderRecipes, title: t('nav_recipes') },
+    profile: { label: t('nav_profile'), icon: icons.user, render: renderProfile, title: t('nav_profile') },
+  };
+}
 
 const view = document.getElementById('view');
 let cleanup = null;
 
 function currentRoute() {
+  const routes = getRoutes();
   const r = location.hash.replace(/^#\/?/, '').split('?')[0];
-  return ROUTES[r] ? r : 'home';
+  return routes[r] ? r : 'home';
 }
 
 function renderNav(active) {
+  const routes = getRoutes();
   const order = ['home', 'activity', 'scan', 'recipes', 'profile'];
   const nav = document.getElementById('bottom-nav');
   nav.innerHTML = order
     .map((k) => {
-      const r = ROUTES[k];
+      const r = routes[k];
       if (r.fab) {
         return `<a href="#/${k}" id="nav-${k}" class="nav-fab ${active === k ? 'active' : ''}" aria-label="Scan Food AI">
           <span class="nav-fab-icon">${icons.camera}</span>
-          <span class="nav-fab-text">+ SCAN</span>
+          <span class="nav-fab-text">${t('nav_scan')}</span>
         </a>`;
       }
       return `<a href="#/${k}" id="nav-${k}" class="nav-item ${active === k ? 'active' : ''}">${r.icon}<span>${r.label}</span></a>`;
@@ -56,22 +61,36 @@ function renderNav(active) {
   document.getElementById('sidebar').innerHTML = `
     <a class="brand" href="#/home"><img src="/icon.svg" alt="" />CalMal</a>
     ${['home', 'scan', 'activity', 'recipes', 'profile']
-      .map((k) => `<a href="#/${k}" id="side-${k}" class="side-item ${active === k ? 'active' : ''}">${k === 'scan' ? icons.camera : ROUTES[k].icon}<span>${k === 'scan' ? 'Scan Food' : ROUTES[k].label}</span></a>`)
+      .map((k) => `<a href="#/${k}" id="side-${k}" class="side-item ${active === k ? 'active' : ''}">${k === 'scan' ? icons.camera : routes[k].icon}<span>${k === 'scan' ? t('dash_scan_btn') : routes[k].label}</span></a>`)
       .join('')}
-    <div class="side-foot">CalMal v2.5 · Multi-Tier AI Cascade<br/>Local-first privacy & offline storage.</div>`;
+    <div class="side-foot">${t('side_foot').replace(/\n/g, '<br/>')}</div>`;
 }
 
 function renderTopbar() {
   const online = navigator.onLine;
   const rec = tracker.isActive();
+  const lang = getLang();
+
   document.getElementById('topbar').innerHTML = `
     <a class="brand" href="#/home"><img src="/icon.svg" alt="" />CalMal</a>
     <div class="topbar-actions">
-      ${rec ? `<a class="pill-status rec" href="#/activity" id="rec-pill"><span class="dot"></span>Recording</a>` : ''}
-      <span class="pill-status ${online ? '' : 'offline'}" title="${online ? 'Online' : 'Offline — Data saved locally'}">
-        <span class="dot"></span>${online ? 'Online' : 'Offline'}
+      <!-- Universal Language Switcher Pill -->
+      <button type="button" class="lang-pill-btn" id="topbar-lang-toggle" title="Switch Language / Tukar Bahasa (EN / BM)">
+        <span class="lang-icon">🌐</span>
+        <span class="lang-cur">${lang.toUpperCase()}</span>
+        <span class="lang-alt">${lang === 'en' ? 'BM' : 'EN'}</span>
+      </button>
+
+      ${rec ? `<a class="pill-status rec" href="#/activity" id="rec-pill"><span class="dot"></span>${t('topbar_recording')}</a>` : ''}
+      <span class="pill-status ${online ? '' : 'offline'}" title="${online ? t('topbar_online') : t('topbar_offline_desc')}">
+        <span class="dot"></span>${online ? t('topbar_online') : t('topbar_offline')}
       </span>
     </div>`;
+
+  document.getElementById('topbar-lang-toggle')?.addEventListener('click', () => {
+    toggleLang();
+    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+  });
 }
 
 function route() {
@@ -94,8 +113,9 @@ function route() {
   }
   document.body.classList.remove('onboarding');
 
+  const routes = getRoutes();
   const key = currentRoute();
-  const r = ROUTES[key];
+  const r = routes[key];
   document.title = `${r.title} · CalMal`;
   renderNav(key);
   renderTopbar();
@@ -114,6 +134,7 @@ tracker.subscribe(() => {
 });
 
 store.subscribe((type) => { if (type === 'reset') route(); });
+onLangChange(() => route());
 
 route();
 startReminderLoop();

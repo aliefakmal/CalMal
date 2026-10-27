@@ -9,6 +9,7 @@ import { avatar } from '../components/companion.js';
 import { openProfileEditor } from '../components/profileEditor.js';
 import { soundboard } from '../services/audioService.js';
 import { esc, fmtDate, todayKey } from '../utils/helpers.js';
+import { t, getLang, setLang } from '../utils/i18n.js';
 
 
 export function renderProfile(container) {
@@ -101,21 +102,45 @@ export function renderProfile(container) {
     const heroRank = store.getHeroRank();
     const activeCoach = profile.selectedCompanion || 'deku';
 
+    const isEn = getLang() === 'en';
+
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="eyebrow">Biometric Profile & Settings</span>
+          <span class="eyebrow">${t('prof_eyebrow')}</span>
           <h1 class="page-title">${esc(profile.name)}</h1>
         </div>
         <div class="row" style="gap:8px">
           <button type="button" class="btn btn-sm btn-primary" id="btn-edit-profile-head">
             ${icons.edit}
-            <span>Edit Profile</span>
+            <span>${t('prof_edit_btn')}</span>
           </button>
         </div>
       </div>
 
       <div class="stack">
+        <!-- App Language Switcher Card (Multi-Language Settings) -->
+        <div class="card stack" style="border:1px solid var(--border-soft);background:var(--surface-2)">
+          <div class="card-title row between">
+            <span class="row" style="gap:6px;align-items:center">
+              <span>🌐</span>
+              <span>${t('prof_lang_title')}</span>
+            </span>
+            <span class="badge ok">${isEn ? 'English (EN)' : 'Bahasa Melayu (BM)'}</span>
+          </div>
+          <p class="small muted" style="line-height:1.45;margin-bottom:2px">
+            ${isEn ? 'Select your interface language. The entire application updates immediately without reloading.' : 'Pilih bahasa paparan aplikasi. Keseluruhan aplikasi akan berubah serta-merta tanpa perlu muat semula.'}
+          </p>
+          <div class="segmented" id="app-lang-switcher" style="margin-top:4px">
+            <button type="button" data-l="en" class="${isEn ? 'active' : ''}">
+              <span>🇬🇧 English</span>
+            </button>
+            <button type="button" data-l="ms" class="${!isEn ? 'active' : ''}">
+              <span>🇲🇾 Bahasa Melayu</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Hero Rank & License Status Card -->
         <div class="card" style="border:1px solid var(--hero-glow);background:linear-gradient(135deg, rgba(18,18,21,0.95), rgba(28,28,30,0.85))">
           <div class="card-title row between">
@@ -131,14 +156,14 @@ export function renderProfile(container) {
 
           <div style="margin:12px 0 6px">
             <div class="row between" style="margin-bottom:6px">
-              <span class="small bold muted" style="text-transform:uppercase;letter-spacing:0.05em">Hero EXP Progress</span>
+              <span class="small bold muted" style="text-transform:uppercase;letter-spacing:0.05em">${isEn ? 'Hero EXP Progress' : 'Kemajuan EXP Wira'}</span>
               <span class="small num" style="color:var(--hero-accent)">${heroRank.currentExp} / ${heroRank.nextLevelExp} EXP (${heroRank.pct}%)</span>
             </div>
             <div class="macro-track" style="height:10px;background:rgba(255,255,255,0.08);border-radius:6px;overflow:hidden">
               <div class="macro-fill" style="width:${heroRank.pct}%;background:var(--hero-accent);transition:width 0.4s var(--ease)"></div>
             </div>
             <div class="xs muted" style="margin-top:8px;line-height:1.4">
-              Earn EXP by logging meals (+10 EXP), hitting protein targets (+20 EXP), and running (+25 EXP).
+              ${isEn ? 'Earn EXP by logging meals (+10 EXP), hitting protein targets (+20 EXP), and running (+25 EXP).' : 'Dapatkan EXP dengan merekod hidangan (+10 EXP), mencapai sasaran protein (+20 EXP), dan berlari (+25 EXP).'}
             </div>
           </div>
         </div>
@@ -146,27 +171,27 @@ export function renderProfile(container) {
         <!-- Current Biometrics Summary Card -->
         <div class="card">
           <div class="card-title row between">
-            <span>Current Physical Status</span>
+            <span>${t('prof_stats_title')}</span>
             <div class="row" style="gap:6px">
               <span class="badge ok">${bmiCategory} (BMI ${bmi.toFixed(1)})</span>
               <button type="button" class="btn btn-xs btn-ghost" id="btn-edit-profile-card">
                 ${icons.edit}
-                <span>Edit</span>
+                <span>${t('edit')}</span>
               </button>
             </div>
           </div>
 
           <div class="equation">
             <div class="eq-cell">
-              <span>Current Weight</span>
+              <span>${t('prof_weight')}</span>
               <b class="num">${profile.weight}<small style="font-size:12px;color:var(--muted)">kg</small></b>
             </div>
             <div class="eq-cell">
-              <span>Target Weight</span>
+              <span>${t('prof_target_weight')}</span>
               <b class="num">${profile.targetWeight || '–'}<small style="font-size:12px;color:var(--muted)">kg</small></b>
             </div>
             <div class="eq-cell">
-              <span>Calorie Target</span>
+              <span>${t('dash_target')}</span>
               <b class="num">${targetKcal}<small style="font-size:12px;color:var(--muted)">kcal</small></b>
             </div>
           </div>
@@ -174,8 +199,8 @@ export function renderProfile(container) {
           <!-- Weight Progress Chart -->
           <div style="margin-top:16px">
             <div class="row between" style="margin-bottom:4px">
-              <span class="small bold muted" style="text-transform:uppercase;letter-spacing:0.06em">Weight Progress</span>
-              <span class="xs muted">${weights.length} records</span>
+              <span class="small bold muted" style="text-transform:uppercase;letter-spacing:0.06em">${isEn ? 'Weight Progress' : 'Kemajuan Berat Badan'}</span>
+              <span class="xs muted">${weights.length} ${isEn ? 'records' : 'rekod'}</span>
             </div>
             ${renderWeightChart(weights, profile.targetWeight)}
           </div>
@@ -184,7 +209,7 @@ export function renderProfile(container) {
           <div class="divider"></div>
           <div class="row" style="align-items:flex-end;gap:10px">
             <div class="field" style="flex:1">
-              <label for="new-weight-input">Log Today's Weight:</label>
+              <label for="new-weight-input">${isEn ? "Log Today's Weight:" : 'Rekod Berat Hari Ini:'}</label>
               <div class="input-suffix">
                 <input class="input num" id="new-weight-input" type="number" step="0.1" value="${profile.weight}" />
                 <span>kg</span>
@@ -192,7 +217,7 @@ export function renderProfile(container) {
             </div>
             <button type="button" class="btn btn-primary" id="btn-log-weight">
               ${icons.scale}
-              <span>Record Weight</span>
+              <span>${t('save')}</span>
             </button>
           </div>
         </div>
@@ -200,8 +225,8 @@ export function renderProfile(container) {
         <!-- Hero Badges Card -->
         <div class="card">
           <div class="card-title row between">
-            <span>Hero Badge Collection</span>
-            <span class="muted">${Object.keys(store.state.badges).length} / ${Object.keys(BADGES).length} unlocked</span>
+            <span>${isEn ? 'Hero Badge Collection' : 'Koleksi Lencana Wira'}</span>
+            <span class="muted">${Object.keys(store.state.badges).length} / ${Object.keys(BADGES).length} ${isEn ? 'unlocked' : 'dibuka'}</span>
           </div>
 
           <div class="badge-grid">
@@ -216,7 +241,7 @@ export function renderProfile(container) {
                     </div>
                     <div class="badge-title">${esc(b.title)}</div>
                     <div class="badge-desc">${esc(b.desc)}</div>
-                    ${unlocked ? `<span class="badge ok" style="font-size:9.5px;height:18px;padding:0 6px;background:${b.color}25;color:${b.color};border-color:${b.color}66">UNLOCKED</span>` : '<span class="badge" style="font-size:9.5px;height:18px;padding:0 6px;opacity:0.6">LOCKED</span>'}
+                    ${unlocked ? `<span class="badge ok" style="font-size:9.5px;height:18px;padding:0 6px;background:${b.color}25;color:${b.color};border-color:${b.color}66">${isEn ? 'UNLOCKED' : 'DIBUKA'}</span>` : `<span class="badge" style="font-size:9.5px;height:18px;padding:0 6px;opacity:0.6">${isEn ? 'LOCKED' : 'DIKUNCI'}</span>`}
                   </div>
                 `;
               })
@@ -227,38 +252,40 @@ export function renderProfile(container) {
         <!-- OpenStreetMap Info Card -->
         <div class="card stack">
           <div class="card-title row between">
-            <span>Map & Route Tracker</span>
+            <span>${isEn ? 'Map & Route Tracker' : 'Peta & Penjejak Laluan'}</span>
             <span class="badge ok">${icons.pin} OpenStreetMap</span>
           </div>
           <p class="small muted" style="line-height:1.45">
-            Live run tracking and Strava-style GPS maps use <b>OpenStreetMap (OSM)</b>. No API key required — works straight from your device GPS.
+            ${isEn ? 'Live run tracking and Strava-style GPS maps use <b>OpenStreetMap (OSM)</b>. No API key required — works straight from your device GPS.' : 'Penjejakan larian langsung menggunakan <b>OpenStreetMap (OSM)</b>. Tiada kunci API diperlukan — berfungsi terus daripada GPS peranti.'}
           </p>
         </div>
 
         <!-- Gemini Multi-Model Cascade Card -->
         <div class="card stack">
           <div class="card-title row between">
-            <span>AI Engine & Fallback Cascade</span>
+            <span>${isEn ? 'AI Engine & Fallback Cascade' : 'Enjin AI & Tindanan Alternatif'}</span>
             <span class="badge ok">Gemini 3.5 → 3.1 → Gemma 4</span>
           </div>
 
           <p class="small muted" style="line-height:1.45">
-            CalMal features an intelligent multi-tier AI cascading engine: <b>Gemini 3.5 Flash Lite</b> (primary) → <b>Gemini 3.1 Flash Lite</b> (fallback 1) → <b>Gemma 4 31B</b> (fallback 2) → <b>Smart Asian Dietary Engine</b> (offline fallback). An API key is completely optional — you can provide your Google Gemini API key below to unlock cloud capabilities.
+            ${isEn
+              ? 'CalMal features an intelligent multi-tier AI cascading engine: <b>Gemini 3.5 Flash Lite</b> (primary) → <b>Gemini 3.1 Flash Lite</b> (fallback 1) → <b>Gemma 4 31B</b> (fallback 2) → <b>Smart Asian Dietary Engine</b> (offline fallback). An API key is completely optional — you can provide your Google Gemini API key below to unlock cloud capabilities.'
+              : 'CalMal dilengkapi enjin AI bertindih pintar: <b>Gemini 3.5 Flash Lite</b> (utama) → <b>Gemini 3.1 Flash Lite</b> → <b>Gemma 4 31B</b> → <b>Enjin Pemakanan Tempatan</b> (luar talian). Kunci API adalah pilihan sahaja.'}
           </p>
 
           <div class="field">
-            <label for="api-key-input">Gemini API Key (Optional):</label>
+            <label for="api-key-input">${t('prof_api_key')}:</label>
             <input class="input" id="api-key-input" type="password" value="${esc(settings.apiKey || '')}" placeholder="AIzaSy... (Optional)" autocomplete="off" />
           </div>
 
           <div class="row" style="gap:10px">
             <button type="button" class="btn btn-secondary btn-sm" id="btn-save-key">
               ${icons.check}
-              <span>Save Key</span>
+              <span>${t('save')}</span>
             </button>
             <button type="button" class="btn btn-ghost btn-sm" id="btn-test-key">
               ${icons.refresh}
-              <span>Test Connection</span>
+              <span>${isEn ? 'Test Connection' : 'Uji Sambungan'}</span>
             </button>
           </div>
         </div>
@@ -266,13 +293,13 @@ export function renderProfile(container) {
         <!-- Companion & Notification Settings Card -->
         <div class="card stack">
           <div class="card-title">
-            <span>Companion & Audio Settings</span>
+            <span>${t('prof_companion_title')}</span>
           </div>
 
           <label class="row between" style="padding:8px 0;cursor:pointer">
             <div>
-              <b>Deku & Bakugou Companions</b>
-              <p class="small muted">Manga dialogue & motivational voice bubble cues on dashboard and scanner.</p>
+              <b>${isEn ? 'Deku & Bakugou Companions' : 'Teman Deku & Bakugou'}</b>
+              <p class="small muted">${isEn ? 'Manga dialogue & motivational voice bubble cues on dashboard and scanner.' : 'Dialog manga & kata semangat suara animasi di papan pemuka dan pengimbas.'}</p>
             </div>
             <input type="checkbox" id="companion-toggle" ${settings.companions !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
           </label>
@@ -281,8 +308,8 @@ export function renderProfile(container) {
 
           <label class="row between" style="padding:8px 0;cursor:pointer">
             <div>
-              <b>Hero Voice & Sound Effects (SFX)</b>
-              <p class="small muted">Web Audio Japanese & English voice cues, plus heroic tone synthesizers.</p>
+              <b>${t('prof_voice_effects')}</b>
+              <p class="small muted">${isEn ? 'Web Audio Japanese voice cues and hero sound effects.' : 'Kesan audio suara bahasa Jepun dan nada wira.'}</p>
             </div>
             <input type="checkbox" id="sound-toggle" ${settings.soundEnabled !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
           </label>
@@ -291,8 +318,8 @@ export function renderProfile(container) {
 
           <label class="row between" style="padding:8px 0;cursor:pointer">
             <div>
-              <b>Daily Smart Reminders</b>
-              <p class="small muted">Meal reminders (8:00 AM, 1:00 PM, 8:00 PM) and evening run alerts (5:30 PM).</p>
+              <b>${isEn ? 'Daily Smart Reminders' : 'Peringatan Harian Pintar'}</b>
+              <p class="small muted">${isEn ? 'Meal reminders (8:00 AM, 1:00 PM, 8:00 PM) and evening run alerts (5:30 PM).' : 'Peringatan waktu makan dan peringatan riadah petang.'}</p>
             </div>
             <input type="checkbox" id="notif-toggle" ${settings.notifications ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
           </label>
@@ -301,8 +328,8 @@ export function renderProfile(container) {
 
           <label class="row between" style="padding:8px 0;cursor:pointer">
             <div>
-              <b>Fasting Mode / Puasa (Ramadan & Intermittent)</b>
-              <p class="small muted">Disables daytime meal alerts; reschedules hydration and reminder prompts for Sahur & Iftar.</p>
+              <b>${isEn ? 'Fasting Mode / Puasa (Ramadan & Intermittent)' : 'Mod Puasa (Ramadan & Berselang)'}</b>
+              <p class="small muted">${isEn ? 'Disables daytime meal alerts; reschedules hydration and reminder prompts for Sahur & Iftar.' : 'Menyesuaikan peringatan waktu makan dan hidrasi untuk waktu Sahur & Iftar.'}</p>
             </div>
             <input type="checkbox" id="fasting-toggle" ${settings.fastingMode ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
           </label>
@@ -311,8 +338,8 @@ export function renderProfile(container) {
 
           <label class="row between" style="padding:8px 0;cursor:pointer">
             <div>
-              <b>Continuous Live Camera (Default: On)</b>
-              <p class="small muted">Automatically starts camera feed immediately upon navigating to the Scan tab.</p>
+              <b>${isEn ? 'Continuous Live Camera (Default: On)' : 'Kamera Langsung Automatik (Asal: Buka)'}</b>
+              <p class="small muted">${isEn ? 'Automatically starts camera feed immediately upon navigating to the Scan tab.' : 'Membuka kamera secara automatik serta-merta apabila ke tab Imbas.'}</p>
             </div>
             <input type="checkbox" id="camera-always-toggle" ${settings.cameraAlwaysOn !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
           </label>
@@ -321,17 +348,17 @@ export function renderProfile(container) {
         <!-- Data Management Card -->
         <div class="card stack">
           <div class="card-title">
-            <span>Data Management</span>
+            <span>${isEn ? 'Data Management' : 'Pengurusan Data'}</span>
           </div>
 
           <div class="row wrap" style="gap:10px">
             <button type="button" class="btn btn-secondary btn-sm" id="btn-export-data">
               ${icons.download}
-              <span>Export Data (JSON)</span>
+              <span>${isEn ? 'Export Data (JSON)' : 'Eksport Data (JSON)'}</span>
             </button>
             <button type="button" class="btn btn-danger btn-sm" id="btn-reset-app">
               ${icons.trash}
-              <span>Reset All Data</span>
+              <span>${isEn ? 'Reset All Data' : 'Set Semula Semua Data'}</span>
             </button>
           </div>
         </div>
@@ -339,8 +366,8 @@ export function renderProfile(container) {
         <!-- Sources & Attributions Card -->
         <div class="card stack">
           <div class="card-title row between">
-            <span>Sources & Attributions</span>
-            <span class="badge ok">Verified</span>
+            <span>${isEn ? 'Sources & Attributions' : 'Sumber & Rujukan'}</span>
+            <span class="badge ok">${isEn ? 'Verified' : 'Disahkan'}</span>
           </div>
           <div class="stack" style="gap:10px;font-size:13px">
             <div class="row between" style="padding:6px 0;border-bottom:1px solid var(--border-soft)">
@@ -387,6 +414,15 @@ export function renderProfile(container) {
   }
 
   function bindEvents() {
+    // App Language Switcher
+    container.querySelectorAll('#app-lang-switcher button').forEach((b) => {
+      b.addEventListener('click', () => {
+        const lang = b.dataset.l;
+        setLang(lang);
+        toast(lang === 'en' ? 'Language changed to English!' : 'Bahasa ditukar ke Bahasa Melayu!', 'success');
+      });
+    });
+
     // Edit Profile Modal Trigger
     const triggerEditProfile = () => {
       openProfileEditor((updatedProfile) => {

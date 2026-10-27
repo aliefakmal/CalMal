@@ -8,6 +8,7 @@ import { companionBubble } from '../components/companion.js';
 import { openMealEditor } from '../components/mealEditor.js';
 import { onScanModeUsed, onMealLogged } from '../services/companionService.js';
 import { store } from '../services/store.js';
+import { t, getLang } from '../utils/i18n.js';
 
 export function renderScanner(container) {
   let mode = 'food'; // 'food' | 'barcode' | 'ocr'
@@ -24,36 +25,51 @@ export function renderScanner(container) {
   let cameraErrorMessage = '';
   let facingMode = store.settings?.cameraFacing || 'environment'; // 'environment' | 'user'
 
-  const QUICK_CHIPS = [
-    'Nasi separuh (half rice)',
-    'Kurang minyak (less oil)',
-    'Kuah banjir (extra gravy)',
-    'Kuah asing (gravy on side)',
-    'Ayam dada (chicken breast)',
-    'Kurang manis (less sweet)',
-    'Tanpa kulit (skinless)',
-    'Sambal asing (sambal on side)',
-    'Telur rebus (boiled egg)',
-    'Sayur lebih (extra veggies)',
+  const QUICK_CHIPS_EN = [
+    'Half rice',
+    'Less oil',
+    'Extra gravy',
+    'Gravy on side',
+    'Chicken breast',
+    'Less sweet',
+    'Skinless',
+    'Sambal on side',
+    'Boiled egg',
+    'Extra veggies',
+  ];
+
+  const QUICK_CHIPS_MS = [
+    'Nasi separuh',
+    'Kurang minyak',
+    'Kuah banjir',
+    'Kuah asing',
+    'Ayam dada',
+    'Kurang manis',
+    'Tanpa kulit',
+    'Sambal asing',
+    'Telur rebus',
+    'Sayur lebih',
   ];
 
   function render() {
     onScanModeUsed(mode);
+    const isEn = getLang() === 'en';
+    const currentChips = isEn ? QUICK_CHIPS_EN : QUICK_CHIPS_MS;
 
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="eyebrow">3-in-1 Scanner · Continuous Live Camera</span>
-          <h1 class="page-title">Scan & Analyze</h1>
+          <span class="eyebrow">${t('scan_eyebrow')}</span>
+          <h1 class="page-title">${t('scan_title')}</h1>
         </div>
         <div class="row" style="gap:6px;flex-wrap:wrap">
           <label for="file-input-native" class="btn btn-sm btn-secondary" id="btn-iphone-snap" style="cursor:pointer;margin:0" title="Direct iPhone / Smartphone Camera">
-            📱 iPhone Camera
+            📱 ${isEn ? 'iPhone Camera' : 'Kamera Telefon'}
           </label>
-          <button type="button" class="btn btn-sm btn-ghost" id="btn-voice-log" title="Log food using speech">
-            ${icons.sound} <span>Voice Log</span>
+          <button type="button" class="btn btn-sm btn-ghost" id="btn-voice-log" title="${isEn ? 'Log food using speech' : 'Rakam makanan guna suara'}">
+            ${icons.sound} <span>${isEn ? 'Voice Note' : 'Nota Suara'}</span>
           </button>
-          <button type="button" class="btn btn-icon btn-ghost btn-sm" id="btn-iphone-help" title="iPhone camera setup guide">
+          <button type="button" class="btn btn-icon btn-ghost btn-sm" id="btn-iphone-help" title="${isEn ? 'Camera setup guide' : 'Panduan kamera'}">
             ?
           </button>
         </div>
@@ -63,15 +79,15 @@ export function renderScanner(container) {
       <div class="segmented" id="scanner-mode-tabs" style="margin-bottom:16px">
         <button type="button" data-m="food" class="${mode === 'food' ? 'active' : ''}">
           ${icons.camera}
-          <span>Food AI</span>
+          <span>${t('scan_tab_food')}</span>
         </button>
         <button type="button" data-m="barcode" class="${mode === 'barcode' ? 'active' : ''}">
           ${icons.barcode}
-          <span>Barcode</span>
+          <span>${t('scan_tab_barcode')}</span>
         </button>
         <button type="button" data-m="ocr" class="${mode === 'ocr' ? 'active' : ''}">
           ${icons.label}
-          <span>Label OCR</span>
+          <span>${t('scan_tab_label')}</span>
         </button>
       </div>
 
@@ -148,24 +164,24 @@ export function renderScanner(container) {
       <!-- Quick Context Chips (Food AI Mode) -->
       <div id="food-chips-section" class="card stack ${mode === 'food' ? '' : 'hidden'}" style="margin-bottom:14px">
         <div class="card-title">
-          <span>Quick Context Notes (Portion Fine-Tuning)</span>
-          <span class="xs muted">Optional</span>
+          <span>${isEn ? 'Quick Context Notes (Portion Fine-Tuning)' : 'Nota Pantas (Laras Saiz Porsi)'}</span>
+          <span class="xs muted">${isEn ? 'Optional' : 'Pilihan'}</span>
         </div>
         <div class="chips" id="quick-chips-box">
-          ${QUICK_CHIPS.map(
+          ${currentChips.map(
             (c) =>
               `<button type="button" class="chip ${selectedChips.has(c) ? 'active' : ''}" data-chip="${c}">+ ${c}</button>`
           ).join('')}
         </div>
-        <input class="input" id="custom-context-input" value="${esc(customContextNote)}" placeholder="e.g. Chicken breast, half rice, sauce on side..." />
+        <input class="input" id="custom-context-input" value="${esc(customContextNote)}" placeholder="${isEn ? 'e.g. Chicken breast, half rice, sauce on side...' : 'cth. Dada ayam, nasi separuh, kuah asing...'}" />
       </div>
 
       <!-- Manual Barcode Search -->
       <div id="barcode-manual-section" class="card stack ${mode === 'barcode' ? '' : 'hidden'}" style="margin-bottom:14px">
-        <div class="card-title"><span>Manual Barcode Search</span></div>
+        <div class="card-title"><span>${isEn ? 'Manual Barcode Search' : 'Carian Kod Bar Manual'}</span></div>
         <div class="row">
-          <input class="input num" id="manual-barcode-input" placeholder="Enter barcode number (e.g. 9556001...)" />
-          <button type="button" class="btn btn-secondary" id="btn-lookup-barcode">Search</button>
+          <input class="input num" id="manual-barcode-input" placeholder="${isEn ? 'Enter barcode number (e.g. 9556001...)' : 'Masukkan nombor kod bar...'}" />
+          <button type="button" class="btn btn-secondary" id="btn-lookup-barcode">${isEn ? 'Search' : 'Cari'}</button>
         </div>
       </div>
 
@@ -182,6 +198,7 @@ export function renderScanner(container) {
   function setCameraUIState(state, errorMsg = '') {
     cameraState = state;
     cameraErrorMessage = errorMsg;
+    const isEn = getLang() === 'en';
     const hud = container.querySelector('#camera-status-hud');
     const vf = container.querySelector('#camera-viewfinder');
     const perm = container.querySelector('#camera-perm-overlay');
@@ -189,7 +206,7 @@ export function renderScanner(container) {
     const facingBadge = container.querySelector('#camera-facing-badge');
 
     if (facingBadge) {
-      facingBadge.textContent = facingMode === 'environment' ? 'Back Camera' : 'Front Camera';
+      facingBadge.textContent = facingMode === 'environment' ? (isEn ? 'Back Camera' : 'Kamera Belakang') : (isEn ? 'Front Camera' : 'Kamera Depan');
     }
 
     if (state === 'active') {
@@ -200,7 +217,7 @@ export function renderScanner(container) {
       hud?.classList.add('hidden');
       vf?.classList.add('hidden');
       perm?.classList.remove('hidden');
-      if (msgEl) msgEl.textContent = errorMsg || 'Please allow camera access for automatic scanning.';
+      if (msgEl) msgEl.textContent = errorMsg || (isEn ? 'Please allow camera access for automatic scanning.' : 'Sila benarkan akses kamera untuk pengimbasan automatik.');
     } else {
       hud?.classList.add('hidden');
       vf?.classList.add('hidden');
@@ -223,18 +240,29 @@ export function renderScanner(container) {
     }
   }
 
-  const ANALYSIS_STEPS = [
-    { title: 'Gemini 3.5 Flash Lite analyzing...', sub: '🔍 Mengenal pasti hidangan & lauk Malaysia...' },
-    { title: 'Estimating Portion & Kuah...', sub: '⚖️ Menganggar sukatan, kuah & saiz porsi...' },
-    { title: 'Computing Nutrition...', sub: '⚡ Mengira kalori, protein, karbo & lemak...' },
-    { title: 'Finalizing Recommendations...', sub: '💬 Merumuskan nasihat Deku & Bakugou...' },
-  ];
+  function getAnalysisSteps() {
+    const isEn = getLang() === 'en';
+    return isEn
+      ? [
+          { title: 'Gemini 3.5 Flash Lite analyzing...', sub: '🔍 Identifying Malaysian dishes & ingredients...' },
+          { title: 'Estimating Portion & Gravy...', sub: '⚖️ Calibrating portion size, rice & gravy...' },
+          { title: 'Computing Nutrition...', sub: '⚡ Calculating calories, protein, carbs & fat...' },
+          { title: 'Finalizing Recommendations...', sub: '💬 Generating Deku & Bakugou coach feedback...' },
+        ]
+      : [
+          { title: 'Gemini 3.5 Flash Lite menganalisis...', sub: '🔍 Mengenal pasti hidangan & lauk Malaysia...' },
+          { title: 'Menganggar Porsi & Kuah...', sub: '⚖️ Menganggar sukatan, kuah & saiz porsi...' },
+          { title: 'Mengira Nutrisi...', sub: '⚡ Mengira kalori, protein, karbo & lemak...' },
+          { title: 'Merumuskan Cadangan...', sub: '💬 Merumuskan nasihat Deku & Bakugou...' },
+        ];
+  }
 
   function setAnalyzing(loading) {
     isAnalyzing = loading;
     const sp = container.querySelector('#camera-spinner');
     const titleEl = container.querySelector('#spinner-title');
     const subEl = container.querySelector('#spinner-sub');
+    const steps = getAnalysisSteps();
 
     if (analysisInterval) {
       clearInterval(analysisInterval);
@@ -245,18 +273,19 @@ export function renderScanner(container) {
 
     if (loading) {
       let stepIdx = 0;
-      if (titleEl) titleEl.textContent = ANALYSIS_STEPS[0].title;
-      if (subEl) subEl.textContent = ANALYSIS_STEPS[0].sub;
+      if (titleEl) titleEl.textContent = steps[0].title;
+      if (subEl) subEl.textContent = steps[0].sub;
       analysisInterval = setInterval(() => {
-        stepIdx = (stepIdx + 1) % ANALYSIS_STEPS.length;
-        if (titleEl) titleEl.textContent = ANALYSIS_STEPS[stepIdx].title;
-        if (subEl) subEl.textContent = ANALYSIS_STEPS[stepIdx].sub;
+        stepIdx = (stepIdx + 1) % steps.length;
+        if (titleEl) titleEl.textContent = steps[stepIdx].title;
+        if (subEl) subEl.textContent = steps[stepIdx].sub;
       }, 950);
     }
   }
 
   function renderResultHTML() {
     if (!analysisResult) return '';
+    const isEn = getLang() === 'en';
 
     if (mode === 'food') {
       const r = analysisResult;
@@ -264,7 +293,7 @@ export function renderScanner(container) {
         <div class="card stack fade-up" style="margin-top:14px">
           <div class="card-title row between">
             <div>
-              <span class="eyebrow" style="display:block;margin-bottom:2px">AI Analysis Result</span>
+              <span class="eyebrow" style="display:block;margin-bottom:2px">${isEn ? 'AI Analysis Result' : 'Keputusan Analisis AI'}</span>
               <h2 style="font-size:22px;font-weight:800">${esc(r.name)}</h2>
             </div>
             ${statusBadge(r.recommendation.status)}
@@ -272,32 +301,32 @@ export function renderScanner(container) {
 
           <div class="equation">
             <div class="eq-cell">
-              <span>Calories</span>
+              <span>${t('me_calories')}</span>
               <b class="num">${r.kcal}</b>
               <span class="xs muted">kcal</span>
             </div>
             <div class="eq-cell">
-              <span>Est. Weight</span>
+              <span>${isEn ? 'Est. Weight' : 'Anggaran Berat'}</span>
               <b class="num">${r.weight_g}</b>
-              <span class="xs muted">grams</span>
+              <span class="xs muted">g</span>
             </div>
             <div class="eq-cell">
-              <span>Protein</span>
+              <span>${t('me_protein')}</span>
               <b class="num">${round1(r.protein)}</b>
-              <span class="xs muted">grams</span>
+              <span class="xs muted">g</span>
             </div>
           </div>
 
           <div class="grid grid-2" style="font-size:13px;padding:8px 0">
-            <div>Carbohydrates: <b>${round1(r.carbs)}g</b></div>
-            <div>Fat: <b>${round1(r.fat)}g</b></div>
+            <div>${t('me_carbs')}: <b>${round1(r.carbs)}g</b></div>
+            <div>${t('me_fat')}: <b>${round1(r.fat)}g</b></div>
           </div>
 
           ${
             r.items && r.items.length
               ? `<div class="divider"></div>
                  <div class="stack" style="gap:8px">
-                   <span class="small bold muted">Dish Breakdown:</span>
+                   <span class="small bold muted">${isEn ? 'Dish Breakdown:' : 'Pecahan Hidangan:'}</span>
                    ${r.items
                      .map(
                        (it) => `
@@ -313,7 +342,7 @@ export function renderScanner(container) {
 
           ${
             r.recommendation.adjustment
-              ? `<p class="small muted" style="margin:4px 0;line-height:1.4"><b>Portion Recommendation:</b> ${esc(r.recommendation.adjustment)}</p>`
+              ? `<p class="small muted" style="margin:4px 0;line-height:1.4"><b>${isEn ? 'Portion Recommendation:' : 'Cadangan Porsi:'}</b> ${esc(r.recommendation.adjustment)}</p>`
               : ''
           }
 
@@ -323,11 +352,11 @@ export function renderScanner(container) {
           <div class="grid grid-2" style="margin-top:10px">
             <button type="button" class="btn btn-secondary" id="btn-quick-edit">
               ${icons.edit}
-              <span>Adjust Portion</span>
+              <span>${t('scan_edit_details')}</span>
             </button>
             <button type="button" class="btn btn-primary" id="btn-save-log">
               ${icons.check}
-              <span>Save to Log</span>
+              <span>${t('scan_log_meal')}</span>
             </button>
           </div>
         </div>
@@ -340,7 +369,7 @@ export function renderScanner(container) {
         <div class="card stack fade-up" style="margin-top:14px">
           <div class="card-title row between">
             <div>
-              <span class="eyebrow">${esc(p.brand || 'Product')}</span>
+              <span class="eyebrow">${esc(p.brand || (isEn ? 'Product' : 'Produk'))}</span>
               <h2 style="font-size:20px;font-weight:800">${esc(p.name)}</h2>
             </div>
             <span class="badge ok">Open Food Facts</span>
@@ -353,17 +382,17 @@ export function renderScanner(container) {
               <span class="xs muted">kcal</span>
             </div>
             <div class="eq-cell">
-              <span>Protein</span>
+              <span>${t('me_protein')}</span>
               <b class="num">${round1(p.per100.protein)}g</b>
             </div>
             <div class="eq-cell">
-              <span>Carbs / Fat</span>
+              <span>${t('me_carbs')} / ${t('me_fat')}</span>
               <b class="num">${round1(p.per100.carbs)} / ${round1(p.per100.fat)}g</b>
             </div>
           </div>
 
           <div class="field" style="margin-top:8px">
-            <label for="barcode-grams-input">Portion size consumed (grams):</label>
+            <label for="barcode-grams-input">${isEn ? 'Portion size consumed (grams):' : 'Saiz hidangan diambil (gram):'}</label>
             <div class="input-suffix">
               <input class="input num" id="barcode-grams-input" type="number" value="${p.servingSize || 100}" />
               <span>g</span>
@@ -372,7 +401,7 @@ export function renderScanner(container) {
 
           <button type="button" class="btn btn-primary btn-block" id="btn-save-barcode">
             ${icons.plus}
-            <span>Save to Food Log</span>
+            <span>${t('scan_log_meal')}</span>
           </button>
         </div>
       `;
@@ -384,7 +413,7 @@ export function renderScanner(container) {
         <div class="card stack fade-up" style="margin-top:14px">
           <div class="card-title row between">
             <div>
-              <span class="eyebrow">Nutrition Label OCR</span>
+              <span class="eyebrow">${t('scan_tab_label')} OCR</span>
               <h2 style="font-size:20px;font-weight:800">${esc(r.name)}</h2>
             </div>
             ${statusBadge(r.recommendation.status)}
@@ -397,7 +426,7 @@ export function renderScanner(container) {
               <span class="xs muted">kcal</span>
             </div>
             <div class="eq-cell">
-              <span>Protein</span>
+              <span>${t('me_protein')}</span>
               <b class="num">${round1(r.perServing.protein || r.per100.protein)}g</b>
             </div>
             <div class="eq-cell">
@@ -412,11 +441,11 @@ export function renderScanner(container) {
           <div class="grid grid-2" style="margin-top:8px">
             <button type="button" class="btn btn-secondary" id="btn-ocr-edit">
               ${icons.edit}
-              <span>Adjust Portion</span>
+              <span>${t('scan_edit_details')}</span>
             </button>
             <button type="button" class="btn btn-primary" id="btn-ocr-save">
               ${icons.check}
-              <span>Save to Log</span>
+              <span>${t('scan_log_meal')}</span>
             </button>
           </div>
         </div>

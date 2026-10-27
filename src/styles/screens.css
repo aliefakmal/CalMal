@@ -1209,3 +1209,46 @@
   background: #10b981;
   color: #000;
 }
+
+/* ---------------- Language Switcher (EN / BM Pill) ---------------- */
+.lang-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  font-size: 11.5px;
+  font-weight: 700;
+  user-select: none;
+}
+
+.lang-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.lang-pill-btn:active {
+  transform: scale(0.95);
+}
+
+.lang-pill-btn .lang-icon {
+  font-size: 12px;
+}
+
+.lang-pill-btn .lang-cur {
+  color: #ffffff;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.lang-pill-btn .lang-alt {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 500;
+}
