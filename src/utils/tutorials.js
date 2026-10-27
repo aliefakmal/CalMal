@@ -4,7 +4,7 @@ import { t, getLang } from './i18n.js';
 import { openSheet } from '../components/ui.js';
 import { icons } from '../components/icons.js';
 import { esc } from './helpers.js';
-import { soundboard } from '../services/audioService.js';
+import { soundboard, VOICE_SHUFFLE_CATALOG } from '../services/audioService.js';
 
 /**
  * Returns the interactive tutorial configuration for a given page key.
@@ -277,7 +277,9 @@ function getTutorialConfig(pageKey, isEn) {
           desc: isEn
             ? 'Switch between Deku and Bakugou for genuine Japanese voice lines and motivational feedback based on your progress.'
             : 'Pilih antara Deku dan Bakugou untuk ulasan suara asli anime Jepun dan sorakan motivasi mengikut pencapaian anda.',
-          renderWidget: () => `
+          renderWidget: () => {
+            const dekuDefault = VOICE_SHUFFLE_CATALOG.deku[0];
+            return `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
                 <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
@@ -295,10 +297,10 @@ function getTutorialConfig(pageKey, isEn) {
               <div style="background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px">
                 <div class="row" style="gap:6px;align-items:center;font-size:11.5px;color:#34d399;margin-bottom:4px;font-weight:600">
                   <span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1)">JP</span>
-                  <span id="tut-coach-ja">大丈夫！</span>
+                  <span id="tut-coach-ja">${esc(dekuDefault.ja)}</span>
                 </div>
                 <p style="font-size:12.5px;color:#e2e8f0;margin:0;line-height:1.4" id="tut-coach-text">
-                  ${isEn ? 'Don’t worry, you’ve got this! Let’s stay on track today!' : 'Jangan risau, semuanya akan baik-baik saja! Mari capai sasaran hari ini!'}
+                  ${esc(isEn ? dekuDefault.en : dekuDefault.ms)}
                 </p>
               </div>
               <button type="button" class="btn btn-secondary btn-block" id="tut-coach-play-btn" style="gap:8px">
@@ -306,9 +308,13 @@ function getTutorialConfig(pageKey, isEn) {
                 <span id="tut-coach-play-label">${isEn ? 'Play Voice Audio' : 'Dengar Suara Hero'}</span>
               </button>
             </div>
-          `,
+            `;
+          },
           mount: (box) => {
+            const dekuLine = VOICE_SHUFFLE_CATALOG.deku[0];
+            const bakuLine = VOICE_SHUFFLE_CATALOG.bakugou[0];
             let activeCoach = 'deku';
+            let currentLine = dekuLine;
             let isPlaying = false;
             let playTimer = null;
             const dekuBtn = box.querySelector('#tut-coach-deku');
@@ -354,21 +360,19 @@ function getTutorialConfig(pageKey, isEn) {
               }
               activeCoach = coach;
               if (coach === 'deku') {
+                currentLine = dekuLine;
                 dekuBtn.className = 't-coach-btn active-deku';
                 bakuBtn.className = 't-coach-btn';
-                jaEl.textContent = '大丈夫！';
+                jaEl.textContent = dekuLine.ja;
                 jaEl.style.color = '#34d399';
-                textEl.textContent = isEn
-                  ? 'Don’t worry, you’ve got this! Let’s stay on track today!'
-                  : 'Jangan risau, semuanya akan baik-baik saja! Mari capai sasaran hari ini!';
+                textEl.textContent = isEn ? dekuLine.en : dekuLine.ms;
               } else {
+                currentLine = bakuLine;
                 bakuBtn.className = 't-coach-btn active-baku';
                 dekuBtn.className = 't-coach-btn';
-                jaEl.textContent = 'おいおいおい！';
+                jaEl.textContent = bakuLine.ja;
                 jaEl.style.color = '#fb923c';
-                textEl.textContent = isEn
-                  ? 'Oi oi oi! Break through your limits, don’t slack off!'
-                  : 'Oi oi oi! Mari pecahkan had batasan kau, jangan malas!';
+                textEl.textContent = isEn ? bakuLine.en : bakuLine.ms;
               }
               soundboard.playUISound('toggle-on');
             };
@@ -391,22 +395,14 @@ function getTutorialConfig(pageKey, isEn) {
               }
 
               setPlayingBtn();
-              const picked = soundboard.pickNextLine(activeCoach);
-              if (picked?.line) {
-                jaEl.textContent = picked.line.ja;
-                textEl.textContent = isEn ? picked.line.en : picked.line.ms;
-                soundboard.playLineAudio(activeCoach, picked.line).catch(() => {
-                  resetPlayBtn();
-                });
-              } else {
-                soundboard.play(activeCoach, 'greet').catch(() => {
-                  resetPlayBtn();
-                });
-              }
+              // Play the exact line displayed without changing text
+              soundboard.playLineAudio(activeCoach, currentLine).catch(() => {
+                resetPlayBtn();
+              });
 
               playTimer = setTimeout(() => {
                 resetPlayBtn();
-              }, 4000);
+              }, 4800);
             });
 
             return () => {
@@ -1046,7 +1042,9 @@ function getTutorialConfig(pageKey, isEn) {
           desc: isEn
             ? 'Switch between Deku and Bakugou for motivational voice lines and commentary based on your workout and nutrition.'
             : 'Pilih antara Deku dan Bakugou untuk suara motivasi dan ulasan audio mengikut pencapaian nutrisi dan senaman anda.',
-          renderWidget: () => `
+          renderWidget: () => {
+            const dekuDefault = VOICE_SHUFFLE_CATALOG.deku[0];
+            return `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
                 <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
@@ -1063,10 +1061,10 @@ function getTutorialConfig(pageKey, isEn) {
               <div id="tut-prof-quote" style="background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;font-size:11.5px">
                 <div class="row" style="gap:6px;align-items:center;font-size:11.5px;color:#34d399;margin-bottom:3px;font-weight:600">
                   <span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1)">JP</span>
-                  <span id="tut-prof-ja">大丈夫！</span>
+                  <span id="tut-prof-ja">${esc(dekuDefault.ja)}</span>
                 </div>
                 <div class="xs muted" id="tut-prof-ms">
-                  ${isEn ? 'Don’t worry, you’ve got this! Let’s break through limits!' : 'Jangan risau, semuanya akan baik-baik saja! Mari melepasi had batasan!'}
+                  ${esc(isEn ? dekuDefault.en : dekuDefault.ms)}
                 </div>
               </div>
               <button type="button" class="btn btn-secondary btn-block" id="tut-prof-play-btn" style="gap:8px">
@@ -1074,9 +1072,13 @@ function getTutorialConfig(pageKey, isEn) {
                 <span id="tut-prof-play-label">${isEn ? 'Play Hero Voice Line' : 'Dengar Suara Hero'}</span>
               </button>
             </div>
-          `,
+            `;
+          },
           mount: (box) => {
+            const dekuLine = VOICE_SHUFFLE_CATALOG.deku[0];
+            const bakuLine = VOICE_SHUFFLE_CATALOG.bakugou[0];
             let activeChar = 'deku';
+            let currentLine = dekuLine;
             let isPlaying = false;
             let playTimer = null;
             const dekuBtn = box.querySelector('#tut-prof-deku');
@@ -1122,21 +1124,19 @@ function getTutorialConfig(pageKey, isEn) {
               }
               activeChar = char;
               if (char === 'deku') {
+                currentLine = dekuLine;
                 dekuBtn.className = 't-coach-btn active-deku';
                 bakuBtn.className = 't-coach-btn';
-                jaEl.textContent = '大丈夫！';
+                jaEl.textContent = dekuLine.ja;
                 jaEl.style.color = '#34d399';
-                msEl.textContent = isEn
-                  ? 'Don’t worry, you’ve got this! Let’s break through limits!'
-                  : 'Jangan risau, semuanya akan baik-baik saja! Mari melepasi had batasan!';
+                msEl.textContent = isEn ? dekuLine.en : dekuLine.ms;
               } else {
+                currentLine = bakuLine;
                 bakuBtn.className = 't-coach-btn active-baku';
                 dekuBtn.className = 't-coach-btn';
-                jaEl.textContent = 'おいおいおい！';
+                jaEl.textContent = bakuLine.ja;
                 jaEl.style.color = '#fb923c';
-                msEl.textContent = isEn
-                  ? 'Oi oi oi! Break through your limits, don’t slack off!'
-                  : 'Oi oi oi! Pecahkan had batasan kau, jangan malas!';
+                msEl.textContent = isEn ? bakuLine.en : bakuLine.ms;
               }
               soundboard.playUISound('toggle-on');
             };
@@ -1159,22 +1159,14 @@ function getTutorialConfig(pageKey, isEn) {
               }
 
               setPlayingBtn();
-              const picked = soundboard.pickNextLine(activeChar);
-              if (picked?.line) {
-                jaEl.textContent = picked.line.ja;
-                msEl.textContent = isEn ? picked.line.en : picked.line.ms;
-                soundboard.playLineAudio(activeChar, picked.line).catch(() => {
-                  resetPlayBtn();
-                });
-              } else {
-                soundboard.play(activeChar, 'greet').catch(() => {
-                  resetPlayBtn();
-                });
-              }
+              // Play the exact line displayed without changing text
+              soundboard.playLineAudio(activeChar, currentLine).catch(() => {
+                resetPlayBtn();
+              });
 
               playTimer = setTimeout(() => {
                 resetPlayBtn();
-              }, 4000);
+              }, 4800);
             });
 
             return () => {
