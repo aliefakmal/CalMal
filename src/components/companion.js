@@ -367,6 +367,9 @@ export function showMilestoneCelebration({
     } catch { /* noop */ }
     activeMilestoneOverlay = null;
   }
+  document.querySelectorAll('.milestone-overlay').forEach((el) => {
+    try { el.remove(); } catch { /* noop */ }
+  });
 
   const hero = (who === 'bakugou' || who === 'baku' || (!who && store.profile?.selectedCompanion === 'bakugou'))
     ? 'bakugou'

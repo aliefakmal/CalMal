@@ -121,16 +121,23 @@ export const store = {
   addMeal(meal) {
     const m = { id: uid(), date: todayKey(), time: new Date().toISOString(), sync_status: 'PENDING', ...meal };
     state.meals.unshift(m);
+    this._rearmMilestones(m.date);
     emit('meals');
     return m;
   },
   updateMeal(id, patch) {
     const m = state.meals.find((x) => x.id === id);
-    if (m) Object.assign(m, patch, { sync_status: 'PENDING' });
+    if (m) {
+      Object.assign(m, patch, { sync_status: 'PENDING' });
+      this._rearmMilestones(m.date);
+    }
     emit('meals');
   },
   deleteMeal(id) {
-    state.meals = state.meals.filter((m) => m.id !== id);
+    const m = state.meals.find((x) => x.id === id);
+    const date = m?.date || todayKey();
+    state.meals = state.meals.filter((x) => x.id !== id);
+    this._rearmMilestones(date);
     emit('meals');
   },
   mealsOn(date = todayKey()) { return state.meals.filter((m) => m.date === date); },
@@ -139,11 +146,15 @@ export const store = {
   addActivity(act) {
     const a = { id: uid(), date: todayKey(), sync_status: 'PENDING', ...act };
     state.activities.unshift(a);
+    this._rearmMilestones(a.date);
     emit('activities');
     return a;
   },
   deleteActivity(id) {
-    state.activities = state.activities.filter((a) => a.id !== id);
+    const a = state.activities.find((x) => x.id === id);
+    const date = a?.date || todayKey();
+    state.activities = state.activities.filter((x) => x.id !== id);
+    this._rearmMilestones(date);
     emit('activities');
   },
   activitiesOn(date = todayKey()) { return state.activities.filter((a) => a.date === date); },
@@ -180,6 +191,38 @@ export const store = {
     Object.keys(state.flags).forEach((k) => { if (k.slice(0, 10) < cutoff) delete state.flags[k]; });
     emit('flags');
   },
+  clearFlag(name, date = todayKey(), notify = false) {
+    const key = `${date}:${name}`;
+    if (state.flags && state.flags[key]) {
+      delete state.flags[key];
+      persist();
+      if (notify) emit('flags');
+    }
+  },
+
+  // Re-arm milestone celebration flags if numbers drop below required targets
+  _rearmMilestones(date = todayKey()) {
+    try {
+      const meals = this.mealsOn(date);
+      const acts = this.activitiesOn(date);
+      const sum = (arr, k) => arr.reduce((s, x) => s + (Number(x[k]) || 0), 0);
+      const macros = this.macros || { target: 2000, protein: 120, carbs: 220, fat: 65 };
+      const kin = Math.round(sum(meals, 'kcal'));
+      const kout = Math.round(sum(acts, 'kcal'));
+      const protein = sum(meals, 'protein');
+      const effectiveTarget = macros.target + kout;
+
+      // If calorie intake exits target range (95%-105%) or fewer than 2 meals, re-arm celebrate:calories
+      if (effectiveTarget >= 800 && (kin < effectiveTarget * 0.95 || kin > effectiveTarget * 1.05 || meals.length < 2)) {
+        if (state.flags[`${date}:celebrate:calories`]) delete state.flags[`${date}:celebrate:calories`];
+      }
+
+      // If protein drops below daily target, re-arm celebrate:macros
+      if (macros.protein > 20 && protein < macros.protein) {
+        if (state.flags[`${date}:celebrate:macros`]) delete state.flags[`${date}:celebrate:macros`];
+      }
+    } catch { /* noop */ }
+  },
 
   // ---------- Water Tracker ----------
   getWater(date = todayKey()) {
@@ -187,13 +230,24 @@ export const store = {
   },
   addWater(amount = 250, date = todayKey()) {
     state.water = state.water || {};
-    state.water[date] = Math.max(0, (state.water[date] || 0) + amount);
+    const newAmt = Math.max(0, (state.water[date] || 0) + amount);
+    state.water[date] = newAmt;
+    const target = this.getWaterTarget();
+    // If water was reduced below target, re-arm celebrate:water flag immediately
+    if (newAmt < target) {
+      delete state.flags[`${date}:celebrate:water`];
+    }
     emit('water');
     return state.water[date];
   },
   setWater(amount, date = todayKey()) {
     state.water = state.water || {};
-    state.water[date] = Math.max(0, Number(amount) || 0);
+    const newAmt = Math.max(0, Number(amount) || 0);
+    state.water[date] = newAmt;
+    const target = this.getWaterTarget();
+    if (newAmt < target) {
+      delete state.flags[`${date}:celebrate:water`];
+    }
     emit('water');
     return state.water[date];
   },
@@ -201,7 +255,12 @@ export const store = {
     return Number(state.profile?.waterTarget) || 2000;
   },
   setWaterTarget(target) {
-    this.saveProfile({ waterTarget: Math.max(500, Number(target) || 2000) });
+    const newTarget = Math.max(500, Number(target) || 2000);
+    const curWater = this.getWater();
+    if (curWater < newTarget) {
+      delete state.flags[`${todayKey()}:celebrate:water`];
+    }
+    this.saveProfile({ waterTarget: newTarget });
   },
   copyYesterdayMeals() {
     const yest = new Date(Date.now() - 864e5);

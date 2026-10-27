@@ -140,7 +140,7 @@ export function renderDashboard(container) {
             <div class="card bento-card water-widget" style="padding:16px">
               <div class="row between" style="margin-bottom:8px">
                 <div class="row" style="gap:8px;align-items:center;cursor:pointer" id="btn-water-header" title="${t('dash_custom_water')}">
-                  <div class="water-icon-circle">${icons.droplet}</div>
+                  <div class="water-icon-circle ${water >= waterTarget && waterTarget > 0 ? 'complete' : ''}">${icons.droplet}</div>
                   <div>
                     <div class="row" style="gap:6px;align-items:center">
                       <span class="small bold" style="color:#fff">${t('dash_water_title')}</span>
@@ -150,11 +150,11 @@ export function renderDashboard(container) {
                   </div>
                 </div>
                 <div class="row" style="gap:4px;align-items:center">
-                  <button type="button" class="btn btn-xs btn-ghost" id="btn-sub-water" title="Remove 250ml water" style="padding:3px 7px;font-size:11px;border:1px solid var(--border-soft);color:var(--text-muted)">
+                  <button type="button" class="btn btn-xs btn-ghost" id="btn-sub-water" title="Remove 250ml water" style="padding:3px 7px;font-size:11px;border:1px solid var(--border-soft);color:var(--text-muted);touch-action:manipulation">
                     ${icons.minus}
                     <span>250ml</span>
                   </button>
-                  <button type="button" class="btn btn-xs btn-primary btn-water-add" id="btn-add-water" title="Add 250ml water" style="padding:3px 7px;font-size:11px">
+                  <button type="button" class="btn btn-xs btn-primary btn-water-add" id="btn-add-water" title="Add 250ml water" style="padding:3px 7px;font-size:11px;touch-action:manipulation">
                     ${icons.plus}
                     <span>250ml</span>
                   </button>
@@ -162,7 +162,7 @@ export function renderDashboard(container) {
               </div>
 
               <div class="water-track" style="cursor:pointer" id="water-bar-click" title="Click to adjust water">
-                <div class="water-fill" style="width:${waterPct}%"></div>
+                <div class="water-fill ${water >= waterTarget && waterTarget > 0 ? 'complete' : ''}" style="width:${waterPct}%"></div>
               </div>
             </div>
           </div>
@@ -320,43 +320,56 @@ export function renderDashboard(container) {
     const s = store.summary();
 
     // 1. Water Milestone: reached 100% of daily hydration target
-    if (waterTarget >= 500 && water >= waterTarget && !store.flag('celebrate:water')) {
-      store.setFlag('celebrate:water');
-      setTimeout(() => {
-        showMilestoneCelebration({
-          milestone: 'water',
-          who: currentCoach,
-          statText: `${water} / ${waterTarget} ml (100%)`,
-        });
-      }, 300);
-      return;
+    if (waterTarget >= 500) {
+      if (water < waterTarget) {
+        store.clearFlag('celebrate:water');
+      } else if (!store.flag('celebrate:water')) {
+        store.setFlag('celebrate:water');
+        setTimeout(() => {
+          showMilestoneCelebration({
+            milestone: 'water',
+            who: currentCoach,
+            statText: `${water} / ${waterTarget} ml (100%)`,
+          });
+        }, 150);
+        return;
+      }
     }
 
     // 2. Daily Protein & Macronutrient Milestone: 100% target reached
-    if (s.macros?.protein > 20 && s.protein >= s.macros.protein && s.kin >= 350 && !store.flag('celebrate:macros')) {
-      store.setFlag('celebrate:macros');
-      setTimeout(() => {
-        showMilestoneCelebration({
-          milestone: 'macros',
-          who: currentCoach,
-          statText: `${Math.round(s.protein)}g / ${s.macros.protein}g Protein`,
-        });
-      }, 300);
-      return;
+    if (s.macros?.protein > 20) {
+      if (s.protein < s.macros.protein) {
+        store.clearFlag('celebrate:macros');
+      } else if (s.kin >= 350 && !store.flag('celebrate:macros')) {
+        store.setFlag('celebrate:macros');
+        setTimeout(() => {
+          showMilestoneCelebration({
+            milestone: 'macros',
+            who: currentCoach,
+            statText: `${Math.round(s.protein)}g / ${s.macros.protein}g Protein`,
+          });
+        }, 150);
+        return;
+      }
     }
 
     // 3. Calorie Target Balance: daily calorie intake within target range
     const effectiveTarget = s.target + s.kout;
-    if (effectiveTarget >= 800 && s.kin >= effectiveTarget * 0.95 && s.kin <= effectiveTarget * 1.05 && s.meals.length >= 2 && !store.flag('celebrate:calories')) {
-      store.setFlag('celebrate:calories');
-      setTimeout(() => {
-        showMilestoneCelebration({
-          milestone: 'calories',
-          who: currentCoach,
-          statText: `${s.kin} / ${effectiveTarget} kcal`,
-        });
-      }, 300);
-      return;
+    if (effectiveTarget >= 800) {
+      const inRange = s.kin >= effectiveTarget * 0.95 && s.kin <= effectiveTarget * 1.05 && s.meals.length >= 2;
+      if (!inRange) {
+        store.clearFlag('celebrate:calories');
+      } else if (!store.flag('celebrate:calories')) {
+        store.setFlag('celebrate:calories');
+        setTimeout(() => {
+          showMilestoneCelebration({
+            milestone: 'calories',
+            who: currentCoach,
+            statText: `${s.kin} / ${effectiveTarget} kcal`,
+          });
+        }, 150);
+        return;
+      }
     }
   }
 
