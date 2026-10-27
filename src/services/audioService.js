@@ -4,46 +4,46 @@ import { store } from './store.js';
 export const JAPANESE_VOICE_SCRIPTS = {
   deku: {
     greet: {
-      ja: '大丈夫！僕が来た！今日も一緒に頑張ろう！',
-      romaji: 'Daijoubu! Boku ga kita! Kyou mo issho ni gambarou!',
+      ja: '大丈夫！ここから後ろには絶対行かせないよ！',
+      romaji: 'Daijoubu! Koko kara ushiro ni wa zettai ikasenai yo!',
     },
     analyze: {
-      ja: 'デトロイト・スマッシュ！ノートにカロリーと栄養素をしっかり記録したよ！',
-      romaji: 'Detroit Smash! Nooto ni karorii to eiyouso o kiroku shita yo!',
+      ja: '大丈夫！ノートにカロリーと栄養素をしっかり記録したよ！',
+      romaji: 'Daijoubu! Nooto ni karorii to eiyouso o shikkari kiroku shita yo!',
     },
     goal: {
-      ja: '更に向こうへ！プルス・ウルトラ！目標達成、やったね！',
-      romaji: 'Sara ni mukou e! Purusu Urutora! Mokuhyou tassei, yatta ne!',
+      ja: '更に向こうへ！100万% デラウェア・デトロイト・スマッシュ！！',
+      romaji: 'Sara ni mukou e! Hyakuman Pāsento Delaware Detroit SMASH!!',
     },
     over: {
-      ja: 'あわわ… カロリーオーバーだよ！でも諦めちゃダメだ！一緒に消費しよう！',
-      romaji: 'Awawa... Karorii oobaa da yo! Demo akiramecha dame da! Issho ni shouhi shiyou!',
+      ja: '大丈夫！諦めちゃダメだ！一緒に走って消費しよう！',
+      romaji: 'Daijoubu! Akiramecha dame da! Issho ni hashitte shouhi shiyou!',
     },
     run: {
-      ja: '行こう！ワン・フォー・オール、フルカウル！限界を超えるんだ！',
-      romaji: 'Ikou! Wan Foo Ooru, Furu Kauru! Genkai o koerunda!',
+      ja: 'だから走れぇぇ！ワン・フォー・オール、限界を超えるんだ！',
+      romaji: 'Dakara hashireee! Wan Foo Ooru, genkai o koerunda!',
     },
   },
   bakugou: {
     greet: {
-      ja: 'おい！起きたかクソ野郎！サボったら爆破すんぞ！',
-      romaji: 'Oi! Okitaka kuso yarou! Sabottara bakuha sunzo!',
+      ja: 'バカ！俺の背中追うならサボってんじゃねぇ！',
+      romaji: 'Baka! Ore no senaka ou nara sabotten ja nee!',
     },
     analyze: {
-      ja: '何食おうとしてやがる！余計な脂肪つけんな、俺が見てやる！',
-      romaji: 'Nani kuou to shite yagaru! Yokei na shibou tsukenna, ore ga mite yaru!',
+      ja: 'バカ！何食おうとしてやがる、俺が見てやる！',
+      romaji: 'Baka! Nani kuou to shite yagaru, ore ga mite yaru!',
     },
     goal: {
-      ja: '死ねぇぇ！当たり前だ！俺の背中追うならこれくらい達成しろ！',
-      romaji: 'SHINEEE! Atarimae da! Ore no senaka ou nara kore kurai tassei shiro!',
+      ja: '爆豪の勝利だ！当たり前だ！俺について来い！',
+      romaji: 'Bakugou no shouri da! Atarimae da! Ore ni tsuite koi!',
     },
     over: {
       ja: 'おいコラァ！！カロリーオーバーだ！今すぐ走って全部燃やせぇ！',
       romaji: 'Oi koraaa!! Karorii oobaa da! Ima sugu hashitte zenbu moyaseee!',
     },
     run: {
-      ja: 'ハウザー・インパクト！ついて来い！置いてくぞ！ぶっ飛ばして走れぇ！',
-      romaji: 'Howitzer Impact! Tsuite koi! Oiteku zo! Buttobashite hashireee!',
+      ja: 'バカ！ついて来い！置いてくぞ！ぶっ飛ばして走れぇ！',
+      romaji: 'Baka! Tsuite koi! Oiteku zo! Buttobashite hashireee!',
     },
   },
 };
@@ -195,28 +195,39 @@ class AudioService {
     if (store.settings?.soundEnabled === false || this.isMuted) return;
     this.init();
 
+    const charKey = (character === 'baku' || character === 'bakugo') ? 'bakugou' : character;
+
     // Trigger haptic vibration if supported
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      if (character === 'bakugou') navigator.vibrate([30, 20, 60]);
+      if (charKey === 'bakugou') navigator.vibrate([30, 20, 60]);
       else navigator.vibrate(15);
     }
 
-    const filePath = `/assets/companions/${character}/audio/${character}_${soundKey}.mp3`;
+    const candidatePaths = [
+      `/assets/companions/${charKey}/audio/${charKey}_${soundKey}.mp3`,
+      charKey === 'bakugou' ? `/assets/companions/bakugou/audio/baku_${soundKey}.mp3` : null,
+      `/assets/companions/${charKey}/audio/${charKey}_voice.mp3`,
+    ].filter(Boolean);
 
-    try {
-      let audio = this.cache.get(filePath);
-      if (!audio) {
-        audio = new Audio(filePath);
-        audio.preload = 'auto';
-        this.cache.set(filePath, audio);
+    for (const filePath of candidatePaths) {
+      try {
+        let audio = this.cache.get(filePath);
+        if (!audio) {
+          audio = new Audio(filePath);
+          audio.preload = 'auto';
+          this.cache.set(filePath, audio);
+        }
+        audio.currentTime = 0;
+        await audio.play();
+        return; // Successfully played audio
+      } catch (err) {
+        // Continue to next candidate or fallback
       }
-      audio.currentTime = 0;
-      await audio.play();
-    } catch {
-      // High-precision Web Audio procedural FX + Speech Synthesis
-      this.playSyntheticHeroSFX(character, soundKey);
-      this.speakJapanese(character, soundKey);
     }
+
+    // High-precision Web Audio procedural FX + Speech Synthesis fallback
+    this.playSyntheticHeroSFX(charKey, soundKey);
+    this.speakJapanese(charKey, soundKey);
   }
 
   setMute(muted) {
