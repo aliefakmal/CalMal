@@ -1,6 +1,6 @@
 // Smart Notifications & Anime Companion Triggers (English)
 import { store } from './store.js';
-import { showCompanion, showCutIn } from '../components/companion.js';
+import { showCompanion, showCutIn, showMilestoneCelebration } from '../components/companion.js';
 import { toast } from '../components/ui.js';
 
 export const BADGES = {
@@ -101,6 +101,7 @@ function unlock(id) {
 export function onMealLogged(meal) {
   unlock('first_meal');
   const s = store.summary();
+  const currentCoach = store.profile?.selectedCompanion || 'deku';
 
   // 3-day streak
   const days = new Set(store.state.meals.map((x) => x.date));
@@ -113,6 +114,18 @@ export function onMealLogged(meal) {
   }
   if (streak >= 3) unlock('streak_3');
 
+  // 100% Daily Protein Milestone (Sprite Bubble Animation)
+  if (s.macros?.protein > 20 && s.protein >= s.macros.protein && !store.flag('celebrate:macros')) {
+    store.setFlag('celebrate:macros');
+    unlock('protein_80');
+    showMilestoneCelebration({
+      milestone: 'macros',
+      who: currentCoach,
+      statText: `${Math.round(s.protein)}g / ${s.macros.protein}g Protein`,
+    });
+    return;
+  }
+
   // 80% Protein
   if (s.protein >= s.macros.protein * 0.8 && !store.flag('protein80')) {
     store.setFlag('protein80');
@@ -124,12 +137,16 @@ export function onMealLogged(meal) {
     return;
   }
 
-  // Target calorie hit within 90-100%
+  // Target calorie hit within 95-105% (Sprite Bubble Animation)
   const ratio = s.kin / (s.target + s.kout);
-  if (ratio >= 0.9 && ratio <= 1.0 && !store.flag('target')) {
-    store.setFlag('target');
+  if (ratio >= 0.95 && ratio <= 1.05 && s.meals.length >= 2 && !store.flag('celebrate:calories')) {
+    store.setFlag('celebrate:calories');
     unlock('target_day');
-    showCompanion({ who: 'both', title: 'Fist Bump! 👊', text: 'Deku: Perfect calorie balance today! · Bakugou: Hmph, don’t you dare overeat tomorrow!' });
+    showMilestoneCelebration({
+      milestone: 'calories',
+      who: currentCoach,
+      statText: `${s.kin} / ${s.target + s.kout} kcal`,
+    });
     return;
   }
 

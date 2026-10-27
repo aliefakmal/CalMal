@@ -271,3 +271,181 @@ export function showCutIn({ title, subtitle, lines = [] }) {
     if (e.target === el) close();
   });
 }
+
+export const MILESTONE_SCRIPTS = {
+  water: {
+    title: {
+      en: 'Water Hydration Complete! 💧',
+      ms: 'Penghidratan Air Lengkap! 💧',
+    },
+    subtitle: {
+      en: '100% Daily Hydration Target Reached!',
+      ms: '100% Sasaran Air Harian Berjaya Dicapai!',
+    },
+    deku: {
+      file: 'deku_line4.mp3',
+      ja: '更に向こうへ！プルス・ウルトラ！！',
+      romaji: 'Sara ni mukou e! PLUS ULTRA!!',
+      en: 'Go Beyond! PLUS ULTRA!! Full hydration achieved!',
+      ms: 'Melangkah Lebih Jauh! PLUS ULTRA!! Penghidratan penuh berjaya dicapai!',
+    },
+    bakugou: {
+      file: 'bakugou_line5.mp3',
+      ja: '爆豪の勝利だ！当たり前だ！',
+      romaji: 'Bakugou no shouri da! Atarimae da!',
+      en: 'Bakugo’s victory! Of course you hit the hydration goal!',
+      ms: 'Kemenangan mutlak Bakugo! Dah tentulah, cukup air hari ni!',
+    },
+  },
+  calories: {
+    title: {
+      en: 'Calorie Target Balance Hit! 🎯',
+      ms: 'Sasaran Kalori Tepat Sasaran! 🎯',
+    },
+    subtitle: {
+      en: 'Daily Energy Balance Achieved!',
+      ms: 'Sasaran Kalori Harian Berjaya Diseimbangkan!',
+    },
+    deku: {
+      file: 'deku_line5.mp3',
+      ja: 'ワン・フォー・オール 100万%！！',
+      romaji: 'One For All Hyakuman Pāsento!!',
+      en: 'One For All 1,000,000%!! Perfect calorie fuel for today!',
+      ms: 'One For All 1,000,000%!! Pembakaran dan tenaga kalori sempurna hari ini!',
+    },
+    bakugou: {
+      file: 'bakugou_line5.mp3',
+      ja: '爆豪の勝利だ！当たり前だ！',
+      romaji: 'Bakugou no shouri da! Atarimae da!',
+      en: 'Bakugo’s victory! Perfect fuel, don’t you dare slack off tomorrow!',
+      ms: 'Kemenangan mutlak Bakugo! Kalori tepat sasaran, esok jangan malas!',
+    },
+  },
+  macros: {
+    title: {
+      en: 'Daily Macronutrients Complete! ⚡',
+      ms: 'Sasaran Makronutrien Lengkap! ⚡',
+    },
+    subtitle: {
+      en: 'Protein & Muscle Fuel Goals Met!',
+      ms: 'Sasaran Protein & Nutrisi Otot Dipenuhi!',
+    },
+    deku: {
+      file: 'deku_line6.mp3',
+      ja: 'お疲れ様です！',
+      romaji: 'Otsukaresama desu!',
+      en: 'Great work today! Your muscles have all the fuel they need!',
+      ms: 'Terima kasih atas usaha gigih hari ini! Otot sedia pulih dan membina kekuatan!',
+    },
+    bakugou: {
+      file: 'bakugou_line6.mp3',
+      ja: '爆豪の決戦だ！ぶっ飛ばして走れぇ！',
+      romaji: 'Bakugou no kessen da! Buttobashite hashireee!',
+      en: 'Bakugo’s showdown starts now! All macros loaded, now dominate!',
+      ms: 'Pertempuran penentu Bakugo bermula! Makronutrien lengkap, sekarang dominasi!',
+    },
+  },
+};
+
+let activeMilestoneOverlay = null;
+
+/**
+ * Animated Celebration Popup with Hero Sprite Bubble
+ * Triggers on Water Hydration 100%, Calorie Balance On-Target, or Daily Macronutrients Complete
+ */
+export function showMilestoneCelebration({
+  milestone = 'water',
+  who = null,
+  statText = '',
+  onClose = null,
+} = {}) {
+  if (!store.settings.companions) return;
+
+  if (activeMilestoneOverlay) {
+    try {
+      activeMilestoneOverlay.remove();
+    } catch { /* noop */ }
+    activeMilestoneOverlay = null;
+  }
+
+  const hero = (who === 'bakugou' || who === 'baku' || (!who && store.profile?.selectedCompanion === 'bakugou'))
+    ? 'bakugou'
+    : 'deku';
+
+  const isMs = store.settings?.language === 'ms';
+  const milestoneData = MILESTONE_SCRIPTS[milestone] || MILESTONE_SCRIPTS.water;
+  const titleText = isMs ? milestoneData.title.ms : milestoneData.title.en;
+  const subText = isMs ? milestoneData.subtitle.ms : milestoneData.subtitle.en;
+  const scriptObj = milestoneData[hero] || milestoneData.deku;
+  const quoteText = isMs ? scriptObj.ms : scriptObj.en;
+
+  let root = document.getElementById('overlay-root');
+  if (!root) {
+    root = document.createElement('div');
+    root.id = 'overlay-root';
+    document.body.appendChild(root);
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'milestone-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+
+  overlay.innerHTML = `
+    <div class="milestone-card milestone-card-${hero}">
+      <div class="milestone-burst-bg"></div>
+      <div style="position:relative;z-index:3">
+        <div class="milestone-avatar-wrap">
+          <div class="milestone-avatar-aura"></div>
+          ${avatar(hero, 76, 'goal_hit')}
+        </div>
+        <div class="milestone-title">${esc(titleText)}</div>
+        <div class="milestone-subtitle">
+          ${esc(subText)}
+          ${statText ? `<span style="display:block;margin-top:2px;color:#fff;font-weight:800;letter-spacing:0.02em">${esc(statText)}</span>` : ''}
+        </div>
+        <div class="milestone-sprite-bubble">
+          <div class="milestone-ja-quote">
+            <span class="milestone-ja-tag">JP</span>
+            <span>${esc(scriptObj.ja)}</span>
+          </div>
+          <div class="milestone-trans-quote">${esc(quoteText)}</div>
+        </div>
+        <button type="button" class="btn btn-primary btn-block milestone-action-btn" id="btn-milestone-claim">
+          ${isMs ? 'TERUSKAN PERJUANGAN! (PLUS ULTRA)' : 'PLUS ULTRA! KEEP GOING'}
+        </button>
+      </div>
+    </div>
+  `;
+
+  root.appendChild(overlay);
+  activeMilestoneOverlay = overlay;
+
+  // Play authentic Japanese anime voice line matching the text
+  soundboard.playLineAudio(hero, scriptObj).catch(() => {});
+
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate([40, 50, 80, 50, 120]);
+  }
+
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    soundboard.stopAll();
+    overlay.classList.add('out');
+    setTimeout(() => {
+      overlay.remove();
+      if (activeMilestoneOverlay === overlay) activeMilestoneOverlay = null;
+      onClose?.();
+    }, 320);
+  };
+
+  overlay.querySelector('#btn-milestone-claim')?.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+
+  setTimeout(close, 7500);
+}
+

@@ -4,46 +4,46 @@ import { store } from './store.js';
 export const JAPANESE_VOICE_SCRIPTS = {
   deku: {
     greet: {
-      ja: '大丈夫！ここから後ろには絶対行かせないよ！',
-      romaji: 'Daijoubu! Koko kara ushiro ni wa zettai ikasenai yo!',
+      ja: '大丈夫！',
+      romaji: 'Daijoubu!',
     },
     analyze: {
-      ja: '大丈夫！ノートにカロリーと栄養素をしっかり記録したよ！',
-      romaji: 'Daijoubu! Nooto ni karorii to eiyouso o shikkari kiroku shita yo!',
+      ja: '大丈夫！',
+      romaji: 'Daijoubu!',
     },
     goal: {
-      ja: '更に向こうへ！100万% デラウェア・デトロイト・スマッシュ！！',
-      romaji: 'Sara ni mukou e! Hyakuman Pāsento Delaware Detroit SMASH!!',
+      ja: 'ワン・フォー・オール 100万%！！',
+      romaji: 'One For All Hyakuman Pāsento!!',
     },
     over: {
-      ja: '大丈夫！諦めちゃダメだ！一緒に走って消費しよう！',
-      romaji: 'Daijoubu! Akiramecha dame da! Issho ni hashitte shouhi shiyou!',
+      ja: '大丈夫！',
+      romaji: 'Daijoubu!',
     },
     run: {
-      ja: 'だから走れぇぇ！ワン・フォー・オール、限界を超えるんだ！',
-      romaji: 'Dakara hashireee! Wan Foo Ooru, genkai o koerunda!',
+      ja: 'スマァァッシュ！！',
+      romaji: 'SMAAASH!!',
     },
   },
   bakugou: {
     greet: {
-      ja: 'バカ！俺の背中追うならサボってんじゃねぇ！',
-      romaji: 'Baka! Ore no senaka ou nara sabotten ja nee!',
+      ja: 'おいおいおい！上に上がれば関係ねぇ！',
+      romaji: 'Oi oi oi! Ue ni agarya kankei nee!',
     },
     analyze: {
-      ja: 'バカ！何食おうとしてやがる、俺が見てやる！',
-      romaji: 'Baka! Nani kuou to shite yagaru, ore ga mite yaru!',
+      ja: 'バカ！',
+      romaji: 'Baka!',
     },
     goal: {
-      ja: '爆豪の勝利だ！当たり前だ！俺について来い！',
-      romaji: 'Bakugou no shouri da! Atarimae da! Ore ni tsuite koi!',
+      ja: '爆豪の勝利だ！当たり前だ！',
+      romaji: 'Bakugou no shouri da! Atarimae da!',
     },
     over: {
-      ja: 'おいコラァ！！カロリーオーバーだ！今すぐ走って全部燃やせぇ！',
-      romaji: 'Oi koraaa!! Karorii oobaa da! Ima sugu hashitte zenbu moyaseee!',
+      ja: '死ねぇぇ！！',
+      romaji: 'SHINEEEE!!',
     },
     run: {
-      ja: 'バカ！ついて来い！置いてくぞ！ぶっ飛ばして走れぇ！',
-      romaji: 'Baka! Tsuite koi! Oiteku zo! Buttobashite hashireee!',
+      ja: '爆豪の決戦だ！ぶっ飛ばして走れぇ！',
+      romaji: 'Bakugou no kessen da! Buttobashite hashireee!',
     },
   },
 };
@@ -52,17 +52,17 @@ export const VOICE_SHUFFLE_CATALOG = {
   deku: [
     {
       file: 'deku_line1.mp3',
-      ja: '大丈夫！ここから後ろには絶対行かせないよ！',
-      romaji: 'Daijoubu! Koko kara ushiro ni wa zettai ikasenai yo!',
-      en: 'Don’t worry! I will never let anyone pass behind me!',
-      ms: 'Jangan risau! Saya takkan biarkan sesiapa lepasi garisan ini!',
+      ja: '大丈夫！',
+      romaji: 'Daijoubu!',
+      en: 'Don’t worry, you’ve got this!',
+      ms: 'Jangan risau, semuanya akan baik-baik saja!',
     },
     {
       file: 'deku_line2.mp3',
-      ja: 'だから走れぇぇ！限界を超えて行こう！',
-      romaji: 'Dakara hashireee! Genkai o koete ikou!',
-      en: 'So run!! Let’s break through our limits!',
-      ms: 'Sebab itu terus berlari!! Mari melepasi had kemampuan kita!',
+      ja: 'スマァァッシュ！！',
+      romaji: 'SMAAASH!!',
+      en: 'SMAAASH!! Break through your limits!',
+      ms: 'SMAAASH!! Mari melepasi had batasan kita!',
     },
     {
       file: 'deku_line3.mp3',
@@ -73,7 +73,7 @@ export const VOICE_SHUFFLE_CATALOG = {
     },
     {
       file: 'deku_line4.mp3',
-      ja: 'さらに向こうへ！プルス・ウルトラ！！',
+      ja: '更に向こうへ！プルス・ウルトラ！！',
       romaji: 'Sara ni mukou e! PLUS ULTRA!!',
       en: 'Go Beyond! PLUS ULTRA!!',
       ms: 'Melangkah Lebih Jauh! PLUS ULTRA!!',
@@ -87,19 +87,19 @@ export const VOICE_SHUFFLE_CATALOG = {
     },
     {
       file: 'deku_line6.mp3',
-      ja: 'お疲れ様です！今日もよく頑張ったね！',
-      romaji: 'Otsukaresama desu! Kyou mo yoku ganbatta ne!',
-      en: 'Thank you for your hard work! You gave it your all today!',
-      ms: 'Tahniah atas usaha keras! Awak dah bersungguh-sungguh hari ini!',
+      ja: 'お疲れ様です！',
+      romaji: 'Otsukaresama desu!',
+      en: 'Thank you for your hard work today! (Great job!)',
+      ms: 'Terima kasih atas usaha gigih hari ini! (Kerja yang bagus!)',
     },
   ],
   bakugou: [
     {
       file: 'bakugou_line1.mp3',
       ja: 'おいおいおい！上に上がれば関係ねぇ！',
-      romaji: 'Oi oi oi! Ue ni agareba kankei nee!',
-      en: 'Oi oi oi! Keep climbing to the top, no excuses!',
-      ms: 'Oi oi oi! Takde alasan, panjat sampai atas!',
+      romaji: 'Oi oi oi! Ue ni agarya kankei nee!',
+      en: 'Oi oi oi! As long as I climb to the top, nothing else matters!',
+      ms: 'Oi oi oi! Janji aku naik sampai puncak, benda lain tak penting!',
     },
     {
       file: 'bakugou_line2.mp3',
@@ -110,31 +110,31 @@ export const VOICE_SHUFFLE_CATALOG = {
     },
     {
       file: 'bakugou_line3.mp3',
-      ja: 'おいおいおい！サボってんじゃねぇぞ！',
-      romaji: 'Oi oi oi! Sabotten ja nee zo!',
-      en: 'Oi oi oi! Don’t you dare slack off!',
-      ms: 'Oi oi oi! Jangan berani bermalas-malasan!',
+      ja: 'おいおいおい！',
+      romaji: 'Oi oi oi!',
+      en: 'Oi oi oi! What are you doing, don’t slack off!',
+      ms: 'Oi oi oi! Kau buat apa tu, jangan bermalas-malasan!',
     },
     {
       file: 'bakugou_line4.mp3',
-      ja: 'バカ！俺の背中追うなら本気出せ！',
-      romaji: 'Baka! Ore no senaka ou nara honki dase!',
-      en: 'Idiot! If you’re chasing my back, give it your all!',
-      ms: 'Bongok! Kalau nak kejar langkah aku, bersungguh-sungguhlah!',
+      ja: 'バカ！',
+      romaji: 'Baka!',
+      en: 'Idiot! Get moving and give it your all!',
+      ms: 'Bongok! Bangun dan bersungguh-sungguhlah!',
     },
     {
       file: 'bakugou_line5.mp3',
-      ja: '爆豪の勝利だ！当たり前だ、ついて来い！',
-      romaji: 'Bakugou no shouri da! Atarimae da, tsuite koi!',
-      en: 'Bakugo’s victory! That’s obvious, now follow me!',
-      ms: 'Kemenangan mutlak Bakugo! Ikut aku!',
+      ja: '爆豪の勝利だ！当たり前だ！',
+      romaji: 'Bakugou no shouri da! Atarimae da!',
+      en: 'Bakugo’s victory! Of course it is, now keep up!',
+      ms: 'Kemenangan mutlak Bakugo! Dah tentulah, sekarang ikut aku!',
     },
     {
       file: 'bakugou_line6.mp3',
-      ja: 'ついて来い！置いてくぞ！ぶっ飛ばして走れぇ！',
-      romaji: 'Tsuite koi! Oiteku zo! Buttobashite hashireee!',
-      en: 'Keep up! I’ll leave you behind! Sprint like crazy!',
-      ms: 'Ikut aku! Aku tinggal kau nanti! Lari sekuat hati!',
+      ja: '爆豪の決戦だ！ぶっ飛ばして走れぇ！',
+      romaji: 'Bakugou no kessen da! Buttobashite hashireee!',
+      en: 'Bakugo’s showdown starts now! Sprint like crazy!',
+      ms: 'Pertempuran penentu Bakugo bermula! Lari sekuat hati!',
     },
   ],
 };
@@ -146,12 +146,52 @@ class AudioService {
     this.isMuted = false;
     this.voices = [];
     this.lastShuffledIndex = { deku: -1, bakugou: -1 };
+    this.currentAudio = null;
+    this.currentSourceNode = null;
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = () => {
         this.voices = window.speechSynthesis.getVoices();
       };
       this.voices = window.speechSynthesis.getVoices();
+    }
+
+    // Auto-stop audio when app is minimized, sent to background, or navigated
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          this.stopAll();
+        }
+      });
+      window.addEventListener('pagehide', () => this.stopAll());
+      window.addEventListener('beforeunload', () => this.stopAll());
+      window.addEventListener('hashchange', () => this.stopAll());
+    }
+  }
+
+  /**
+   * Immediately stops any currently playing audio, speech, or SFX
+   * Prevents audio running in the background or overlapping
+   */
+  stopAll() {
+    if (this.currentAudio) {
+      try {
+        this.currentAudio.pause();
+        this.currentAudio.currentTime = 0;
+      } catch { /* noop */ }
+      this.currentAudio = null;
+    }
+    if (this.currentSourceNode) {
+      try {
+        this.currentSourceNode.stop();
+        this.currentSourceNode.disconnect();
+      } catch { /* noop */ }
+      this.currentSourceNode = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch { /* noop */ }
     }
   }
 
@@ -301,9 +341,11 @@ class AudioService {
 
   /**
    * Play the audio for a specific line in background (non-blocking)
+   * Auto-stops when finished and stops any previous audio
    */
   async playLineAudio(character = 'deku', lineObj) {
     if (store.settings?.soundEnabled === false || this.isMuted) return;
+    this.stopAll();
     this.init();
     const charKey = (character === 'baku' || character === 'bakugo') ? 'bakugou' : character;
     const line = lineObj || VOICE_SHUFFLE_CATALOG[charKey]?.[0];
@@ -314,7 +356,7 @@ class AudioService {
       else navigator.vibrate(20);
     }
 
-    const version = 'v=4';
+    const version = 'v=6';
     const primaryPath = `/assets/companions/${charKey}/audio/${line.file}?${version}`;
     const rawPrimaryPath = `/assets/companions/${charKey}/audio/${line.file}`;
     const fallbackPath = `/assets/companions/${charKey}/audio/${charKey}_voice.mp3?${version}`;
@@ -328,6 +370,19 @@ class AudioService {
           this.cache.set(p, audio);
         }
         audio.currentTime = 0;
+        this.currentAudio = audio;
+
+        // Auto-stop tracking when finished
+        audio.onended = () => {
+          if (this.currentAudio === audio) this.currentAudio = null;
+        };
+        audio.onpause = () => {
+          if (this.currentAudio === audio) this.currentAudio = null;
+        };
+        audio.onerror = () => {
+          if (this.currentAudio === audio) this.currentAudio = null;
+        };
+
         await audio.play();
         return;
       } catch {
@@ -335,7 +390,7 @@ class AudioService {
       }
     }
 
-    // Direct Web Audio fallback
+    // Direct Web Audio fallback with auto-stop tracking
     try {
       if (this.audioContext) {
         const resp = await fetch(primaryPath);
@@ -345,6 +400,10 @@ class AudioService {
           const srcNode = this.audioContext.createBufferSource();
           srcNode.buffer = audioBuf;
           srcNode.connect(this.audioContext.destination);
+          this.currentSourceNode = srcNode;
+          srcNode.onended = () => {
+            if (this.currentSourceNode === srcNode) this.currentSourceNode = null;
+          };
           srcNode.start(0);
           return;
         }
@@ -375,6 +434,7 @@ class AudioService {
    */
   async play(character = 'deku', soundKey = 'greet', customText = '') {
     if (store.settings?.soundEnabled === false || this.isMuted) return null;
+    this.stopAll();
     this.init();
 
     const charKey = (character === 'baku' || character === 'bakugo') ? 'bakugou' : character;
@@ -390,7 +450,7 @@ class AudioService {
       else navigator.vibrate(15);
     }
 
-    const version = 'v=4';
+    const version = 'v=6';
     const candidatePaths = [
       `/assets/companions/${charKey}/audio/${charKey}_${soundKey}.mp3?${version}`,
       `/assets/companions/${charKey}/audio/${charKey}_${soundKey}.mp3`,
@@ -408,6 +468,16 @@ class AudioService {
           this.cache.set(filePath, audio);
         }
         audio.currentTime = 0;
+        this.currentAudio = audio;
+        audio.onended = () => {
+          if (this.currentAudio === audio) this.currentAudio = null;
+        };
+        audio.onpause = () => {
+          if (this.currentAudio === audio) this.currentAudio = null;
+        };
+        audio.onerror = () => {
+          if (this.currentAudio === audio) this.currentAudio = null;
+        };
         await audio.play();
         return { success: true, character: charKey, soundKey };
       } catch {
@@ -423,8 +493,8 @@ class AudioService {
 
   setMute(muted) {
     this.isMuted = muted;
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window && muted) {
-      window.speechSynthesis.cancel();
+    if (muted) {
+      this.stopAll();
     }
   }
 }

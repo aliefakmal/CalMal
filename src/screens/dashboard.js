@@ -1,7 +1,7 @@
 import { store } from '../services/store.js';
 import { icons } from '../components/icons.js';
 import { ringSVG, macroBar, animateRings, routeThumbSVG, openSheet, toast } from '../components/ui.js';
-import { companionBubble, bindCompanionEvents } from '../components/companion.js';
+import { companionBubble, bindCompanionEvents, showMilestoneCelebration } from '../components/companion.js';
 import { dashboardMessage } from '../services/companionService.js';
 import { openMealEditor } from '../components/mealEditor.js';
 import { formatPace, formatDuration, calcSuggestedDailyTarget } from '../utils/calc.js';
@@ -308,6 +308,56 @@ export function renderDashboard(container) {
     bindEvents();
     bindCompanionEvents(container, () => scheduleRender());
     animateRings(container);
+    checkDailyMilestones();
+  }
+
+  function checkDailyMilestones() {
+    if (!store.settings?.companions) return;
+    const p = store.profile || {};
+    const currentCoach = p.selectedCompanion || 'deku';
+    const water = store.getWater();
+    const waterTarget = store.getWaterTarget();
+    const s = store.summary();
+
+    // 1. Water Milestone: reached 100% of daily hydration target
+    if (waterTarget >= 500 && water >= waterTarget && !store.flag('celebrate:water')) {
+      store.setFlag('celebrate:water');
+      setTimeout(() => {
+        showMilestoneCelebration({
+          milestone: 'water',
+          who: currentCoach,
+          statText: `${water} / ${waterTarget} ml (100%)`,
+        });
+      }, 300);
+      return;
+    }
+
+    // 2. Daily Protein & Macronutrient Milestone: 100% target reached
+    if (s.macros?.protein > 20 && s.protein >= s.macros.protein && s.kin >= 350 && !store.flag('celebrate:macros')) {
+      store.setFlag('celebrate:macros');
+      setTimeout(() => {
+        showMilestoneCelebration({
+          milestone: 'macros',
+          who: currentCoach,
+          statText: `${Math.round(s.protein)}g / ${s.macros.protein}g Protein`,
+        });
+      }, 300);
+      return;
+    }
+
+    // 3. Calorie Target Balance: daily calorie intake within target range
+    const effectiveTarget = s.target + s.kout;
+    if (effectiveTarget >= 800 && s.kin >= effectiveTarget * 0.95 && s.kin <= effectiveTarget * 1.05 && s.meals.length >= 2 && !store.flag('celebrate:calories')) {
+      store.setFlag('celebrate:calories');
+      setTimeout(() => {
+        showMilestoneCelebration({
+          milestone: 'calories',
+          who: currentCoach,
+          statText: `${s.kin} / ${effectiveTarget} kcal`,
+        });
+      }, 300);
+      return;
+    }
   }
 
   function openWaterAdjuster() {

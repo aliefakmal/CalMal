@@ -282,6 +282,144 @@
 .cutin-panel p { font-size: 13.5px; line-height: 1.4; color: #ddd; }
 .cutin-btn { width: 100%; font-size: 16px; letter-spacing: 0.05em; }
 
+/* ---------------- Milestone Celebration Popup (Sprite Bubble) ---------------- */
+.milestone-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.3s var(--ease);
+}
+.milestone-overlay.out { animation: fadeOut 0.3s var(--ease) forwards; }
+
+.milestone-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 440px;
+  background: linear-gradient(180deg, rgba(28, 28, 30, 0.98), #0d0d0e);
+  border: 2px solid var(--hero-accent, var(--deku));
+  border-radius: 28px;
+  padding: 26px 22px 22px;
+  text-align: center;
+  box-shadow: 0 0 50px var(--hero-glow, rgba(61, 220, 151, 0.35)), 0 20px 40px rgba(0, 0, 0, 0.9);
+  animation: milestoneBounceIn 0.5s var(--spring);
+  overflow: hidden;
+}
+
+@keyframes milestoneBounceIn {
+  0% { transform: scale(0.65) translateY(40px); opacity: 0; }
+  60% { transform: scale(1.04) translateY(-4px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.milestone-card-deku { border-color: #3ddc97; box-shadow: 0 0 45px rgba(61, 220, 151, 0.35); }
+.milestone-card-bakugou { border-color: #ff7a1a; box-shadow: 0 0 45px rgba(255, 122, 26, 0.4); }
+
+.milestone-burst-bg {
+  position: absolute;
+  inset: -50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.02) 0deg 15deg, transparent 15deg 30deg);
+  animation: spinSlow 30s linear infinite;
+  pointer-events: none;
+}
+@keyframes spinSlow { to { transform: rotate(360deg); } }
+
+.milestone-avatar-wrap {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.milestone-avatar-aura {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--hero-accent, #3ddc97) 0%, transparent 70%);
+  opacity: 0.45;
+  animation: auraPulse 1.8s ease-in-out infinite;
+}
+@keyframes auraPulse {
+  0%, 100% { transform: scale(1); opacity: 0.35; }
+  50% { transform: scale(1.25); opacity: 0.65; }
+}
+
+.milestone-title {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.milestone-card-deku .milestone-title { color: #3ddc97; }
+.milestone-card-bakugou .milestone-title { color: #ff7a1a; }
+
+.milestone-subtitle {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+/* Comic Sprite Bubble */
+.milestone-sprite-bubble {
+  position: relative;
+  background: #1c1c1e;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin: 16px 0 18px;
+  text-align: left;
+}
+.milestone-sprite-bubble::after {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 9px 9px 9px;
+  border-style: solid;
+  border-color: transparent transparent #1c1c1e transparent;
+}
+.milestone-ja-quote {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--hero-accent, #3ddc97);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.milestone-ja-tag {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  letter-spacing: 0.04em;
+}
+.milestone-trans-quote {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #f2f2f7;
+  font-weight: 500;
+}
+
+.milestone-action-btn {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 12px 20px;
+  font-size: 14px;
+}
+
 /* ---------------- Portion slider box ---------------- */
 .portion-box {
   background: #0d0d0e;
