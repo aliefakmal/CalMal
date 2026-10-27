@@ -1603,9 +1603,9 @@
 .topbar-actions .btn-guide-pill,
 .topbar-actions .lang-pill-btn,
 .topbar-actions .btn-install-pill {
-  height: 30px;
+  height: 32px;
   box-sizing: border-box;
-  padding: 0 9px;
+  padding: 0 10px;
 }
 
 .topbar-actions .btn-guide-pill {

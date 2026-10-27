@@ -84,11 +84,10 @@ input, select, textarea { font-family: inherit; touch-action: manipulation; }
 body::before {
   content: '';
   position: fixed;
-  inset: -20% -10% auto -10%;
-  height: 60vh;
+  inset: 0;
   background:
-    radial-gradient(40% 50% at 20% 20%, rgba(255, 255, 255, 0.06), transparent 70%),
-    radial-gradient(35% 45% at 85% 10%, rgba(255, 255, 255, 0.04), transparent 70%);
+    radial-gradient(800px 500px at 50% 120px, rgba(255, 255, 255, 0.035), transparent 70%),
+    radial-gradient(600px 400px at 80% 300px, rgba(255, 255, 255, 0.02), transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -101,24 +100,29 @@ body::before {
 .topbar {
   position: sticky;
   top: 0;
-  z-index: 30;
-  height: calc(var(--top-h) + var(--safe-t));
-  padding: var(--safe-t) 18px 0;
+  z-index: 35;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: calc(var(--top-h) + var(--safe-t));
+  height: auto;
+  padding-top: max(var(--safe-t), 12px);
+  padding-bottom: 12px;
+  padding-left: max(18px, env(safe-area-inset-left));
+  padding-right: max(18px, env(safe-area-inset-right));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: saturate(160%) blur(18px);
-  -webkit-backdrop-filter: saturate(160%) blur(18px);
+  background: #000000;
   border-bottom: 1px solid var(--border-soft);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-weight: 800;
-  font-size: 19px;
+  font-size: 21px;
   letter-spacing: -0.03em;
   text-decoration: none;
   color: #ffffff;
@@ -126,16 +130,20 @@ body::before {
   flex-shrink: 0;
 }
 .brand img {
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   object-fit: contain;
   display: block;
   flex-shrink: 0;
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+  transition: transform 0.2s var(--ease);
+}
+.brand:hover img {
+  transform: scale(1.05);
 }
 .brand small { color: var(--muted); font-weight: 600; font-size: 12px; letter-spacing: 0; }
 
-.topbar-actions { display: flex; align-items: center; gap: 6px; }
+.topbar-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 
 .view {
   padding: 18px 16px calc(var(--nav-h) + var(--safe-b) + 28px);
@@ -232,7 +240,8 @@ body::before {
     border-right: 1px solid var(--border-soft);
     background: linear-gradient(180deg, rgba(28, 28, 30, 0.5), rgba(0, 0, 0, 0.2));
   }
-  .sidebar .brand { padding: 4px 10px 22px; font-size: 21px; }
+  .sidebar .brand { padding: 4px 10px 22px; font-size: 22px; gap: 12px; }
+  .sidebar .brand img { width: 40px; height: 40px; }
   .side-item {
     display: flex;
     align-items: center;
@@ -250,7 +259,12 @@ body::before {
   .side-item.active { background: #fff; color: #000; }
   .side-foot { margin-top: auto; padding: 12px; color: var(--muted-2); font-size: 12px; line-height: 1.5; }
   .topbar .brand { display: none; }
-  .topbar { padding: 0 32px; }
+  .topbar {
+    padding: 0 32px;
+    min-height: var(--top-h);
+    height: var(--top-h);
+    justify-content: flex-end;
+  }
   .view { max-width: 1180px; padding: 28px 32px 48px; }
 }
 
