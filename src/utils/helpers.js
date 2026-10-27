@@ -53,31 +53,76 @@ export const round1 = (n) => Math.round((Number(n) || 0) * 10) / 10;
 export const int = (n) => Math.round(Number(n) || 0);
 export const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
 
-/** Mampatkan fail imej → JPEG base64 (untuk Gemini) + lakaran kecil (untuk log). */
+/** Mampatkan fail imej → JPEG base64 (untuk Gemini) + lakaran kecil (untuk log). Sokong iPhone, Android & desktop. */
 export async function compressImage(file, maxDim = 1024, quality = 0.82) {
-  const dataUrl = await new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result);
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
-  const img = await new Promise((res, rej) => {
-    const i = new Image();
-    i.onload = () => res(i);
-    i.onerror = rej;
-    i.src = dataUrl;
-  });
+  if (!file) throw new Error('No image file provided');
+
+  // Jika sudah sedia dalam format objek imej { dataUrl, base64 }
+  if (file && typeof file === 'object' && file.base64 && file.dataUrl) {
+    return file;
+  }
+
+  let width = 0;
+  let height = 0;
+  let source = null;
+
+  // 1. Cuba createImageBitmap terlebih dahulu (cepat, cekap memori & auto-orientasi EXIF)
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bmp = await createImageBitmap(file);
+      width = bmp.width;
+      height = bmp.height;
+      source = bmp;
+    } catch (e) {
+      // Abaikan jika format tidak disokong secara terus oleh createImageBitmap
+    }
+  }
+
+  // 2. Fallback kepada FileReader + Image()
+  if (!source) {
+    const dataUrl = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = () => rej(new Error('Gagal membaca fail gambar daripada peranti.'));
+      r.readAsDataURL(file);
+    });
+
+    const img = await new Promise((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = () => rej(new Error('Format gambar tidak dapat dinyahkod. Sila pilih gambar JPEG/PNG atau gunakan kamera peranti.'));
+      i.src = dataUrl;
+    });
+
+    width = img.width || 800;
+    height = img.height || 600;
+    source = img;
+  }
+
   const draw = (max, q) => {
-    const scale = Math.min(1, max / Math.max(img.width, img.height));
+    const scale = Math.min(1, max / Math.max(width, height, 1));
     const c = document.createElement('canvas');
-    c.width = Math.round(img.width * scale);
-    c.height = Math.round(img.height * scale);
-    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    c.width = Math.max(1, Math.round(width * scale));
+    c.height = Math.max(1, Math.round(height * scale));
+    const ctx = c.getContext('2d');
+    ctx.drawImage(source, 0, 0, c.width, c.height);
     return c.toDataURL('image/jpeg', q);
   };
+
   const full = draw(maxDim, quality);
   const thumb = draw(180, 0.6);
-  return { dataUrl: full, base64: full.split(',')[1], mime: 'image/jpeg', thumb };
+
+  // Tutup bitmap jika perlu untuk elak kebocoran memori pada telefon mudah alih
+  if (source && typeof source.close === 'function') {
+    try { source.close(); } catch {}
+  }
+
+  return {
+    dataUrl: full,
+    base64: full.split(',')[1],
+    mime: 'image/jpeg',
+    thumb,
+  };
 }
 
 export function debounce(fn, ms = 300) {

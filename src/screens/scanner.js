@@ -22,7 +22,7 @@ export function renderScanner(container) {
 
   let cameraState = 'starting'; // 'starting' | 'active' | 'denied' | 'error'
   let cameraErrorMessage = '';
-  let facingMode = store.settings.cameraFacing || 'environment'; // 'environment' | 'user'
+  let facingMode = store.settings?.cameraFacing || 'environment'; // 'environment' | 'user'
 
   const QUICK_CHIPS = [
     'Nasi separuh (half rice)',
@@ -47,9 +47,9 @@ export function renderScanner(container) {
           <h1 class="page-title">Scan & Analyze</h1>
         </div>
         <div class="row" style="gap:6px;flex-wrap:wrap">
-          <button type="button" class="btn btn-sm btn-secondary" id="btn-iphone-snap" title="Direct iPhone / Smartphone Camera">
+          <label for="file-input-native" class="btn btn-sm btn-secondary" id="btn-iphone-snap" style="cursor:pointer;margin:0" title="Direct iPhone / Smartphone Camera">
             📱 iPhone Camera
-          </button>
+          </label>
           <button type="button" class="btn btn-sm btn-ghost" id="btn-voice-log" title="Log food using speech">
             ${icons.sound} <span>Voice Log</span>
           </button>
@@ -111,12 +111,12 @@ export function renderScanner(container) {
             <div class="stack" style="gap:8px;width:100%;max-width:280px">
               <button type="button" class="btn btn-primary btn-sm btn-block" id="btn-request-cam-perm">
                 ${icons.camera}
-                <span>Enable Camera Access</span>
+                <span>Retry Live Camera</span>
               </button>
-              <button type="button" class="btn btn-secondary btn-sm btn-block" id="btn-open-native-cam">
+              <label for="file-input-native" class="btn btn-secondary btn-sm btn-block" id="btn-open-native-cam" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;margin:0">
                 ${icons.image}
                 <span>Open Device Camera</span>
-              </button>
+              </label>
             </div>
           </div>
 
@@ -130,12 +130,12 @@ export function renderScanner(container) {
 
         <!-- Shutter, Gallery Upload & Camera Switch Controls -->
         <div class="scanner-controls">
-          <input type="file" id="file-input" accept="image/*" class="hidden" />
-          <input type="file" id="file-input-native" accept="image/*" capture="environment" class="hidden" />
+          <input type="file" id="file-input" accept="image/*" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;opacity:0" />
+          <input type="file" id="file-input-native" accept="image/*" capture="environment" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;opacity:0" />
 
-          <button type="button" class="btn btn-icon btn-ghost" id="btn-upload-gallery" title="Upload from Gallery" aria-label="Upload from gallery">
+          <label for="file-input" class="btn btn-icon btn-ghost" id="btn-upload-gallery" style="cursor:pointer;margin:0" title="Upload from Gallery" aria-label="Upload from gallery">
             ${icons.image}
-          </button>
+          </label>
 
           <button type="button" class="shutter-btn" id="btn-shutter" title="Capture Photo" aria-label="Capture photo"></button>
 
@@ -437,19 +437,26 @@ export function renderScanner(container) {
   // ----------------- WebRTC & Mobile Camera Management -----------------
   async function startCamera() {
     const video = container.querySelector('#scanner-video');
+    const prevImg = container.querySelector('#scanner-preview-img');
     if (!video) return;
 
-    // Secure context check (HTTPS / Localhost)
+    // Reset preview state
+    if (prevImg) prevImg.classList.add('hidden');
+    video.style.display = 'block';
+
+    // 1. Semak Sokongan & Keselamatan Sambungan (HTTPS / Localhost)
+    const hasMediaDevices = !!(navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function');
     const isSecure = window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+
+    if (!hasMediaDevices || !isSecure) {
       const err = !isSecure
-        ? 'Browser blocked camera because connection is unencrypted HTTP. Open device camera below or use HTTPS (e.g. on Vercel).'
-        : 'This device or browser does not support WebRTC streaming. Please use the device camera button below.';
+        ? 'Sambungan HTTP tidak disulitkan (unencrypted). Pelayar telefon menyekat live camera atas dasar keselamatan. Sila tekan "Open Device Camera" di bawah untuk mengimbas makanan, atau gunakan HTTPS.'
+        : 'Pelayar ini tidak menyokong live camera WebRTC. Sila gunakan butang kamera peranti di bawah.';
       setCameraUIState('error', err);
       return;
     }
 
-    // Keep existing active stream if healthy
+    // Jika strim sedia ada masih sihat dan aktif, gunakan semula
     if (stream && stream.active && video.srcObject === stream) {
       setCameraUIState('active');
       setupBarcodeReaderIfNeeded(video);
@@ -458,7 +465,7 @@ export function renderScanner(container) {
 
     stopCamera();
 
-    // Required attributes for iOS Safari & Android WebKit
+    // Atribut mandatori untuk iOS Safari, Chrome Mobile & Android WebKit
     video.setAttribute('autoplay', '');
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', '');
@@ -469,68 +476,102 @@ export function renderScanner(container) {
     try {
       setCameraUIState('starting');
 
-      // Multi-tier Fallback Strategy (prevents OverconstrainedError across phones)
-      let mediaStream = null;
-      try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({
+      // Strategi Fallback Berperingkat untuk kestabilan 100% pada semua peranti
+      const attempts = [
+        // 1. Resolusi Standard HD dengan facingMode ideal
+        {
           video: {
             facingMode: { ideal: facingMode },
-            width: { ideal: 1920, max: 1920 },
-            height: { ideal: 1080, max: 1080 },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
           },
           audio: false,
-        });
-      } catch (err1) {
+        },
+        // 2. facingMode sahaja tanpa had resolusi
+        {
+          video: {
+            facingMode: { ideal: facingMode },
+          },
+          audio: false,
+        },
+        // 3. Tukar arah kamera (user / environment) jika kamera pertama gagal
+        {
+          video: {
+            facingMode: facingMode === 'environment' ? 'user' : 'environment',
+          },
+          audio: false,
+        },
+        // 4. Sebarang input kamera yang wujud (komputer riba, webcam USB, dll)
+        {
+          video: true,
+          audio: false,
+        },
+      ];
+
+      let mediaStream = null;
+      let lastErr = null;
+      for (const constraint of attempts) {
         try {
-          mediaStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: facingMode } },
-            audio: false,
-          });
-        } catch (err2) {
-          mediaStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false,
-          });
+          mediaStream = await navigator.mediaDevices.getUserMedia(constraint);
+          if (mediaStream) break;
+        } catch (attemptErr) {
+          lastErr = attemptErr;
         }
+      }
+
+      if (!mediaStream) {
+        throw lastErr || new Error('Tidak dapat memulakan peranti kamera.');
       }
 
       stream = mediaStream;
       video.srcObject = stream;
 
+      let readyDispatched = false;
       const markReady = () => {
+        if (readyDispatched) return;
+        readyDispatched = true;
         setCameraUIState('active');
         setupBarcodeReaderIfNeeded(video);
       };
 
-      video.onloadedmetadata = () => {
-        const p = video.play();
-        if (p !== undefined) p.catch(() => {});
-        markReady();
+      const tryPlay = async () => {
+        try {
+          await video.play();
+          markReady();
+        } catch (err) {
+          console.warn('Waiting for video play event:', err);
+        }
       };
-      video.oncanplay = markReady;
 
-      const pImmediate = video.play();
-      if (pImmediate !== undefined) {
-        pImmediate.then(markReady).catch(() => {});
-      }
+      video.onloadedmetadata = tryPlay;
+      video.oncanplay = tryPlay;
+      video.onloadeddata = tryPlay;
 
+      // Cuba main serta-merta
+      tryPlay();
+
+      // Semakan keselamatan sekunder selepas 400ms
       setTimeout(() => {
-        if (stream && stream.active) markReady();
-      }, 500);
+        if (stream && stream.active) {
+          const liveTrack = stream.getVideoTracks().find((t) => t.readyState === 'live');
+          if (liveTrack) markReady();
+        }
+      }, 400);
+
     } catch (e) {
       console.warn('Mobile camera access error:', e);
       let msg = '';
       if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
-        msg = 'Camera permission was denied. Tap "Enable Camera Access" or allow camera in browser site settings.';
+        msg = 'Kebenaran kamera dinafikan oleh pelayar. Sila klik "Retry Live Camera" atau gunakan butang kamera telefon di bawah.';
         setCameraUIState('denied', msg);
       } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
-        msg = 'No camera hardware found on this device.';
+        msg = 'Tiada perkakasan kamera dikesan pada peranti ini.';
         setCameraUIState('error', msg);
       } else if (e.name === 'NotReadableError' || e.name === 'TrackStartError') {
-        msg = 'Camera is currently in use by another app. Please close other camera apps and retry.';
+        msg = 'Kamera sedang digunakan oleh aplikasi lain. Sila tutup aplikasi kamera lain dan cuba lagi.';
         setCameraUIState('error', msg);
       } else {
-        msg = e.message || 'Could not start camera. You can use your device camera directly below.';
+        msg = e.message || 'Tidak dapat memulakan live camera. Anda boleh menggunakan kamera peranti di bawah.';
         setCameraUIState('error', msg);
       }
     }
@@ -564,8 +605,16 @@ export function renderScanner(container) {
 
   function stopCamera() {
     if (stream) {
-      stream.getTracks().forEach((t) => t.stop());
+      try {
+        stream.getTracks().forEach((t) => {
+          try { t.stop(); } catch {}
+        });
+      } catch {}
       stream = null;
+    }
+    const video = container.querySelector('#scanner-video');
+    if (video) {
+      video.srcObject = null;
     }
     if (zxingReader) {
       try { zxingReader.reset(); } catch {}
@@ -575,14 +624,15 @@ export function renderScanner(container) {
 
   function captureFrame() {
     const video = container.querySelector('#scanner-video');
-    // Ensure video is actively playing and has positive intrinsic video frame data
-    if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+    if (!video || !video.srcObject) return null;
+
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (!w || !h) {
       return null;
     }
 
     try {
-      const w = video.videoWidth;
-      const h = video.videoHeight;
       const canvas = document.createElement('canvas');
       canvas.width = w;
       canvas.height = h;
@@ -592,8 +642,8 @@ export function renderScanner(container) {
       const full = canvas.toDataURL('image/jpeg', 0.85);
       const thumbCanvas = document.createElement('canvas');
       const sc = Math.min(1, 180 / Math.max(w, h));
-      thumbCanvas.width = Math.round(w * sc);
-      thumbCanvas.height = Math.round(h * sc);
+      thumbCanvas.width = Math.max(1, Math.round(w * sc));
+      thumbCanvas.height = Math.max(1, Math.round(h * sc));
       thumbCanvas.getContext('2d').drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
       const thumb = thumbCanvas.toDataURL('image/jpeg', 0.6);
 
@@ -612,10 +662,18 @@ export function renderScanner(container) {
   async function processFoodScan(imgObj) {
     setAnalyzing(true);
     try {
+      capturedImage = imgObj;
+      const prevImg = container.querySelector('#scanner-preview-img');
+      const videoEl = container.querySelector('#scanner-video');
+      if (prevImg && (imgObj.dataUrl || imgObj.thumb)) {
+        prevImg.src = imgObj.dataUrl || imgObj.thumb;
+        prevImg.classList.remove('hidden');
+        if (videoEl) videoEl.style.display = 'none';
+      }
+
       const allNotes = [...selectedChips, customContextNote].filter(Boolean).join(', ');
       const res = await analyzeFood({ image: imgObj, note: allNotes });
       analysisResult = res;
-      capturedImage = imgObj;
       toast(`AI recognized: ${res.name}`, 'success');
       updateResultsUI();
       container.querySelector('#results-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -629,9 +687,17 @@ export function renderScanner(container) {
   async function processOcrScan(imgObj) {
     setAnalyzing(true);
     try {
+      capturedImage = imgObj;
+      const prevImg = container.querySelector('#scanner-preview-img');
+      const videoEl = container.querySelector('#scanner-video');
+      if (prevImg && (imgObj.dataUrl || imgObj.thumb)) {
+        prevImg.src = imgObj.dataUrl || imgObj.thumb;
+        prevImg.classList.remove('hidden');
+        if (videoEl) videoEl.style.display = 'none';
+      }
+
       const res = await readNutritionLabel({ image: imgObj });
       analysisResult = res;
-      capturedImage = imgObj;
       toast(`Label scanned: ${res.name}`, 'success');
       updateResultsUI();
       container.querySelector('#results-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -702,8 +768,7 @@ export function renderScanner(container) {
 
     // 3b. Direct iPhone / Smartphone Native Camera Button
     container.querySelector('#btn-iphone-snap')?.addEventListener('click', () => {
-      toast('Membuka kamera iPhone asli...', 'info', 1800);
-      container.querySelector('#file-input-native')?.click();
+      toast('Membuka kamera telefon...', 'info', 1600);
     });
 
     // 3c. iPhone Camera Guide Sheet
@@ -796,7 +861,8 @@ export function renderScanner(container) {
     container.querySelector('#btn-shutter')?.addEventListener('click', () => {
       const img = captureFrame();
       if (!img) {
-        // Fallback to native mobile device camera synchronously in user gesture
+        // Fallback to native mobile device camera synchronously
+        toast('Kamera langsung belum bersedia. Membuka kamera peranti...', 'info', 1600);
         container.querySelector('#file-input-native')?.click();
         return;
       }
@@ -816,44 +882,42 @@ export function renderScanner(container) {
       await startCamera();
     });
 
-    // 6. Request Camera Permission Again
+    // 6. Request Camera Permission / Retry
     container.querySelector('#btn-request-cam-perm')?.addEventListener('click', async () => {
       await startCamera();
     });
 
     // 7. Open Native Smartphone Camera
     const nativeCamInput = container.querySelector('#file-input-native');
-    container.querySelector('#btn-open-native-cam')?.addEventListener('click', () => {
-      nativeCamInput?.click();
-    });
-
     nativeCamInput?.addEventListener('change', async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
       try {
+        toast('Memproses gambar kamera...', 'info', 1600);
         const img = await compressImage(file);
         if (mode === 'food') processFoodScan(img);
         else if (mode === 'ocr') processOcrScan(img);
       } catch (err) {
-        toast('Failed to process camera image.', 'error');
+        toast(err.message || 'Gagal memproses gambar kamera.', 'error');
+      } finally {
+        e.target.value = ''; // Membolehkan pengguna mengambil semula gambar
       }
     });
 
     // 8. Upload from Gallery
     const fileInput = container.querySelector('#file-input');
-    container.querySelector('#btn-upload-gallery')?.addEventListener('click', () => {
-      fileInput?.click();
-    });
-
     fileInput?.addEventListener('change', async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
       try {
+        toast('Memproses fail galeri...', 'info', 1600);
         const img = await compressImage(file);
         if (mode === 'food') processFoodScan(img);
         else if (mode === 'ocr') processOcrScan(img);
       } catch (err) {
-        toast('Failed to process image file.', 'error');
+        toast(err.message || 'Gagal memproses fail imej.', 'error');
+      } finally {
+        e.target.value = ''; // Membolehkan pemilihan semula
       }
     });
 

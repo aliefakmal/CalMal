@@ -85,6 +85,16 @@ export const store = {
   },
   get macros() { return state.profile ? calcMacros(state.profile) : null; },
 
+  // ---------- Settings ----------
+  get settings() {
+    return state.settings || { apiKey: '', notifications: false, companions: true, soundEnabled: true, cameraAlwaysOn: true, cameraFacing: 'environment' };
+  },
+  saveSettings(patch = {}) {
+    state.settings = { ...(state.settings || {}), ...patch };
+    emit('settings');
+    return state.settings;
+  },
+
   // ---------- Makanan ----------
   addMeal(meal) {
     const m = { id: uid(), date: todayKey(), time: new Date().toISOString(), sync_status: 'PENDING', ...meal };
