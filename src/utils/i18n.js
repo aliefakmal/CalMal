@@ -232,6 +232,26 @@ const DICTIONARY = {
     guide_saved_s2: 'Quick Log: Add saved recipes to today\'s meal diary with a single tap.',
     guide_saved_s3: 'Management: Delete old recipes you no longer need using the trash icon.',
 
+    guide_dash_cal_title: 'Calorie Balance & Formula',
+    guide_dash_cal_desc: 'How your daily target and calorie ring are calculated:',
+    guide_dash_cal_s1: 'Calorie Ring: Visualizes remaining calories. Green ring indicates you are on target; red highlights surplus.',
+    guide_dash_cal_s2: 'Formula: Daily Target - Food Intake + Calories Burned = Remaining Calories.',
+    guide_dash_cal_s3: 'Target Calibration: Tap "Adjust" to customize your daily target or reset to formula recommendation.',
+    guide_dash_cal_s4: 'Weekly Calorie Bank: Tracks cumulative surplus/deficit over 7 rolling days to keep long-term balance.',
+
+    guide_dash_water_title: 'Hydration Tracker Guide',
+    guide_dash_water_desc: 'Easily track and adjust daily water intake:',
+    guide_dash_water_s1: 'Quick Add / Remove: Tap "+ 250ml" to log a glass or "- 250ml" to undo.',
+    guide_dash_water_s2: 'Custom Amount: Tap "Custom" or the water progress bar to set any exact ml amount (e.g., 350ml, 500ml).',
+    guide_dash_water_s3: 'Update Goal: You can also adjust your daily water intake goal inside the custom modal.',
+
+    guide_dash_meals_title: 'Meal Diary & Quick Logging',
+    guide_dash_meals_desc: 'Fast ways to log Malaysian foods & track macros:',
+    guide_dash_meals_s1: '1-Tap Malaysian Chips: Instant log common staples like Kopi O Kosong (5 kcal) or 2 Half-boiled Eggs (140 kcal).',
+    guide_dash_meals_s2: 'Copy Yesterday: Tap "Copy Yesterday" to instantly copy all meals from yesterday into today.',
+    guide_dash_meals_s3: 'AI Food Scanner: Tap "+ SCAN" in bottom nav to snap a photo and auto-estimate calories and macros.',
+    guide_dash_meals_s4: 'Edit & Modifiers: Tap any meal to fine-tune portion size, gravy (kuah), rice amount, and drink sweetness.',
+
     // Preferences tags
     pref_all: 'All Suggestions',
     pref_protein: 'High Protein',
@@ -489,6 +509,26 @@ const DICTIONARY = {
     guide_saved_s1: 'Lihat Maklumat: Sentuh mana-mana kad resipi untuk melihat senarai bahan, arahan masakan, dan makro.',
     guide_saved_s2: 'Log Pantas: Rekod resipi yang disimpan ke diari makanan harian anda dengan satu sentuhan.',
     guide_saved_s3: 'Pengurusan: Padam resipi lama yang tidak lagi diperlukan menggunakan ikon tong sampah.',
+
+    guide_dash_cal_title: 'Panduan Baki Kalori & Formula',
+    guide_dash_cal_desc: 'Cara pengiraan sasaran harian dan cincin kalori:',
+    guide_dash_cal_s1: 'Cincin Kalori: Memaparkan baki kalori semasa. Warna hijau menandakan sasaran dipatuhi; merah menandakan lebihan kalori.',
+    guide_dash_cal_s2: 'Formula: Sasaran Harian - Makanan Masuk + Kalori Terbakar = Baki Kalori.',
+    guide_dash_cal_s3: 'Kalibrasi Sasaran: Sentuh "Laras" untuk melaras sasaran kalori harian atau tetapkan semula ke cadangan formula.',
+    guide_dash_cal_s4: 'Bank Kalori Mingguan: Menjejaki jumlah defisit/lebihan terkumpul selama 7 hari untuk keseimbangan jangka panjang.',
+
+    guide_dash_water_title: 'Panduan Penjejak Air Hidrasi',
+    guide_dash_water_desc: 'Kawal dan rekod pengambilan air harian dengan mudah:',
+    guide_dash_water_s1: 'Tambah / Tolak Pantas: Sentuh "+ 250ml" untuk rekod segelas air atau "- 250ml" untuk memadam.',
+    guide_dash_water_s2: 'Jumlah Bebas: Sentuh "Bebas" atau bar penjejak air untuk masukkan sebarang jumlah ml (cth. 350ml, 500ml).',
+    guide_dash_water_s3: 'Kemas Kini Sasaran: Anda juga boleh menukar sasaran air harian dalam tetingkap bebas.',
+
+    guide_dash_meals_title: 'Panduan Diari Makanan & Log Pantas',
+    guide_dash_meals_desc: 'Cara pantas merekod makanan Malaysia & makro harian:',
+    guide_dash_meals_s1: 'Cip 1-Sentuhan Malaysia: Log pantas hidangan lazim seperti Kopi O Kosong (5 kcal) atau 2 Telur Separuh Masak (140 kcal).',
+    guide_dash_meals_s2: 'Salin Semalam: Sentuh "Salin Semalam" untuk menyalin semua hidangan semalam ke hari ini serta-merta.',
+    guide_dash_meals_s3: 'Pengimbas AI: Sentuh "+ SCAN" di navigasi bawah untuk tangkap foto dan anggar kalori serta makro automatik.',
+    guide_dash_meals_s4: 'Ubah Suai & Pelaras: Sentuh mana-mana hidangan untuk laras kuah, sukatan nasi, dan tahap manis minuman.',
 
     // Preferences tags
     pref_all: 'Semua Pilihan',

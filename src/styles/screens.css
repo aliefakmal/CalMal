@@ -1279,7 +1279,83 @@
   font-weight: 500;
 }
 
-/* ---------------- Section Guide / Tutorial Accordion ---------------- */
+/* ---------------- Section Guide / Tutorial Button & Modal ---------------- */
+.btn-guide-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 2.5px 8px;
+  background: rgba(59, 130, 246, 0.09);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 999px;
+  color: #60a5fa;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  line-height: 1;
+}
+
+.btn-guide-pill:hover {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-guide-pill svg {
+  width: 12px;
+  height: 12px;
+}
+
+.btn-guide-pill.symbol-only {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.guide-modal-sheet {
+  max-width: 520px;
+  width: 100%;
+}
+
+.guide-modal-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0 18px;
+}
+
+.guide-modal-step-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.guide-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.16);
+  color: #60a5fa;
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.guide-step-text {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #e4e4e7;
+}
+
 .section-guide-card {
   background: #0d0d10;
   border: 1px solid rgba(255, 255, 255, 0.08);

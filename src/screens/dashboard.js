@@ -5,8 +5,8 @@ import { companionBubble, bindCompanionEvents } from '../components/companion.js
 import { dashboardMessage } from '../services/companionService.js';
 import { openMealEditor } from '../components/mealEditor.js';
 import { formatPace, formatDuration, calcSuggestedDailyTarget } from '../utils/calc.js';
-import { esc, fmtTime, todayKey } from '../utils/helpers.js';
 import { t, getLang, toggleLang } from '../utils/i18n.js';
+import { renderGuideButton, openGuideModal } from './recipes.js';
 
 export function renderDashboard(container) {
   let unsub = null;
@@ -61,6 +61,7 @@ export function renderDashboard(container) {
             <div class="card-title row between" style="width:100%;margin-bottom:4px">
               <span>${t('dash_calorie_balance')}</span>
               <div class="row" style="gap:6px;align-items:center">
+                ${renderGuideButton('dash_calorie')}
                 <button type="button" class="lang-pill-btn section-lang-toggle" title="Switch Language" style="padding:2px 7px;font-size:10.5px">
                   <span class="lang-icon">${icons.globe}</span>
                   <span class="lang-cur">${getLang().toUpperCase()}</span>
@@ -154,6 +155,7 @@ export function renderDashboard(container) {
                   </div>
                 </div>
                 <div class="row" style="gap:4px;align-items:center">
+                  ${renderGuideButton('dash_water')}
                   <button type="button" class="lang-pill-btn section-lang-toggle" title="Switch Language" style="padding:2px 7px;font-size:10.5px">
                     <span class="lang-icon">${icons.globe}</span>
                     <span class="lang-cur">${getLang().toUpperCase()}</span>
@@ -193,6 +195,7 @@ export function renderDashboard(container) {
             <div class="card-title row between" style="flex-wrap:wrap;gap:8px">
               <span>${t('dash_today_meals')}</span>
               <div class="row" style="gap:6px;align-items:center">
+                ${renderGuideButton('dash_meals')}
                 <button type="button" class="lang-pill-btn section-lang-toggle" title="Switch Language" style="padding:2px 7px;font-size:10.5px">
                   <span class="lang-icon">${icons.globe}</span>
                   <span class="lang-cur">${getLang().toUpperCase()}</span>
@@ -439,12 +442,21 @@ export function renderDashboard(container) {
   }
 
   function bindEvents() {
-    // 0. Section Language Toggles
+    // 0. Section Language Toggles & Tutorial Modals
     container.querySelectorAll('.section-lang-toggle').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         toggleLang();
         render();
+      });
+    });
+
+    container.querySelectorAll('.section-guide-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.guide;
+        if (id) openGuideModal(id);
+        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
       });
     });
 

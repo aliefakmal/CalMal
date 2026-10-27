@@ -207,23 +207,128 @@ export function renderSectionLangToggle() {
   `;
 }
 
-export function renderGuideAccordion(id, title, steps = []) {
+export function renderGuideButton(id, label = '') {
+  const isEn = getLang() === 'en';
+  const text = label || (isEn ? 'Tutorial' : 'Panduan');
   return `
-    <div class="section-guide-card" id="guide-card-${id}" style="margin:6px 0">
-      <button type="button" class="section-guide-toggle-btn" data-guide="${id}">
-        <div class="row" style="gap:8px;align-items:center">
-          <span class="guide-badge">${t('guide_badge')}</span>
-          <span class="guide-title">${esc(title)}</span>
-        </div>
-        <span class="guide-caret" id="caret-${id}">▼</span>
-      </button>
-      <div class="section-guide-content hidden" id="content-${id}">
-        <ul class="guide-steps-list">
-          ${steps.map((st) => `<li>${esc(st)}</li>`).join('')}
-        </ul>
-      </div>
-    </div>
+    <button type="button" class="btn-guide-pill section-guide-btn" data-guide="${id}" title="${esc(text)}" aria-label="${esc(text)}">
+      ${icons.help}
+      <span>${esc(text)}</span>
+    </button>
   `;
+}
+
+export function openGuideModal(guideId) {
+  const isEn = getLang() === 'en';
+  let title = '';
+  let desc = '';
+  let steps = [];
+
+  switch (guideId) {
+    case 'planner':
+      title = t('guide_planner_title');
+      desc = t('guide_planner_desc');
+      steps = [
+        t('guide_planner_s1'),
+        t('guide_planner_s2'),
+        t('guide_planner_s3'),
+        t('guide_planner_s4'),
+        t('guide_planner_s5'),
+        t('guide_planner_s6'),
+      ];
+      break;
+    case 'market':
+      title = t('guide_market_title');
+      desc = t('guide_market_desc');
+      steps = [
+        t('guide_market_s1'),
+        t('guide_market_s2'),
+        t('guide_market_s3'),
+        t('guide_market_s4'),
+      ];
+      break;
+    case 'generator':
+      title = t('guide_generator_title');
+      desc = t('guide_generator_desc');
+      steps = [
+        t('guide_generator_s1'),
+        t('guide_generator_s2'),
+        t('guide_generator_s3'),
+        t('guide_generator_s4'),
+      ];
+      break;
+    case 'saved':
+      title = t('guide_saved_title');
+      desc = t('guide_saved_desc');
+      steps = [
+        t('guide_saved_s1'),
+        t('guide_saved_s2'),
+        t('guide_saved_s3'),
+      ];
+      break;
+    case 'dash_calorie':
+      title = t('guide_dash_cal_title');
+      desc = t('guide_dash_cal_desc');
+      steps = [
+        t('guide_dash_cal_s1'),
+        t('guide_dash_cal_s2'),
+        t('guide_dash_cal_s3'),
+        t('guide_dash_cal_s4'),
+      ];
+      break;
+    case 'dash_water':
+      title = t('guide_dash_water_title');
+      desc = t('guide_dash_water_desc');
+      steps = [
+        t('guide_dash_water_s1'),
+        t('guide_dash_water_s2'),
+        t('guide_dash_water_s3'),
+      ];
+      break;
+    case 'dash_meals':
+      title = t('guide_dash_meals_title');
+      desc = t('guide_dash_meals_desc');
+      steps = [
+        t('guide_dash_meals_s1'),
+        t('guide_dash_meals_s2'),
+        t('guide_dash_meals_s3'),
+        t('guide_dash_meals_s4'),
+      ];
+      break;
+    default:
+      return;
+  }
+
+  openSheet(`
+    <div class="guide-modal-sheet">
+      <div class="row between" style="align-items:flex-start;margin-bottom:12px">
+        <div style="flex:1;padding-right:12px">
+          <div class="row" style="gap:6px;align-items:center;margin-bottom:4px">
+            <span class="badge ok">${t('guide_badge')}</span>
+            <span class="xs muted">${isEn ? 'Step-by-Step Walkthrough' : 'Langkah Demi Langkah'}</span>
+          </div>
+          <h3 style="font-size:17px;font-weight:800;color:#fff;margin:0;line-height:1.3">${esc(title)}</h3>
+          <p class="xs muted" style="margin:4px 0 0;line-height:1.4">${esc(desc)}</p>
+        </div>
+        <button type="button" class="btn btn-icon btn-ghost btn-sm" data-close aria-label="${t('close')}">
+          ${icons.close}
+        </button>
+      </div>
+
+      <div class="guide-modal-steps">
+        ${steps.map((st, idx) => `
+          <div class="guide-modal-step-item">
+            <div class="guide-step-num">${idx + 1}</div>
+            <div class="guide-step-text">${esc(st)}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <button type="button" class="btn btn-primary btn-block" data-close style="margin-top:8px">
+        <span>${isEn ? 'Got It' : 'Faham'}</span>
+      </button>
+    </div>
+  `);
 }
 
 export function renderRecipes(container) {
@@ -287,16 +392,11 @@ export function renderRecipes(container) {
               <span>${t('rec_diet_focus')}</span>
               <span class="xs muted" style="margin-left:6px">${isEn ? 'Halal / Health Focus' : 'Fokus Sihat & Halal'}</span>
             </div>
-            ${renderSectionLangToggle()}
+            <div class="row" style="gap:6px;align-items:center">
+              ${renderGuideButton('generator')}
+              ${renderSectionLangToggle()}
+            </div>
           </div>
-
-          <!-- Recipe Generator Tutorial Accordion -->
-          ${renderGuideAccordion('generator', t('guide_generator_title'), [
-            t('guide_generator_s1'),
-            t('guide_generator_s2'),
-            t('guide_generator_s3'),
-            t('guide_generator_s4'),
-          ])}
 
           <div class="chips" id="diet-chips" style="margin-top:4px">
             ${DIET_FILTERS.map((d) => `<button type="button" class="chip ${selectedDiet === d ? 'active' : ''}" data-d="${d}">${d}</button>`).join('')}
@@ -614,20 +714,11 @@ export function renderRecipes(container) {
               <button type="button" class="btn btn-sm btn-ghost" id="btn-print-plan" title="Print / PDF">
                 ${icons.printer}
               </button>
+              ${renderGuideButton('planner')}
               ${renderSectionLangToggle()}
             </div>
           </div>
         </div>
-
-        <!-- 7-Day Meal Plan Guide Accordion -->
-        ${renderGuideAccordion('planner', t('guide_planner_title'), [
-          t('guide_planner_s1'),
-          t('guide_planner_s2'),
-          t('guide_planner_s3'),
-          t('guide_planner_s4'),
-          t('guide_planner_s5'),
-          t('guide_planner_s6'),
-        ])}
 
         <!-- Filter Dock (Sticky / Unified) -->
         <div class="plan-filter-dock" id="plan-filter-dock">
@@ -672,17 +763,14 @@ export function renderRecipes(container) {
               <span class="badge ok">${isEn ? 'Market Guide' : 'Panduan Pasar'}</span>
               <b class="xs muted" style="text-transform:uppercase;letter-spacing:0.05em">${t('rec_market_tips')}</b>
             </div>
-            ${renderSectionLangToggle()}
+            <div class="row" style="gap:6px;align-items:center">
+              ${renderGuideButton('market')}
+              ${renderSectionLangToggle()}
+            </div>
           </div>
-          <ul style="padding-left:18px;margin:2px 0 6px;line-height:1.6;font-size:12.5px;color:var(--text-2)">
+          <ul style="padding-left:18px;margin:2px 0 0;line-height:1.6;font-size:12.5px;color:var(--text-2)">
             ${getShoppingTips().map((tip) => `<li>${esc(tip)}</li>`).join('')}
           </ul>
-          ${renderGuideAccordion('market', t('guide_market_title'), [
-            t('guide_market_s1'),
-            t('guide_market_s2'),
-            t('guide_market_s3'),
-            t('guide_market_s4'),
-          ])}
         </div>
       </div>
     `;
@@ -699,15 +787,11 @@ export function renderRecipes(container) {
               <span>${t('rec_saved_collection')}</span>
               <span class="muted" style="margin-left:6px">${list.length} ${isEn ? 'recipes' : 'resipi'}</span>
             </div>
-            ${renderSectionLangToggle()}
+            <div class="row" style="gap:6px;align-items:center">
+              ${renderGuideButton('saved')}
+              ${renderSectionLangToggle()}
+            </div>
           </div>
-
-          <!-- Saved Collection Tutorial Accordion -->
-          ${renderGuideAccordion('saved', t('guide_saved_title'), [
-            t('guide_saved_s1'),
-            t('guide_saved_s2'),
-            t('guide_saved_s3'),
-          ])}
 
           <div class="list">
             ${
@@ -870,16 +954,13 @@ export function renderRecipes(container) {
         });
       });
 
-      // Section Guides Accordions
-      container.querySelectorAll('.section-guide-toggle-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
+      // Section Tutorial Modal Buttons (Opens clean popup guide)
+      container.querySelectorAll('.section-guide-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const id = btn.dataset.guide;
-          const content = container.querySelector(`#content-${id}`);
-          const caret = container.querySelector(`#caret-${id}`);
-          if (content) {
-            const isHidden = content.classList.toggle('hidden');
-            if (caret) caret.textContent = isHidden ? '▼' : '▲';
-          }
+          if (id) openGuideModal(id);
+          if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
         });
       });
 
