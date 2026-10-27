@@ -14,7 +14,7 @@ import { soundboard } from '../services/audioService.js';
 function getTutorialConfig(pageKey, isEn) {
   const configs = {
     dashboard: {
-      category: isEn ? 'Dashboard & Calorie Balance' : 'Dashboard & Baki Kalori',
+      category: 'Dashboard',
       icon: icons.home,
       steps: [
         {
@@ -374,7 +374,7 @@ function getTutorialConfig(pageKey, isEn) {
     },
 
     scan: {
-      category: isEn ? 'AI Food Scanner' : 'Pengimbas Makanan AI',
+      category: isEn ? 'Food Scanner' : 'Pengimbas',
       icon: icons.scan,
       steps: [
         {
@@ -577,7 +577,7 @@ function getTutorialConfig(pageKey, isEn) {
     },
 
     recipes: {
-      category: isEn ? 'Recipes & Meal Plan' : 'Resipi & Pelan Makanan',
+      category: isEn ? 'Recipes' : 'Resipi',
       icon: icons.chef,
       steps: [
         {
@@ -763,7 +763,7 @@ function getTutorialConfig(pageKey, isEn) {
     },
 
     activity: {
-      category: isEn ? 'GPS Activity Tracker' : 'Penjejak Aktiviti GPS',
+      category: isEn ? 'Activity' : 'Aktiviti',
       icon: icons.run,
       steps: [
         {
@@ -942,7 +942,7 @@ function getTutorialConfig(pageKey, isEn) {
     },
 
     profile: {
-      category: isEn ? 'Profile & Preferences' : 'Profil & Tetapan',
+      category: isEn ? 'Profile' : 'Profil',
       icon: icons.user,
       steps: [
         {
