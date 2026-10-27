@@ -1203,9 +1203,15 @@
   padding-bottom: 2px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
 }
 .plan-filter-scroll::-webkit-scrollbar {
   display: none;
+}
+.plan-pill,
+.plan-pref-chip {
+  touch-action: manipulation;
 }
 
 .plan-pill {

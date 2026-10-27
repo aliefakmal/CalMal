@@ -405,7 +405,41 @@ export function renderRecipes(container) {
   let selectedMealFilter = 'all'; // 'all' | 'breakfast' | 'lunch' | 'dinner' | 'snack'
   let selectedPreference = currentMealPlan?.preference || 'all';
 
+  // Persistent horizontal scroll positions for Filter Dock
+  const filterScrolls = {
+    day: 0,
+    meal: 0,
+    pref: 0,
+  };
+
+  function captureFilterScrolls() {
+    const dayEl = container.querySelector('#day-selector-scroll');
+    if (dayEl) filterScrolls.day = dayEl.scrollLeft;
+
+    const mealEl = container.querySelector('#meal-filter-scroll');
+    if (mealEl) filterScrolls.meal = mealEl.scrollLeft;
+
+    const prefEl = container.querySelector('#pref-chips');
+    if (prefEl) filterScrolls.pref = prefEl.scrollLeft;
+  }
+
+  function restoreFilterScrolls() {
+    requestAnimationFrame(() => {
+      const dayEl = container.querySelector('#day-selector-scroll');
+      if (dayEl && filterScrolls.day > 0) dayEl.scrollLeft = filterScrolls.day;
+
+      const mealEl = container.querySelector('#meal-filter-scroll');
+      if (mealEl && filterScrolls.meal > 0) mealEl.scrollLeft = filterScrolls.meal;
+
+      const prefEl = container.querySelector('#pref-chips');
+      if (prefEl && filterScrolls.pref > 0) prefEl.scrollLeft = filterScrolls.pref;
+    });
+  }
+
   function render() {
+    captureFilterScrolls();
+    const savedWindowY = window.scrollY || document.documentElement.scrollTop || 0;
+
     container.innerHTML = `
       <div class="page-head">
         <div>
@@ -432,6 +466,11 @@ export function renderRecipes(container) {
 
       ${tab === 'planner' ? renderMealPlanner() : tab === 'recipe' ? renderRecipeGenerator() : renderSavedRecipes()}
     `;
+
+    restoreFilterScrolls();
+    if (savedWindowY > 0) {
+      window.scrollTo(0, savedWindowY);
+    }
 
     bindEvents();
   }
@@ -815,7 +854,9 @@ export function renderRecipes(container) {
         </div>
 
         <!-- Main Plan Content -->
-        ${renderPlanContent(plan)}
+        <div id="plan-content-wrap">
+          ${renderPlanContent(plan)}
+        </div>
 
         <!-- Compact Touch UI Market Guide Card -->
         <div class="card flat market-touch-card" id="btn-open-market-guide" role="button" tabindex="0" style="background:#09090b;border:1px solid rgba(255,255,255,0.09);padding:12px 14px;cursor:pointer;border-radius:12px;margin-top:4px;transition:all 0.2s var(--ease)">
@@ -986,7 +1027,7 @@ export function renderRecipes(container) {
       store.saveMealPlan(currentMealPlan);
       toast(getLang() === 'en' ? `Swapped to: ${picked.name}` : `Lauk ditukar: ${picked.name}`, 'success');
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(12);
-      render();
+      updatePlanViewInPlace();
     }
 
     function logPlanMeal(dayIdx, mealIdx) {
@@ -1012,6 +1053,70 @@ export function renderRecipes(container) {
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([15, 30]);
     }
 
+    function updatePlanViewInPlace() {
+      const wrap = container.querySelector('#plan-content-wrap');
+      if (!wrap) {
+        render();
+        return;
+      }
+
+      // 1. Update Day pill active states in-place
+      container.querySelectorAll('#day-selector-scroll .plan-pill').forEach((btn) => {
+        const didx = Number(btn.dataset.didx);
+        btn.classList.toggle('active', didx === selectedDayIndex);
+      });
+
+      // 2. Update Meal pill active states in-place
+      container.querySelectorAll('#meal-filter-scroll .plan-pill').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.mf === selectedMealFilter);
+      });
+
+      // 3. Update Preference chip active states in-place
+      container.querySelectorAll('#pref-chips .plan-pref-chip').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.pref === selectedPreference);
+      });
+
+      // 4. Update header subtitle if plan summary changed
+      const summaryEl = container.querySelector('.plan-header-card p.xs.muted');
+      if (summaryEl && currentMealPlan?.summary) {
+        summaryEl.textContent = currentMealPlan.summary;
+      }
+
+      // 5. Update plan content HTML smoothly without touching the filter dock
+      wrap.innerHTML = renderPlanContent(currentMealPlan);
+
+      // 6. Bind plan content actions
+      bindPlanContentActions();
+    }
+
+    function bindPlanContentActions() {
+      // Reset filter button listener
+      container.querySelectorAll('.btn-reset-filter').forEach((b) => {
+        b.addEventListener('click', () => {
+          selectedMealFilter = 'all';
+          updatePlanViewInPlace();
+        });
+      });
+
+      // Log Meal button listener
+      container.querySelectorAll('.btn-log-meal').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const dayIdx = Number(btn.dataset.didx);
+          const mealIdx = Number(btn.dataset.midx);
+          logPlanMeal(dayIdx, mealIdx);
+        });
+      });
+
+      // Swap Meal button listener
+      container.querySelectorAll('.btn-swap-meal').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const dayIdx = Number(btn.dataset.didx);
+          const mealIdx = Number(btn.dataset.midx);
+          swapMeal(dayIdx, mealIdx);
+        });
+      });
+    }
+
     function bindEvents() {
       // Market Guide Touch Card Popup
       container.querySelector('#btn-open-market-guide')?.addEventListener('click', (e) => {
@@ -1028,15 +1133,17 @@ export function renderRecipes(container) {
       });
 
       if (tab === 'planner') {
-        // Reset filter button listener
-        container.querySelectorAll('.btn-reset-filter').forEach((b) => {
-          b.addEventListener('click', () => {
-            selectedMealFilter = 'all';
-            render();
-          });
-        });
+        // Track live scrolling on each row so filterScrolls is always accurate
+        const dayScroll = container.querySelector('#day-selector-scroll');
+        dayScroll?.addEventListener('scroll', () => { filterScrolls.day = dayScroll.scrollLeft; }, { passive: true });
 
-        // Preference chips click (Instantly adapts the plan)
+        const mealScroll = container.querySelector('#meal-filter-scroll');
+        mealScroll?.addEventListener('scroll', () => { filterScrolls.meal = mealScroll.scrollLeft; }, { passive: true });
+
+        const prefScroll = container.querySelector('#pref-chips');
+        prefScroll?.addEventListener('scroll', () => { filterScrolls.pref = prefScroll.scrollLeft; }, { passive: true });
+
+        // Preference chips click (Instantly adapts the plan without jumping)
         container.querySelectorAll('#pref-chips button').forEach((btn) => {
           btn.addEventListener('click', () => {
             selectedPreference = btn.dataset.pref;
@@ -1047,23 +1154,26 @@ export function renderRecipes(container) {
             const prefLabel = getPreferences().find((p) => p.id === selectedPreference)?.label || selectedPreference;
             toast(getLang() === 'en' ? `Plan adapted to: ${prefLabel}!` : `Menu diselaraskan mengikut: ${prefLabel}!`, 'success');
             if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
-            render();
+            updatePlanViewInPlace();
+            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
           });
         });
 
-        // Day selector click (Ikut Hari)
+        // Day selector click (Ikut Hari - Stays in place)
         container.querySelectorAll('#day-selector-scroll button').forEach((btn) => {
           btn.addEventListener('click', () => {
             selectedDayIndex = Number(btn.dataset.didx);
-            render();
+            updatePlanViewInPlace();
+            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
           });
         });
 
-        // Meal filter click (Ikut Waktu Makan)
+        // Meal filter click (Ikut Waktu Makan - Stays in place)
         container.querySelectorAll('#meal-filter-scroll button').forEach((btn) => {
           btn.addEventListener('click', () => {
             selectedMealFilter = btn.dataset.mf;
-            render();
+            updatePlanViewInPlace();
+            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
           });
         });
 
@@ -1095,6 +1205,9 @@ export function renderRecipes(container) {
           toast(getLang() === 'en' ? '7-Day meal plan loaded!' : 'Pelan 7-Hari berjaya dimuatkan!', 'success');
           render();
         });
+
+        // Bind initial plan content actions
+        bindPlanContentActions();
 
       // MCQ navigation if in survey mode
       container.querySelectorAll('.mcq-option').forEach((optBtn) => {
@@ -1138,24 +1251,6 @@ export function renderRecipes(container) {
           isGeneratingPlan = false;
           render();
         }
-      });
-
-      // Log Meal button listener
-      container.querySelectorAll('.btn-log-meal').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const dayIdx = Number(btn.dataset.didx);
-          const mealIdx = Number(btn.dataset.midx);
-          logPlanMeal(dayIdx, mealIdx);
-        });
-      });
-
-      // Swap Meal button listener
-      container.querySelectorAll('.btn-swap-meal').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const dayIdx = Number(btn.dataset.didx);
-          const mealIdx = Number(btn.dataset.midx);
-          swapMeal(dayIdx, mealIdx);
-        });
       });
     }
 
