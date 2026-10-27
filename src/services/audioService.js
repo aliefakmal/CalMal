@@ -148,6 +148,8 @@ class AudioService {
     this.lastShuffledIndex = { deku: -1, bakugou: -1 };
     this.currentAudio = null;
     this.currentSourceNode = null;
+    this.isPaused = false;
+    this.currentLine = null;
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = () => {
@@ -423,8 +425,80 @@ class AudioService {
     return !!(
       (this.currentAudio && !this.currentAudio.paused && !this.currentAudio.ended) ||
       this.currentSourceNode ||
-      (typeof window !== 'undefined' && window.speechSynthesis?.speaking)
+      (typeof window !== 'undefined' && window.speechSynthesis?.speaking && !window.speechSynthesis?.paused)
     );
+  }
+
+  /**
+   * Check if voice audio is currently in a paused state
+   */
+  isPausedVoice() {
+    return !!(
+      this.isPaused ||
+      (this.currentAudio && this.currentAudio.paused && this.currentAudio.currentTime > 0 && !this.currentAudio.ended) ||
+      (typeof window !== 'undefined' && window.speechSynthesis?.paused)
+    );
+  }
+
+  /**
+   * Pause currently playing voice audio without resetting playback progress
+   */
+  pauseVoice() {
+    let didPause = false;
+    this.isPaused = true;
+    if (this.currentAudio && !this.currentAudio.paused) {
+      try {
+        this.currentAudio.pause();
+        didPause = true;
+      } catch { /* noop */ }
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis?.speaking && !window.speechSynthesis?.paused) {
+      try {
+        window.speechSynthesis.pause();
+        didPause = true;
+      } catch { /* noop */ }
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('calmal:voice-state', {
+        detail: { isPlaying: false, isPaused: true, character: this.currentLine?.character }
+      }));
+    }
+    return didPause;
+  }
+
+  /**
+   * Resume voice audio from where it was paused without changing the line
+   */
+  async resumeVoice() {
+    this.isPaused = false;
+    if (this.currentAudio && this.currentAudio.paused && !this.currentAudio.ended) {
+      try {
+        await this.currentAudio.play();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('calmal:voice-state', {
+            detail: { isPlaying: true, isPaused: false, character: this.currentLine?.character }
+          }));
+        }
+        return true;
+      } catch { /* fallback to replaying line */ }
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis?.paused) {
+      try {
+        window.speechSynthesis.resume();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('calmal:voice-state', {
+            detail: { isPlaying: true, isPaused: false, character: this.currentLine?.character }
+          }));
+        }
+        return true;
+      } catch { /* noop */ }
+    }
+    // Replay active line if audio element lost buffer
+    if (this.currentLine?.character && this.currentLine?.line) {
+      await this.playLineAudio(this.currentLine.character, this.currentLine.line);
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -432,6 +506,7 @@ class AudioService {
    * Prevents audio running in the background or overlapping
    */
   stopAll() {
+    this.isPaused = false;
     if (this.currentAudio) {
       try {
         this.currentAudio.pause();
@@ -452,7 +527,7 @@ class AudioService {
       } catch { /* noop */ }
     }
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false } }));
+      window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false, isPaused: false } }));
     }
   }
 
@@ -612,6 +687,9 @@ class AudioService {
     const line = lineObj || VOICE_SHUFFLE_CATALOG[charKey]?.[0];
     if (!line) return;
 
+    this.isPaused = false;
+    this.currentLine = { character: charKey, line };
+
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       if (charKey === 'bakugou') navigator.vibrate([40, 25, 70]);
       else navigator.vibrate(20);
@@ -635,21 +713,33 @@ class AudioService {
 
         // Auto-stop tracking when finished
         audio.onended = () => {
-          if (this.currentAudio === audio) this.currentAudio = null;
-          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false } }));
+          if (this.currentAudio === audio) {
+            this.currentAudio = null;
+            this.isPaused = false;
+          }
+          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false, isPaused: false } }));
         };
         audio.onpause = () => {
-          if (this.currentAudio === audio) this.currentAudio = null;
-          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false } }));
+          if (!this.isPaused && this.currentAudio === audio) {
+            this.currentAudio = null;
+          }
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('calmal:voice-state', {
+              detail: { isPlaying: false, isPaused: this.isPaused, character: this.currentLine?.character }
+            }));
+          }
         };
         audio.onerror = () => {
-          if (this.currentAudio === audio) this.currentAudio = null;
-          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false } }));
+          if (this.currentAudio === audio) {
+            this.currentAudio = null;
+            this.isPaused = false;
+          }
+          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false, isPaused: false } }));
         };
 
         await audio.play();
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: true, character: charKey } }));
+          window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: true, isPaused: false, character: charKey } }));
         }
         return;
       } catch {
@@ -670,11 +760,12 @@ class AudioService {
           this.currentSourceNode = srcNode;
           srcNode.onended = () => {
             if (this.currentSourceNode === srcNode) this.currentSourceNode = null;
-            if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false } }));
+            this.isPaused = false;
+            if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: false, isPaused: false } }));
           };
           srcNode.start(0);
           if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: true, character: charKey } }));
+            window.dispatchEvent(new CustomEvent('calmal:voice-state', { detail: { isPlaying: true, isPaused: false, character: charKey } }));
           }
           return;
         }

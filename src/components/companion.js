@@ -85,8 +85,9 @@ export function companionBubble(who, text, { compact = false, state = 'idle', so
           <button type="button" class="btn-voice-trigger btn btn-icon btn-ghost btn-xs" title="Play Voice / Mainkan Suara" aria-label="Play Voice SFX" style="width:28px;height:28px;padding:0;touch-action:manipulation">
             ${icons.sound || '🔊'}
           </button>
-          <button type="button" class="btn-voice-stop btn btn-icon btn-ghost btn-xs" title="Stop Voice / Hentikan Suara" aria-label="Stop Voice SFX" style="width:28px;height:28px;padding:0;touch-action:manipulation">
-            ${icons.stop}
+          <button type="button" class="btn-voice-stop btn btn-icon btn-ghost btn-xs" title="Pause / Resume Voice" aria-label="Pause or Resume Voice SFX" style="width:28px;height:28px;padding:0;touch-action:manipulation">
+            <span class="icon-pause">${icons.pause}</span>
+            <span class="icon-resume">${icons.play}</span>
           </button>
           <button type="button" class="btn-voice-reload btn btn-icon btn-ghost btn-xs" title="Reload Voice Line & Quote / Muat Semula Dialog" aria-label="Reload Voice Line" style="width:28px;height:28px;padding:0;touch-action:manipulation">
             ${icons.refresh}
@@ -115,9 +116,11 @@ export function bindCompanionEvents(container, onCoachSwitch) {
   container.querySelectorAll('.cbubble').forEach((el) => {
     const who = el.dataset.who || 'deku';
     const textWrap = el.querySelector('.cbubble-text-wrap') || el.querySelector('.cbubble-text');
+    let currentLineObj = store.getCompanionActiveLine?.(who) || VOICE_SHUFFLE_CATALOG[who]?.[0];
 
     function updateBubbleText(lineObj) {
       if (!lineObj || !textWrap) return;
+      currentLineObj = lineObj;
       const isEn = store.settings?.language !== 'ms';
       const lineText = isEn ? lineObj.en : lineObj.ms;
       textWrap.style.transition = 'opacity 0.12s ease, transform 0.12s ease';
@@ -144,45 +147,79 @@ export function bindCompanionEvents(container, onCoachSwitch) {
       }
     }
 
-    // 1. Click on Sound icon -> if playing, stop; if stopped, play/shuffle
+    // 1. Click on Sound icon -> if playing: pause; if paused: resume SAME line; if idle: play current line
     el.querySelector('.btn-voice-trigger')?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (soundboard.isPlayingVoice()) {
-        soundboard.stopAll();
-        soundboard.playUISound('cancel');
-        el.classList.remove('is-playing');
+        soundboard.pauseVoice();
+        soundboard.playUISound('toggle-off');
+      } else if (soundboard.isPausedVoice()) {
+        soundboard.resumeVoice();
+        soundboard.playUISound('confirm');
       } else {
-        triggerShuffle();
+        soundboard.playLineAudio(who, currentLineObj).catch(() => {});
       }
     });
 
-    // 2. Click on Stop icon -> instant stop voice
+    // 2. Click on Pause / Resume icon -> pause if playing, resume if paused, play if idle
     el.querySelector('.btn-voice-stop')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      soundboard.stopAll();
-      soundboard.playUISound('cancel');
-      el.classList.remove('is-playing');
+      if (soundboard.isPlayingVoice()) {
+        soundboard.pauseVoice();
+        soundboard.playUISound('toggle-off');
+      } else if (soundboard.isPausedVoice()) {
+        soundboard.resumeVoice();
+        soundboard.playUISound('confirm');
+      } else {
+        soundboard.playLineAudio(who, currentLineObj).catch(() => {});
+      }
     });
 
-    // 3. Click on Reload icon -> instant reload quote + play audio
+    // 3. Click on Reload icon -> explicitly shuffle to next quote and play audio
     el.querySelector('.btn-voice-reload')?.addEventListener('click', (e) => {
       e.stopPropagation();
       triggerShuffle();
     });
 
-    // 4. Click on the bubble body -> instant reload quote + play audio
+    // 4. Click on the bubble body -> play or resume current quote without changing it
     el.querySelector('.cbubble-body')?.addEventListener('click', (e) => {
       if (e.target.closest('button')) return;
-      triggerShuffle();
+      if (soundboard.isPlayingVoice()) {
+        soundboard.pauseVoice();
+      } else if (soundboard.isPausedVoice()) {
+        soundboard.resumeVoice();
+      } else {
+        soundboard.playLineAudio(who, currentLineObj).catch(() => {});
+      }
     });
 
-    // Listen to global voice state events to highlight active playing state
+    // Listen to global voice state events to highlight active playing or paused state
     const onVoiceState = (ev) => {
       const isPlaying = ev.detail?.isPlaying;
+      const isPaused = ev.detail?.isPaused;
+      const btnStop = el.querySelector('.btn-voice-stop');
+
       if (isPlaying) {
         el.classList.add('is-playing');
+        el.classList.remove('is-paused');
+        if (btnStop) {
+          btnStop.title = 'Pause Voice / Jeda Suara';
+          btnStop.setAttribute('aria-label', 'Pause Voice SFX');
+        }
+      } else if (isPaused) {
+        el.classList.remove('is-playing');
+        el.classList.add('is-paused');
+        if (btnStop) {
+          btnStop.title = 'Resume Voice / Sambung Semula Suara';
+          btnStop.setAttribute('aria-label', 'Resume Voice SFX');
+        }
       } else {
         el.classList.remove('is-playing');
+        el.classList.remove('is-paused');
+        if (btnStop) {
+          btnStop.title = 'Pause / Resume Voice';
+          btnStop.setAttribute('aria-label', 'Pause or Resume Voice SFX');
+        }
       }
     };
     window.addEventListener('calmal:voice-state', onVoiceState);
