@@ -853,6 +853,10 @@ class AudioService {
     return { success: true, character: charKey, soundKey };
   }
 
+  playSound(character = 'deku', soundKey = 'greet', customText = '') {
+    return this.play(character, soundKey, customText);
+  }
+
   setMute(muted) {
     this.isMuted = muted;
     if (muted) {

@@ -1,4 +1,5 @@
 // Modal Panduan & Walkthrough Interaktif CalMal bagi Setiap Halaman
+// Reka bentuk minimalist, bersih, dan sepadan 100% dengan UI sebenar setiap halaman
 import { t, getLang } from './i18n.js';
 import { openSheet } from '../components/ui.js';
 import { icons } from '../components/icons.js';
@@ -6,26 +7,31 @@ import { esc } from './helpers.js';
 import { soundboard } from '../services/audioService.js';
 
 /**
- * Returns the interactive tutorial definition for a given page key
+ * Returns the interactive tutorial configuration for a given page key.
+ * Strictly mirrors the actual UI elements, terms, and features of each page.
  * Support for: dashboard, scan, recipes, activity, profile
  */
 function getTutorialConfig(pageKey, isEn) {
   const configs = {
     dashboard: {
-      category: isEn ? 'Dashboard & Balance' : 'Dashboard & Baki Kalori',
+      category: isEn ? 'Dashboard & Calorie Balance' : 'Dashboard & Baki Kalori',
       icon: icons.home,
       steps: [
         {
-          tag: isEn ? 'Step 1: Calorie Balance' : 'Langkah 1: Formula Baki Kalori',
-          title: isEn ? 'Auto Calorie Balance Formula' : 'Formula Baki Kalori Automatik',
+          tag: isEn ? 'Calorie Balance' : 'Baki Kalori',
+          title: isEn ? 'Calorie Balance: Target - Food In + Burned' : 'Formula Baki Kalori: Sasaran - Makanan + Terbakar',
           desc: isEn
-            ? 'Daily Target - Food Eaten + Calories Burned = Remaining Allowance. Green ring keeps you on track; red warns surplus!'
-            : 'Sasaran Harian - Makanan Masuk + Kalori Terbakar = Baki Kuota. Cincin hijau tanda patuh sasaran; merah tanda lebihan!',
+            ? 'Formula: Daily Target - Food In + Burned = Remaining Calories. Green ring indicates on target; red warns of a calorie surplus.'
+            : 'Formula: Sasaran Harian - Makanan Masuk + Kalori Terbakar = Baki Kalori. Cincin hijau tanda patuh sasaran; merah tanda lebihan kalori.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Try It Live' : 'Uji Sekarang'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Tap actions to test live ring' : 'Sentuh butang untuk uji cincin'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Adjust Target or tap actions' : 'Laras sasaran atau sentuh butang'}</span>
+              </div>
+              <div class="row between" style="align-items:center;padding:2px 0">
+                <span style="font-weight:700;color:#fff;font-size:13px">${isEn ? 'Calorie Balance' : 'Baki Kalori'}</span>
+                <span class="badge ok" id="tut-dash-badge">${isEn ? 'On Target' : 'Mengikut Sasaran'}</span>
               </div>
               <div class="t-ring-wrapper">
                 <svg class="t-ring-svg" viewBox="0 0 100 100">
@@ -33,24 +39,30 @@ function getTutorialConfig(pageKey, isEn) {
                   <circle class="t-ring-val" id="tut-dash-ring" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="105" />
                 </svg>
                 <div class="t-ring-data">
-                  <div class="t-ring-num"><span id="tut-dash-rem">1,150</span> <span style="font-size:13px;font-weight:600;color:#94a3b8">kcal</span></div>
-                  <div class="t-ring-status" id="tut-dash-status">${isEn ? '✓ On Track (Remaining)' : '✓ Mengikut Sasaran (Baki)'}</div>
-                  <div class="t-formula-line" id="tut-dash-formula">2,000 (Target) - 850 (Food) = 1,150</div>
+                  <div class="t-ring-num"><span id="tut-dash-rem">1,150</span> <span style="font-size:12px;font-weight:600;color:#94a3b8">kcal</span></div>
+                  <div class="t-ring-status" id="tut-dash-status">${isEn ? 'kcal Remaining' : 'kcal Baki'}</div>
+                </div>
+              </div>
+              <!-- Equation row matching real Dashboard -->
+              <div class="equation" style="margin:2px 0">
+                <div class="eq-cell">
+                  <span>${isEn ? 'Target' : 'Sasaran'}</span>
+                  <b class="num" id="tut-eq-target">2,000</b>
+                </div>
+                <div class="eq-cell">
+                  <span>${isEn ? 'Food In' : 'Makanan'}</span>
+                  <b class="num" id="tut-eq-food">850</b>
+                </div>
+                <div class="eq-cell">
+                  <span>${isEn ? 'Burned' : 'Terbakar'}</span>
+                  <b class="num" id="tut-eq-burn" style="color:var(--ok)">+0</b>
                 </div>
               </div>
               <div class="t-actions-grid">
-                <button type="button" class="t-demo-btn" id="tut-dash-add-food">
-                  <span>🍛 + ${isEn ? 'Nasi Lemak (+450)' : 'Nasi Lemak (+450)'}</span>
-                </button>
-                <button type="button" class="t-demo-btn" id="tut-dash-add-tea">
-                  <span>☕ + ${isEn ? 'Teh Tarik (+140)' : 'Teh Tarik (+140)'}</span>
-                </button>
-                <button type="button" class="t-demo-btn" id="tut-dash-add-run">
-                  <span>🏃 - ${isEn ? '3km Run (-250)' : 'Larian 3km (-250)'}</span>
-                </button>
-                <button type="button" class="t-demo-btn" id="tut-dash-reset" style="color:#94a3b8">
-                  <span>↺ ${isEn ? 'Reset' : 'Semula'}</span>
-                </button>
+                <button type="button" class="t-demo-btn" id="tut-dash-add-egg">+ 2 Telur (+140 kcal)</button>
+                <button type="button" class="t-demo-btn" id="tut-dash-add-roti">+ Roti Canai (+310 kcal)</button>
+                <button type="button" class="t-demo-btn" id="tut-dash-add-run" style="border-color:rgba(16,185,129,0.3);color:#34d399">Larian 3km (-250 kcal)</button>
+                <button type="button" class="t-demo-btn" id="tut-dash-reset" style="color:#94a3b8">${isEn ? 'Reset' : 'Semula'}</button>
               </div>
             </div>
           `,
@@ -61,47 +73,50 @@ function getTutorialConfig(pageKey, isEn) {
 
             const updateUI = () => {
               const rem = target - food + burned;
+              const isOver = rem < 0;
               const remEl = box.querySelector('#tut-dash-rem');
               const ringEl = box.querySelector('#tut-dash-ring');
               const statusEl = box.querySelector('#tut-dash-status');
-              const formulaEl = box.querySelector('#tut-dash-formula');
+              const badgeEl = box.querySelector('#tut-dash-badge');
+              const foodEl = box.querySelector('#tut-eq-food');
+              const burnEl = box.querySelector('#tut-eq-burn');
 
-              if (remEl) remEl.textContent = rem.toLocaleString();
+              if (remEl) remEl.textContent = Math.abs(rem).toLocaleString();
+              if (foodEl) foodEl.textContent = food.toLocaleString();
+              if (burnEl) burnEl.textContent = `+${burned}`;
+
               const circum = 251.2;
-              const ratio = Math.max(0, Math.min(1.4, food / (target + burned)));
+              const effectiveTarget = Math.max(1, target + burned);
+              const ratio = Math.max(0, Math.min(1.3, food / effectiveTarget));
               const offset = Math.max(0, circum * (1 - ratio));
 
               if (ringEl) {
                 ringEl.style.strokeDashoffset = offset;
-                if (rem < 0) {
+                if (isOver) {
                   ringEl.classList.add('surplus');
                 } else {
                   ringEl.classList.remove('surplus');
                 }
               }
 
-              if (statusEl) {
-                if (rem < 0) {
-                  statusEl.className = 't-ring-status surplus';
-                  statusEl.textContent = isEn ? `⚠️ Calorie Surplus (+${Math.abs(rem)} kcal)` : `⚠️ Terlebih Had! (+${Math.abs(rem)} kcal)`;
-                } else {
-                  statusEl.className = 't-ring-status';
-                  statusEl.textContent = isEn ? '✓ On Track (Remaining)' : '✓ Mengikut Sasaran (Baki)';
-                }
+              if (badgeEl) {
+                badgeEl.className = `badge ${isOver ? 'bad' : 'ok'}`;
+                badgeEl.textContent = isOver ? (isEn ? 'Surplus' : 'Lebihan') : (isEn ? 'On Target' : 'Mengikut Sasaran');
               }
 
-              if (formulaEl) {
-                formulaEl.textContent = `${target} - ${food} + ${burned} = ${rem} kcal`;
+              if (statusEl) {
+                statusEl.className = `t-ring-status ${isOver ? 'surplus' : ''}`;
+                statusEl.textContent = isOver ? (isEn ? 'kcal Over Target' : 'kcal Terlebih Had') : (isEn ? 'kcal Remaining' : 'kcal Baki');
               }
             };
 
-            box.querySelector('#tut-dash-add-food')?.addEventListener('click', () => {
-              food += 450;
+            box.querySelector('#tut-dash-add-egg')?.addEventListener('click', () => {
+              food += 140;
               soundboard.playUISound('stepper');
               updateUI();
             });
-            box.querySelector('#tut-dash-add-tea')?.addEventListener('click', () => {
-              food += 140;
+            box.querySelector('#tut-dash-add-roti')?.addEventListener('click', () => {
+              food += 310;
               soundboard.playUISound('stepper');
               updateUI();
             });
@@ -120,36 +135,38 @@ function getTutorialConfig(pageKey, isEn) {
           },
         },
         {
-          tag: isEn ? 'Step 2: 1-Tap Malaysian Foods' : 'Langkah 2: Cip 1-Sentuhan Malaysia',
-          title: isEn ? 'Instant 1-Tap Food Logging' : 'Log Makanan Pantas 1-Sentuhan',
+          tag: isEn ? '1-Tap Malaysian Foods' : 'Cip 1-Sentuhan Malaysia',
+          title: isEn ? "Today's Meals & Quick Tap Chips" : 'Log Hidangan Pantas 1-Sentuhan',
           desc: isEn
-            ? 'No typing needed! Tap common Malaysian staples below to instantly record calories and macros directly to today\'s diary.'
-            : 'Tak perlu taip! Sentuh cip hidangan lazim Malaysia untuk rekod kalori dan makro serta-merta ke dalam diari makanan hari ini.',
+            ? 'Tap quick Malaysian staple chips (Kopi O, 2 Telur, Roti Canai, Nasi Putih) to instantly log calories and macros into your food diary.'
+            : 'Sentuh cip makanan lazim (Kopi O, 2 Telur, Roti Canai, Nasi Putih) untuk merekod kalori dan makro serta-merta ke dalam diari makanan.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Interactive Chips' : 'Cip Interaktif'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Tap any dish to log' : 'Sentuh hidangan untuk log'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Tap chips to log' : 'Sentuh cip untuk log'}</span>
+              </div>
+              <div class="row between" style="align-items:center">
+                <span class="xs bold muted" style="letter-spacing:0.04em">${isEn ? '1-Tap Malaysian Foods' : 'Cip Makanan Lazim Malaysia'}</span>
+                <button type="button" class="btn btn-xs btn-ghost" id="tut-tray-clear" style="font-size:11px;color:#94a3b8">${isEn ? 'Reset' : 'Semula'}</button>
               </div>
               <div class="t-chips-list">
-                <button type="button" class="t-food-chip" data-name="Kopi O" data-kcal="60">☕ Kopi O · 60 kcal</button>
-                <button type="button" class="t-food-chip" data-name="2 Telur" data-kcal="140">🥚 2 Telur · 140 kcal</button>
-                <button type="button" class="t-food-chip" data-name="Roti Canai" data-kcal="300">🥞 Roti Canai · 300 kcal</button>
-                <button type="button" class="t-food-chip" data-name="Roti Bakar Kaya" data-kcal="220">🥪 Roti Kaya · 220 kcal</button>
+                <button type="button" class="t-food-chip" data-name="Kopi O Kosong" data-kcal="5">+ Kopi O (5 kcal)</button>
+                <button type="button" class="t-food-chip" data-name="Telur Separuh Masak" data-kcal="140">+ 2 Telur (140 kcal)</button>
+                <button type="button" class="t-food-chip" data-name="Roti Canai" data-kcal="310">+ Roti Canai (310 kcal)</button>
+                <button type="button" class="t-food-chip" data-name="Nasi Putih" data-kcal="150">+ Nasi Putih (150 kcal)</button>
+                <button type="button" class="t-food-chip" data-name="Teh Tarik Kurang Manis" data-kcal="115">+ Teh Tarik (115 kcal)</button>
               </div>
-              <div class="t-log-tray">
-                <div id="tut-tray-info" style="color:#e2e8f0;font-weight:600">
-                  ${isEn ? 'Logged: 0 items (0 kcal)' : 'Dilog: 0 hidangan (0 kcal)'}
+              <div class="t-log-tray" id="tut-log-tray">
+                <div id="tut-tray-info" style="color:#e2e8f0;font-size:12px;font-weight:600">
+                  ${isEn ? 'Diary: 0 items (0 kcal)' : 'Diari: 0 hidangan (0 kcal)'}
                 </div>
-                <button type="button" class="btn btn-ghost btn-xs" id="tut-tray-clear" style="font-size:11px;color:#94a3b8">
-                  ${isEn ? 'Clear' : 'Kosongkan'}
-                </button>
               </div>
             </div>
           `,
           mount: (box) => {
             let totalKcal = 0;
-            let count = 0;
+            let items = [];
             const trayInfo = box.querySelector('#tut-tray-info');
 
             box.querySelectorAll('.t-food-chip').forEach((chip) => {
@@ -157,149 +174,199 @@ function getTutorialConfig(pageKey, isEn) {
                 const kcal = parseInt(chip.dataset.kcal, 10) || 0;
                 const name = chip.dataset.name;
                 totalKcal += kcal;
-                count += 1;
+                items.push(name);
                 chip.classList.add('t-added');
-                setTimeout(() => chip.classList.remove('t-added'), 400);
+                setTimeout(() => chip.classList.remove('t-added'), 300);
 
                 soundboard.playUISound('stepper');
-                if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(12);
+                if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
 
                 if (trayInfo) {
-                  trayInfo.innerHTML = `✓ ${isEn ? 'Added' : 'Ditambah'} <strong>${name}</strong> (+${kcal} kcal) · <span style="color:#34d399">Total: ${totalKcal} kcal</span>`;
+                  trayInfo.innerHTML = `${isEn ? 'Logged' : 'Dilog'}: <strong>${name}</strong> (+${kcal} kcal) · <span style="color:#34d399">${totalKcal} kcal</span>`;
                 }
               });
             });
 
             box.querySelector('#tut-tray-clear')?.addEventListener('click', () => {
               totalKcal = 0;
-              count = 0;
+              items = [];
               soundboard.playUISound('nav');
               if (trayInfo) {
-                trayInfo.textContent = isEn ? 'Logged: 0 items (0 kcal)' : 'Dilog: 0 hidangan (0 kcal)';
+                trayInfo.textContent = isEn ? 'Diary: 0 items (0 kcal)' : 'Diari: 0 hidangan (0 kcal)';
               }
             });
           },
         },
         {
-          tag: isEn ? 'Step 3: Hydration Tracker' : 'Langkah 3: Penjejak Air Pintar',
-          title: isEn ? 'Smart Water Hydration Tracking' : 'Penjejak Air Minuman Pintar',
+          tag: isEn ? 'Water Intake' : 'Air Minuman',
+          title: isEn ? 'Water Tracker & Custom Amount' : 'Penjejak Air Minuman & Sukatan Bebas',
           desc: isEn
-            ? 'Stay energized! Tap +250ml for a quick glass, or tap the water tumbler to log any exact amount.'
-            : 'Kekal bertenaga! Sentuh +250ml untuk secawan air pantas, atau sentuh sukatan botol untuk mencapai 2,500ml harian.',
+            ? 'Tap "+ 250ml" for quick logging, "- 250ml" to deduct, or tap "Custom" / the water bar to input any exact amount in ml.'
+            : 'Sentuh "+ 250ml" untuk log pantas, "- 250ml" untuk tolak, atau sentuh "Bebas" / bar air untuk tetapkan sebarang jumlah ml.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Hydration Stepper' : 'Pelaras Air Pintar'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Daily Goal: 2,500 ml' : 'Sasaran: 2,500 ml'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Daily Target: 2,500 ml' : 'Sasaran Harian: 2,500 ml'}</span>
               </div>
-              <div class="t-water-box">
-                <div class="t-water-glass">
-                  <div class="t-water-fill" id="tut-water-fill" style="height: 50%;"></div>
+              <div class="row between" style="align-items:center">
+                <div class="row" style="gap:8px;align-items:center">
+                  <span style="width:16px;height:16px;display:inline-flex;color:#38bdf8">${icons.droplet}</span>
+                  <div>
+                    <div class="row" style="gap:6px;align-items:center">
+                      <span class="small bold" style="color:#fff">${isEn ? 'Water Intake' : 'Air Minuman'}</span>
+                      <button type="button" class="btn btn-xs btn-ghost" id="tut-water-custom-btn" style="padding:1px 6px;font-size:10px;border:1px solid var(--border-soft)">${isEn ? 'Custom' : 'Bebas'}</button>
+                    </div>
+                    <div class="xs muted"><span id="tut-water-val">1,250</span> / 2,500 ml (<span id="tut-water-pct">50</span>%)</div>
+                  </div>
                 </div>
-                <div class="t-water-info">
-                  <div class="t-water-amount"><span id="tut-water-val">1,250</span> <span style="font-size:13px;font-weight:600;color:#94a3b8">/ 2,500 ml</span></div>
-                  <div style="font-size:11.5px;font-weight:600;color:#38bdf8" id="tut-water-pct">50% ${isEn ? 'achieved' : 'tercapai'}</div>
-                  <div class="xs muted">${isEn ? 'Tap buttons below to drink' : 'Sentuh butang bawah untuk minum'}</div>
+                <div class="row" style="gap:5px;align-items:center">
+                  <button type="button" class="btn btn-xs btn-ghost" id="tut-water-sub" style="padding:3px 7px;font-size:11px;border:1px solid var(--border-soft)">- 250ml</button>
+                  <button type="button" class="btn btn-xs btn-primary" id="tut-water-add" style="padding:3px 7px;font-size:11px">+ 250ml</button>
                 </div>
               </div>
-              <div class="row gap-2">
-                <button type="button" class="t-demo-btn" id="tut-water-sub" style="flex:1">
-                  <span>- 250ml</span>
-                </button>
-                <button type="button" class="t-demo-btn" id="tut-water-add" style="flex:1;border-color:rgba(56,189,248,0.4);color:#38bdf8">
-                  <span>+ 250ml</span>
-                </button>
-                <button type="button" class="t-demo-btn" id="tut-water-bot" style="flex:1">
-                  <span>💧 + 500ml</span>
-                </button>
+              <!-- Water track bar matching real UI -->
+              <div class="water-track" id="tut-water-bar" style="margin-top:6px;cursor:pointer">
+                <div class="water-fill" id="tut-water-fill" style="width: 50%;"></div>
               </div>
             </div>
           `,
           mount: (box) => {
             let water = 1250;
-            const maxWater = 2500;
-            const fillEl = box.querySelector('#tut-water-fill');
+            const target = 2500;
             const valEl = box.querySelector('#tut-water-val');
             const pctEl = box.querySelector('#tut-water-pct');
+            const fillEl = box.querySelector('#tut-water-fill');
 
-            const updateWater = () => {
+            const update = () => {
               if (valEl) valEl.textContent = water.toLocaleString();
-              const pct = Math.round((water / maxWater) * 100);
-              if (pctEl) {
-                pctEl.textContent = `${pct}% ${isEn ? 'achieved' : 'tercapai'}${pct >= 100 ? (isEn ? ' 🏆 Goal Reached!' : ' 🏆 Sasaran Tercapai!') : ''}`;
-                pctEl.style.color = pct >= 100 ? '#fbbf24' : '#38bdf8';
-              }
+              const pct = Math.min(100, Math.round((water / target) * 100));
+              if (pctEl) pctEl.textContent = pct;
               if (fillEl) {
-                fillEl.style.height = `${Math.min(100, pct)}%`;
+                fillEl.style.width = `${pct}%`;
+                if (pct >= 100) fillEl.classList.add('complete');
+                else fillEl.classList.remove('complete');
               }
             };
 
             box.querySelector('#tut-water-add')?.addEventListener('click', () => {
               water = Math.min(4000, water + 250);
               soundboard.playUISound('stepper');
-              updateWater();
-            });
-            box.querySelector('#tut-water-bot')?.addEventListener('click', () => {
-              water = Math.min(4000, water + 500);
-              soundboard.playUISound('confirm');
-              updateWater();
+              update();
             });
             box.querySelector('#tut-water-sub')?.addEventListener('click', () => {
               water = Math.max(0, water - 250);
               soundboard.playUISound('stepper');
-              updateWater();
+              update();
+            });
+            box.querySelector('#tut-water-custom-btn')?.addEventListener('click', () => {
+              water = water === 2000 ? 1250 : 2000;
+              soundboard.playUISound('confirm');
+              update();
+            });
+            box.querySelector('#tut-water-bar')?.addEventListener('click', () => {
+              water = water >= 2500 ? 500 : water + 500;
+              soundboard.playUISound('stepper');
+              update();
             });
           },
         },
         {
-          tag: isEn ? 'Step 4: Anime Hero Coach' : 'Langkah 4: Jurulatih Suara Anime',
-          title: isEn ? 'Deku & Bakugou Live Companion' : 'Jurulatih Anime Deku & Bakugou',
+          tag: isEn ? 'AI Hero Coach' : 'Jurulatih Hero AI',
+          title: isEn ? 'Deku & Bakugou Audio Companion' : 'Jurulatih Audio Deku & Bakugou',
           desc: isEn
-            ? 'Get vocal motivation and real-time commentary based on your workout and calorie discipline!'
-            : 'Dapatkan sorakan suara bersemangat dan ulasan AI mengikut pencapaian diet dan larian anda.',
+            ? 'Switch between Deku and Bakugou for genuine Japanese voice lines and motivational feedback based on your progress.'
+            : 'Pilih antara Deku dan Bakugou untuk ulasan suara asli anime Jepun dan sorakan motivasi mengikut pencapaian anda.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Select Hero' : 'Pilih Jurulatih'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Tap to switch character' : 'Sentuh untuk tukar suara'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Tap to switch coach' : 'Sentuh untuk tukar jurulatih'}</span>
               </div>
-              <div class="t-hero-grid">
-                <div class="t-hero-card active-deku" id="tut-card-deku">
-                  <div class="t-hero-name">🥦 Deku</div>
-                  <div class="t-hero-quote" id="tut-quote-deku">"大丈夫！(Daijoubu!) Mari capai sasaran hari ini!"</div>
-                </div>
-                <div class="t-hero-card" id="tut-card-baku">
-                  <div class="t-hero-name">💥 Bakugou</div>
-                  <div class="t-hero-quote" id="tut-quote-baku">"おいおいおい！Jangan malas, bakar kalori tu!"</div>
-                </div>
+              <div class="row gap-2" style="margin-bottom:4px">
+                <button type="button" class="btn btn-sm btn-block" id="tut-coach-deku" style="flex:1;border:1px solid #10b981;background:rgba(16,185,129,0.15);color:#34d399">
+                  <span>Izuku Midoriya (Deku)</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-ghost btn-block" id="tut-coach-baku" style="flex:1;border:1px solid rgba(255,255,255,0.12)">
+                  <span>Katsuki Bakugou</span>
+                </button>
               </div>
-              <button type="button" class="btn btn-secondary btn-block" id="tut-voice-test-btn" style="margin-top:2px;gap:8px">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                <span>${isEn ? 'Preview Hero Voice Line' : 'Dengar Suara Motivasi Hero'}</span>
+              <!-- Speech Bubble Card matching real Companion -->
+              <div style="background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px">
+                <div class="row" style="gap:6px;align-items:center;font-size:11.5px;color:#34d399;margin-bottom:4px;font-weight:600">
+                  <span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1)">JP</span>
+                  <span id="tut-coach-ja">大丈夫！</span>
+                </div>
+                <p style="font-size:12.5px;color:#e2e8f0;margin:0;line-height:1.4" id="tut-coach-text">
+                  ${isEn ? 'Don’t worry, you’ve got this! Let’s stay on track today!' : 'Jangan risau, semuanya akan baik-baik saja! Mari capai sasaran hari ini!'}
+                </p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-block" id="tut-coach-play-btn" style="gap:8px">
+                <span style="width:14px;height:14px;display:inline-flex">${icons.sound}</span>
+                <span id="tut-coach-play-label">${isEn ? 'Play Voice Audio' : 'Dengar Suara Hero'}</span>
               </button>
             </div>
           `,
           mount: (box) => {
-            let activeHero = 'deku';
-            const dekuCard = box.querySelector('#tut-card-deku');
-            const bakuCard = box.querySelector('#tut-card-baku');
+            let activeCoach = 'deku';
+            const dekuBtn = box.querySelector('#tut-coach-deku');
+            const bakuBtn = box.querySelector('#tut-coach-baku');
+            const jaEl = box.querySelector('#tut-coach-ja');
+            const textEl = box.querySelector('#tut-coach-text');
+            const playBtn = box.querySelector('#tut-coach-play-btn');
+            const playLabel = box.querySelector('#tut-coach-play-label');
 
-            dekuCard?.addEventListener('click', () => {
-              activeHero = 'deku';
-              dekuCard.classList.add('active-deku');
-              bakuCard.classList.remove('active-baku');
+            const setCoach = (coach) => {
+              activeCoach = coach;
+              if (coach === 'deku') {
+                dekuBtn.style.background = 'rgba(16,185,129,0.15)';
+                dekuBtn.style.borderColor = '#10b981';
+                dekuBtn.style.color = '#34d399';
+                bakuBtn.style.background = 'transparent';
+                bakuBtn.style.borderColor = 'rgba(255,255,255,0.12)';
+                bakuBtn.style.color = '#e2e8f0';
+                jaEl.textContent = '大丈夫！';
+                jaEl.style.color = '#34d399';
+                textEl.textContent = isEn
+                  ? 'Don’t worry, you’ve got this! Let’s stay on track today!'
+                  : 'Jangan risau, semuanya akan baik-baik saja! Mari capai sasaran hari ini!';
+              } else {
+                bakuBtn.style.background = 'rgba(249,115,22,0.15)';
+                bakuBtn.style.borderColor = '#f97316';
+                bakuBtn.style.color = '#fb923c';
+                dekuBtn.style.background = 'transparent';
+                dekuBtn.style.borderColor = 'rgba(255,255,255,0.12)';
+                dekuBtn.style.color = '#e2e8f0';
+                jaEl.textContent = 'おいおいおい！';
+                jaEl.style.color = '#fb923c';
+                textEl.textContent = isEn
+                  ? 'Oi oi oi! Break through your limits, don’t slack off!'
+                  : 'Oi oi oi! Mari pecahkan had batasan kau, jangan malas!';
+              }
               soundboard.playUISound('toggle-on');
-            });
+            };
 
-            bakuCard?.addEventListener('click', () => {
-              activeHero = 'bakugou';
-              bakuCard.classList.add('active-baku');
-              dekuCard.classList.remove('active-deku');
-              soundboard.playUISound('toggle-on');
-            });
+            dekuBtn?.addEventListener('click', () => setCoach('deku'));
+            bakuBtn?.addEventListener('click', () => setCoach('bakugou'));
 
-            box.querySelector('#tut-voice-test-btn')?.addEventListener('click', () => {
-              soundboard.playSound(activeHero, 'greet');
+            playBtn?.addEventListener('click', () => {
+              playBtn.disabled = true;
+              if (playLabel) playLabel.textContent = isEn ? 'Playing Audio...' : 'Memainkan Suara...';
+
+              // Pick line and trigger real voice audio
+              const picked = soundboard.pickNextLine(activeCoach);
+              if (picked?.line) {
+                jaEl.textContent = picked.line.ja;
+                textEl.textContent = isEn ? picked.line.en : picked.line.ms;
+                soundboard.playLineAudio(activeCoach, picked.line).catch(() => {});
+              } else {
+                soundboard.play(activeCoach, 'greet').catch(() => {});
+              }
+
+              setTimeout(() => {
+                playBtn.disabled = false;
+                if (playLabel) playLabel.textContent = isEn ? 'Play Voice Audio' : 'Dengar Suara Hero';
+              }, 2200);
             });
           },
         },
@@ -311,16 +378,16 @@ function getTutorialConfig(pageKey, isEn) {
       icon: icons.scan,
       steps: [
         {
-          tag: isEn ? 'Step 1: Live Camera Scan' : 'Langkah 1: Kamera AI Masa Nyata',
-          title: isEn ? 'Point & Snap AI Vision' : 'Halakan Kamera & Imbas AI',
+          tag: isEn ? 'Live Camera Scan' : 'Imbasan Kamera AI',
+          title: isEn ? 'AI Vision Food Recognition' : 'Pengecaman Makanan Melalui Kamera AI',
           desc: isEn
-            ? 'Snap any Malaysian dish. CalMal AI recognizes portions, dish names, calories, and complete macros.'
-            : 'Halakan kamera ke hidangan Malaysia. AI CalMal mengenal pasti jenis masakan, porsi, kalori dan makro automatik.',
+            ? 'Point your camera at any Malaysian dish. CalMal AI identifies the dish, estimated portions, calories, and macros automatically.'
+            : 'Halakan kamera ke hidangan Malaysia. AI CalMal mengenal pasti jenis masakan, anggaran saiz porsi, kalori dan makro secara automatik.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Live Vision Demo' : 'Simulasi Kamera AI'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Tap Test AI Scan below' : 'Sentuh Uji Imbas'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Tap Test AI Scan' : 'Sentuh Uji Imbasan AI'}</span>
               </div>
               <div class="t-viewfinder">
                 <div class="t-corner-tl"></div>
@@ -329,18 +396,21 @@ function getTutorialConfig(pageKey, isEn) {
                 <div class="t-corner-br"></div>
                 <div class="t-laser-line"></div>
                 <div id="tut-scan-preview" style="text-align:center;padding:12px;z-index:2">
-                  <div style="font-size:28px">🍛</div>
-                  <div style="font-size:12px;font-weight:700;color:#fff;margin-top:4px">Nasi Lemak Ayam Goreng</div>
-                  <div class="xs muted">${isEn ? 'Align food within brackets' : 'Kekalkan hidangan dalam bingkai'}</div>
+                  <div style="font-size:13px;font-weight:700;color:#fff">Nasi Lemak Ayam Goreng</div>
+                  <div class="xs muted">${isEn ? 'Position dish within frame' : 'Halakan makanan ke dalam bingkai'}</div>
                 </div>
               </div>
               <button type="button" class="btn btn-primary btn-block" id="tut-scan-test-btn" style="gap:8px">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                <span>${isEn ? '📸 Test AI Scan' : '📸 Uji Imbasan AI'}</span>
+                <span style="width:14px;height:14px;display:inline-flex">${icons.camera}</span>
+                <span>${isEn ? 'Test AI Scan' : 'Uji Imbasan AI'}</span>
               </button>
               <div id="tut-scan-result" style="display:none;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:8px 12px;font-size:11.5px">
-                <div style="color:#34d399;font-weight:800">✓ ${isEn ? 'Detected: Nasi Lemak (640 kcal)' : 'Dikesan: Nasi Lemak Ayam Goreng (640 kcal)'}</div>
-                <div class="xs muted" style="margin-top:2px">Protein: 32g · Carbs: 68g · Fat: 26g · 98% Accuracy</div>
+                <div class="row between" style="align-items:center">
+                  <strong style="color:#34d399">Nasi Lemak Ayam Goreng</strong>
+                  <span class="badge ok" style="font-size:10px">98% Match</span>
+                </div>
+                <div style="font-size:15px;font-weight:900;color:#fff;margin:4px 0">640 <span style="font-size:11px;font-weight:500;color:#94a3b8">kcal · 1 serving (380g)</span></div>
+                <div class="xs muted">Protein: 32g · Carbs: 68g · Fat: 26g</div>
               </div>
             </div>
           `,
@@ -350,30 +420,29 @@ function getTutorialConfig(pageKey, isEn) {
 
             btn?.addEventListener('click', () => {
               btn.disabled = true;
-              btn.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px"></span> <span>${isEn ? 'AI Analyzing...' : 'AI Sedang Menganalisis...'}</span>`;
+              btn.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px"></span> <span>${isEn ? 'Analyzing...' : 'Menganalisis...'}</span>`;
               soundboard.playUISound('confirm');
 
               setTimeout(() => {
                 btn.disabled = false;
-                btn.innerHTML = `<span>${isEn ? '✓ Scan Completed!' : '✓ Imbasan Berjaya!'}</span>`;
+                btn.innerHTML = `<span style="width:14px;height:14px;display:inline-flex">${icons.check}</span> <span>${isEn ? 'Scan Complete' : 'Imbasan Selesai'}</span>`;
                 if (res) res.style.display = 'block';
                 soundboard.playUISound('confirm');
-                if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([20, 30, 40]);
-              }, 480);
+              }, 450);
             });
           },
         },
         {
-          tag: isEn ? 'Step 2: Voice Dictation' : 'Langkah 2: Log Nota Suara',
-          title: isEn ? 'Speak & Log With Voice' : 'Sebut & Log Melalui Suara',
+          tag: isEn ? 'Voice Note' : 'Nota Suara',
+          title: isEn ? 'Log Meals Using Voice Dictation' : 'Log Hidangan Menggunakan Suara',
           desc: isEn
-            ? 'Don\'t feel like typing? Speak in English, Malay, or Manglish and CalMal AI will automatically extract items and calculate calories.'
-            : 'Malas nak menaip? Sebut hidangan anda dalam Bahasa Melayu atau santai dan AI akan mengasingkan lauk serta kalori secara automatik.',
+            ? 'Tap "Voice Note" in the header and speak what you ate in English or Bahasa Melayu. CalMal extracts individual items and calculates calories.'
+            : 'Sentuh "Nota Suara" di bar atas dan sebut hidangan anda. CalMal mengasingkan lauk dan mengira jumlah kalori secara automatik.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Voice Note Simulator' : 'Simulasi Suara AI'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Tap to dictate meal' : 'Sentuh untuk uji sebut'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Tap to test dictation' : 'Sentuh untuk uji sebut'}</span>
               </div>
               <div class="t-waveform">
                 <div class="t-wave-bar"></div>
@@ -383,13 +452,13 @@ function getTutorialConfig(pageKey, isEn) {
                 <div class="t-wave-bar"></div>
               </div>
               <button type="button" class="btn btn-secondary btn-block" id="tut-voice-dictate-btn" style="gap:8px">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                <span>${isEn ? '🎙️ Test Voice Memo' : '🎙️ Uji Sebut Nota Suara'}</span>
+                <span style="width:14px;height:14px;display:inline-flex">${icons.sound}</span>
+                <span>${isEn ? 'Test Voice Note' : 'Uji Nota Suara'}</span>
               </button>
               <div id="tut-voice-output" style="display:none;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;font-size:11.5px">
-                <div class="xs muted">${isEn ? 'Transcribed Audio:' : 'Audio Diterjemah:'}</div>
+                <div class="xs muted">${isEn ? 'Transcribed Speech:' : 'Pertuturan Diterjemah:'}</div>
                 <div style="font-weight:700;color:#fff;margin:2px 0 4px">"Mee goreng mamak telur mata dan teh tarik kurang manis"</div>
-                <div style="color:#38bdf8;font-weight:700">✓ ${isEn ? 'Extracted 3 items · 745 kcal total' : 'Dikenalpasti: 3 item · Jumlah 745 kcal'}</div>
+                <div style="color:#38bdf8;font-weight:700">✓ ${isEn ? 'Extracted 2 items · Total: 655 kcal' : 'Dikesan 2 hidangan · Jumlah: 655 kcal'}</div>
               </div>
             </div>
           `,
@@ -404,36 +473,37 @@ function getTutorialConfig(pageKey, isEn) {
 
               setTimeout(() => {
                 btn.disabled = false;
-                btn.innerHTML = `<span>${isEn ? '✓ Voice Recognized' : '✓ Suara Dikesan'}</span>`;
+                btn.innerHTML = `<span style="width:14px;height:14px;display:inline-flex">${icons.check}</span> <span>${isEn ? 'Voice Recognized' : 'Suara Dikesan'}</span>`;
                 if (out) out.style.display = 'block';
                 soundboard.playUISound('confirm');
-              }, 450);
+              }, 420);
             });
           },
         },
         {
-          tag: isEn ? 'Step 3: Quick Portion Chips' : 'Langkah 3: Cip Pelaras Porsi',
-          title: isEn ? 'Tune Portions Before Saving' : 'Laras Porsi Sebelum Simpan',
+          tag: isEn ? 'Portion Tuning' : 'Laras Porsi',
+          title: isEn ? 'Quick Context Notes (Portion Fine-Tuning)' : 'Nota Pantas (Laras Saiz Porsi)',
           desc: isEn
-            ? 'Adjust calories easily using fast portion chips like "Half Rice", "Less Oil", or "Extra Protein".'
-            : 'Sesuaikan anggaran kalori mengikut cara masakan sebenar menggunakan cip pantas seperti "Nasi Separuh" atau "Kurang Minyak".',
+            ? 'Select chips like "Half rice" or "Less oil" before scanning to tune calorie accuracy to your exact preparation.'
+            : 'Pilih cip pantas seperti "Nasi separuh" atau "Kurang minyak" sebelum imbas untuk ketepatan kalori mengikut hidangan sebenar.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Portion Adjuster' : 'Pelaras Porsi'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Tap chips to modify total' : 'Sentuh cip untuk laras'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Toggle chips to adjust' : 'Sentuh cip untuk laras'}</span>
               </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
-                <div style="font-weight:700;color:#fff;font-size:13px">🍛 Mee Goreng Mamak</div>
-                <div style="font-size:18px;font-weight:900;color:#38bdf8"><span id="tut-tune-kcal">580</span> kcal</div>
+              <div class="row between" style="align-items:center;padding:2px 0">
+                <span style="font-weight:700;color:#fff;font-size:13px">Mee Goreng Mamak</span>
+                <span style="font-size:16px;font-weight:900;color:#38bdf8"><span id="tut-tune-kcal">580</span> kcal</span>
               </div>
               <div class="t-chips-list">
-                <button type="button" class="t-food-chip" id="chip-rice" data-mod="-140">🍚 ${isEn ? 'Half Noodle (-140)' : 'Mee Separuh (-140)'}</button>
-                <button type="button" class="t-food-chip" id="chip-oil" data-mod="-60">🛢️ ${isEn ? 'Less Oil (-60)' : 'Kurang Minyak (-60)'}</button>
-                <button type="button" class="t-food-chip" id="chip-egg" data-mod="85">🍳 ${isEn ? 'Add Egg (+85)' : 'Tambah Telur (+85)'}</button>
+                <button type="button" class="t-food-chip" id="chip-rice" data-mod="-140">${isEn ? 'Half rice (-140 kcal)' : 'Nasi separuh (-140 kcal)'}</button>
+                <button type="button" class="t-food-chip" id="chip-oil" data-mod="-60">${isEn ? 'Less oil (-60 kcal)' : 'Kurang minyak (-60 kcal)'}</button>
+                <button type="button" class="t-food-chip" id="chip-meat" data-mod="120">${isEn ? 'Chicken breast (+120 kcal)' : 'Ayam dada (+120 kcal)'}</button>
+                <button type="button" class="t-food-chip" id="chip-sweet" data-mod="-40">${isEn ? 'Less sweet (-40 kcal)' : 'Kurang manis (-40 kcal)'}</button>
               </div>
               <div class="xs muted" style="line-height:1.4">
-                ${isEn ? 'CalMal recalculates macros and calories automatically based on your customized preferences.' : 'CalMal mengira semula makro dan kalori mengikut pilihan penyediaan sebenar anda.'}
+                ${isEn ? 'CalMal tunes nutritional calories automatically without manual calculation.' : 'CalMal melaras anggaran kalori serta-merta tanpa perlu pengiraan manual.'}
               </div>
             </div>
           `,
@@ -442,7 +512,7 @@ function getTutorialConfig(pageKey, isEn) {
             const activeMods = new Set();
             const kcalEl = box.querySelector('#tut-tune-kcal');
 
-            ['#chip-rice', '#chip-oil', '#chip-egg'].forEach((id) => {
+            ['#chip-rice', '#chip-oil', '#chip-meat', '#chip-sweet'].forEach((id) => {
               const chip = box.querySelector(id);
               chip?.addEventListener('click', () => {
                 const mod = parseInt(chip.dataset.mod, 10);
@@ -463,28 +533,28 @@ function getTutorialConfig(pageKey, isEn) {
           },
         },
         {
-          tag: isEn ? 'Step 4: Barcode & OCR' : 'Langkah 4: Kod Bar & Nutrisi',
-          title: isEn ? 'Packaged Foods Barcode Scan' : 'Imbas Kod Bar Makanan Bungkusan',
+          tag: isEn ? 'Barcode & OCR' : 'Kod Bar & Nutrisi',
+          title: isEn ? 'Barcode & Nutrition Facts OCR' : 'Imbas Kod Bar & Maklumat Pemakanan',
           desc: isEn
-            ? 'Scan barcodes on Malaysian supermarket packaged foods or snap nutrition tables directly from packaging.'
-            : 'Imbas kod bar produk pasar raya Malaysia atau tangkap jadual Maklumat Pemakanan dari bungkusan.',
+            ? 'Switch tabs to scan Malaysian packaged food barcodes or snap nutrition facts tables directly from packages.'
+            : 'Tukar tab untuk imbas kod bar makanan bungkusan pasar raya atau tangkap jadual maklumat pemakanan.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Barcode OCR' : 'Pengimbas Kod Bar'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
                 <span class="tutorial-widget-tip">${isEn ? 'Instant lookup' : 'Carian segera'}</span>
               </div>
-              <div style="background:#090c10;border-radius:10px;padding:12px;text-align:center;border:1px dashed rgba(255,255,255,0.15)">
-                <div style="font-family:monospace;letter-spacing:6px;font-size:20px;color:#cbd5e1">||| | |||| | |||||</div>
-                <div class="xs muted" style="margin-top:4px">9556001234567 (Malaysia Barcode)</div>
+              <div style="background:#090c10;border-radius:10px;padding:10px;text-align:center;border:1px dashed rgba(255,255,255,0.15)">
+                <div style="font-family:monospace;letter-spacing:6px;font-size:18px;color:#cbd5e1">||| | |||| | |||||</div>
+                <div class="xs muted" style="margin-top:2px">9556001234567 (Malaysian Barcode)</div>
               </div>
               <button type="button" class="btn btn-secondary btn-block" id="tut-barcode-btn" style="gap:8px">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="5" x2="3" y2="19"/><line x1="8" y1="5" x2="8" y2="19"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="17" y1="5" x2="17" y2="19"/><line x1="21" y1="5" x2="21" y2="19"/></svg>
-                <span>${isEn ? '🏷️ Simulate Barcode Match' : '🏷️ Uji Imbasan Kod Bar'}</span>
+                <span style="width:14px;height:14px;display:inline-flex">${icons.barcode}</span>
+                <span>${isEn ? 'Test Barcode Lookup' : 'Uji Imbasan Kod Bar'}</span>
               </button>
               <div id="tut-barcode-res" style="display:none;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:8px 12px;font-size:11.5px">
-                <div style="color:#34d399;font-weight:800">✓ Nestlé Milo UHT 200ml</div>
-                <div class="xs muted" style="margin-top:2px">124 kcal · Protein: 4.2g · Enriched with Calcium & B-Vitamins</div>
+                <div style="color:#34d399;font-weight:700">Nestlé Milo UHT 200ml</div>
+                <div class="xs muted" style="margin-top:2px">124 kcal · Protein: 4.2g · Carbs: 18g · Calcium & B-Vitamins</div>
               </div>
             </div>
           `,
@@ -511,16 +581,16 @@ function getTutorialConfig(pageKey, isEn) {
       icon: icons.chef,
       steps: [
         {
-          tag: isEn ? 'Step 1: 7-Day Meal Plan' : 'Langkah 1: Pelan Makanan 7-Hari',
-          title: isEn ? 'Personalized Weekly Malaysian Schedule' : 'Jadual Mingguan Makanan Sihat Malaysia',
+          tag: isEn ? '7-Day Meal Plan' : 'Pelan 7-Hari',
+          title: isEn ? '7-Day Schedule & Meal Filters' : 'Jadual Mingguan & Pilihan Waktu Makan',
           desc: isEn
-            ? 'Filter by Day (Mon–Sun) or meal timing (Breakfast, Lunch, Dinner) to view scheduled healthy Malaysian dishes.'
-            : 'Pilih hari (Isnin–Ahad) atau waktu makan untuk melihat cadangan menu sihat seimbang khas citarasa tempatan.',
+            ? 'Toggle between Day View (Mon–Sun) or Meal View (Breakfast, Lunch, Dinner, Snack) to view scheduled healthy Malaysian dishes.'
+            : 'Pilih mod Ikut Hari (Isnin–Ahad) atau Ikut Waktu Makan (Sarapan, Makan Tengah Hari, dll.) untuk semak hidangan sihat.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Interactive Schedule' : 'Jadual Interaktif'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Tap day to swap menu' : 'Sentuh hari untuk tukar'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Tap day to inspect meal' : 'Sentuh hari untuk semak'}</span>
               </div>
               <div class="t-day-pills">
                 <button type="button" class="t-day-pill active" data-day="mon">${isEn ? 'Mon' : 'Isnin'}</button>
@@ -531,30 +601,30 @@ function getTutorialConfig(pageKey, isEn) {
               </div>
               <div class="t-dish-preview-card" id="tut-dish-card">
                 <div>
-                  <div style="font-size:10px;font-weight:700;color:#60a5fa;text-transform:uppercase">${isEn ? 'LUNCH PREVIEW' : 'MAKAN TENGAH HARI'}</div>
-                  <div style="font-weight:800;color:#fff;font-size:13px;margin:2px 0" id="tut-dish-name">🍛 Nasi Beras Perang + Ayam Panggang</div>
-                  <div class="xs muted" id="tut-dish-macros">420 kcal · 36g Protein · 48g Carbs</div>
+                  <div style="font-size:10px;font-weight:700;color:#60a5fa;text-transform:uppercase" id="tut-dish-timing">${isEn ? 'LUNCH' : 'MAKAN TENGAH HARI'}</div>
+                  <div style="font-weight:700;color:#fff;font-size:13px;margin:2px 0" id="tut-dish-name">Ayam Masak Lemak Cili Api & Nasi</div>
+                  <div class="xs muted" id="tut-dish-macros">680 kcal · 54g Protein · 65g Carbs</div>
                 </div>
-                <span class="badge ok" style="font-size:10px">✓ High Protein</span>
+                <span class="badge ok" style="font-size:10px">High Protein</span>
               </div>
             </div>
           `,
           mount: (box) => {
             const dishes = {
-              mon: { name: isEn ? '🍛 Brown Rice + Grilled Turmeric Chicken' : '🍛 Nasi Beras Perang + Ayam Panggang', macros: '420 kcal · 36g P · 48g C' },
-              tue: { name: isEn ? '🐟 Tomato Clear Fish Soup & Greens' : '🐟 Sup Ikan Siakap Sayur Bening', macros: '320 kcal · 38g P · 18g C' },
-              wed: { name: isEn ? '🥗 Malaysian Chicken Salad & Boiled Egg' : '🥗 Kerabu Ayam & Telur Rebus', macros: '350 kcal · 32g P · 14g C' },
-              thu: { name: isEn ? '🍲 Kelantan Beef Singgang (Low Fat)' : '🍲 Singgang Daging Kelantan Sihat', macros: '390 kcal · 40g P · 12g C' },
-              fri: { name: isEn ? '🍗 Coconut-Free Roast Percik Chicken' : '🍗 Ayam Percik Bakar Tanpa Santan', macros: '430 kcal · 37g P · 22g C' },
+              mon: { timing: isEn ? 'LUNCH' : 'MAKAN TENGAH HARI', name: 'Ayam Masak Lemak Cili Api & Nasi', macros: '680 kcal · 54g Protein · 65g Carbs' },
+              tue: { timing: isEn ? 'LUNCH' : 'MAKAN TENGAH HARI', name: 'Sup Ayam Utara & Ulam Kampung', macros: '620 kcal · 52g Protein · 55g Carbs' },
+              wed: { timing: isEn ? 'DINNER' : 'MAKAN MALAM', name: 'Ikan Siakap Stim Limau & Halia', macros: '510 kcal · 48g Protein · 35g Carbs' },
+              thu: { timing: isEn ? 'LUNCH' : 'MAKAN TENGAH HARI', name: 'Nasi Kerabu & Ayam Percik', macros: '690 kcal · 56g Protein · 70g Carbs' },
+              fri: { timing: isEn ? 'BREAKFAST' : 'SARAPAN', name: 'Roti Bakar & Telur Separuh Masak', macros: '320 kcal · 17g Protein · 28g Carbs' },
             };
 
             box.querySelectorAll('.t-day-pill').forEach((pill) => {
               pill.addEventListener('click', () => {
                 box.querySelectorAll('.t-day-pill').forEach((p) => p.classList.remove('active'));
                 pill.classList.add('active');
-                const day = pill.dataset.day;
-                const d = dishes[day];
+                const d = dishes[pill.dataset.day];
                 if (d) {
+                  box.querySelector('#tut-dish-timing').textContent = d.timing;
                   box.querySelector('#tut-dish-name').textContent = d.name;
                   box.querySelector('#tut-dish-macros').textContent = d.macros;
                 }
@@ -564,36 +634,36 @@ function getTutorialConfig(pageKey, isEn) {
           },
         },
         {
-          tag: isEn ? 'Step 2: 1-Tap Dish Swap' : 'Langkah 2: Tukar Lauk 1-Sentuhan',
-          title: isEn ? 'Don\'t Like It? Instant Dish Swap!' : 'Tak Suka Menu Cadangan? Tukar Serta-Merta!',
+          tag: isEn ? 'Swap Dish' : 'Tukar Lauk',
+          title: isEn ? 'Instant Dish Swap & Diet Preferences' : 'Tukar Lauk 1-Sentuhan & Keutamaan Diet',
           desc: isEn
-            ? 'Tap "Swap Dish" to rotate healthy alternatives with matching nutritional calories and protein macros.'
-            : 'Sentuh "Tukar Lauk" untuk menggantikan menu dengan hidangan alternatif sihat yang mempunyai jumlah kalori dan protein setara.',
+            ? 'Tap "Swap Dish" on any meal to instantly rotate an alternative healthy Malaysian dish with matching nutritional macros.'
+            : 'Sentuh "Tukar Lauk" pada mana-mana hidangan untuk menggantikan menu alternatif sihat yang mempunyai makro setara.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Smart Dish Swap' : 'Tukar Lauk Pintar'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Preserves calorie budget' : 'Kekalkan bajet kalori'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Preserves calorie target' : 'Kekalkan sasaran kalori'}</span>
               </div>
               <div class="t-dish-preview-card" id="tut-swap-card">
                 <div>
-                  <div style="font-size:10px;font-weight:700;color:#f59e0b;text-transform:uppercase">${isEn ? 'CURRENT SELECTION' : 'LAUK TERPILIH'}</div>
-                  <div style="font-weight:800;color:#fff;font-size:13.5px;margin:2px 0" id="tut-swap-name">🍗 Ayam Masak Merah Sihat</div>
-                  <div class="xs muted" id="tut-swap-meta">460 kcal · 36g Protein · Kurang Minyak</div>
+                  <div style="font-size:10px;font-weight:700;color:#f59e0b;text-transform:uppercase">${isEn ? 'CURRENT SELECTION' : 'MENU SEMASA'}</div>
+                  <div style="font-weight:700;color:#fff;font-size:13px;margin:2px 0" id="tut-swap-name">Ayam Masak Lemak Cili Api & Nasi</div>
+                  <div class="xs muted" id="tut-swap-meta">680 kcal · 54g Protein</div>
                 </div>
               </div>
               <button type="button" class="btn btn-secondary btn-block" id="tut-swap-btn" style="gap:8px">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
-                <span>${isEn ? '⇄ Swap Dish Now' : '⇄ Tukar Lauk Sekarang'}</span>
+                <span style="width:14px;height:14px;display:inline-flex">${icons.refresh}</span>
+                <span>${isEn ? 'Swap Dish' : 'Tukar Lauk'}</span>
               </button>
             </div>
           `,
           mount: (box) => {
             const alts = [
-              { name: isEn ? '🐟 Sambal Grilled Fish (Air Asam)' : '🐟 Ikan Kembung Bakar Air Asam', meta: '320 kcal · 32g Protein' },
-              { name: isEn ? '🍲 Steamed Lime & Ginger Sea Bass' : '🍲 Ikan Siakap Stim Limau & Halia', meta: '290 kcal · 38g Protein' },
-              { name: isEn ? '🍳 Turmeric Chicken Breast Stir-Fry' : '🍳 Ayam Kunyit Dada Sayur Campur', meta: '380 kcal · 35g Protein' },
-              { name: isEn ? '🍗 Healthy Ayam Masak Merah' : '🍗 Ayam Masak Merah Sihat', meta: '460 kcal · 36g Protein' },
+              { name: 'Ikan Kembung Bakar Air Asam', meta: '520 kcal · 44g Protein' },
+              { name: 'Nasi Ayam Stim Hainan', meta: '590 kcal · 46g Protein' },
+              { name: 'Sup Daging Empuk & Kentang', meta: '610 kcal · 46g Protein' },
+              { name: 'Ayam Masak Lemak Cili Api & Nasi', meta: '680 kcal · 54g Protein' },
             ];
             let idx = 0;
             const btn = box.querySelector('#tut-swap-btn');
@@ -604,8 +674,8 @@ function getTutorialConfig(pageKey, isEn) {
             btn?.addEventListener('click', () => {
               idx = (idx + 1) % alts.length;
               if (cardEl) {
-                cardEl.style.transform = 'scale(0.96)';
-                setTimeout(() => (cardEl.style.transform = 'scale(1)'), 150);
+                cardEl.style.transform = 'scale(0.97)';
+                setTimeout(() => (cardEl.style.transform = 'scale(1)'), 140);
               }
               if (nameEl) nameEl.textContent = alts[idx].name;
               if (metaEl) metaEl.textContent = alts[idx].meta;
@@ -614,30 +684,30 @@ function getTutorialConfig(pageKey, isEn) {
           },
         },
         {
-          tag: isEn ? 'Step 3: AI Kitchen Generator' : 'Langkah 3: Penjana Resipi AI',
-          title: isEn ? 'Cook From Whatever You Have' : 'Masak Dari Bahan Dapur Anda',
+          tag: isEn ? 'AI Generator' : 'Penjana AI',
+          title: isEn ? 'Generate Recipes From Available Ingredients' : 'Cipta Resipi Dari Bahan Dapur Anda',
           desc: isEn
-            ? 'Select ingredients in your fridge or kitchen, and CalMal AI generates high-protein, calorie-friendly Malaysian meals in seconds.'
-            : 'Pilih bahan yang ada dalam peti sejuk anda, dan AI akan mencadangkan hidangan sihat, jimat, dan pantas mengikut selera tempatan.',
+            ? 'Switch to the Generator tab to create personalized recipes from ingredients you have or fridge photos.'
+            : 'Pergi ke tab Penjana untuk mencipta resipi sihat daripada bahan dapur yang ada atau foto peti sejuk anda.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'AI Chef Generator' : 'Penjana Resipi AI'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Tap ingredients' : 'Pilih bahan dapur'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Select available items' : 'Pilih bahan dapur'}</span>
               </div>
               <div class="t-chips-list">
-                <button type="button" class="t-food-chip t-added" data-ing="egg">🥚 ${isEn ? 'Egg' : 'Telur'}</button>
-                <button type="button" class="t-food-chip t-added" data-ing="chicken">🍗 ${isEn ? 'Chicken' : 'Dada Ayam'}</button>
-                <button type="button" class="t-food-chip" data-ing="spinach">🥬 ${isEn ? 'Spinach' : 'Bayam'}</button>
-                <button type="button" class="t-food-chip" data-ing="garlic">🧄 ${isEn ? 'Garlic' : 'Bawang Putih'}</button>
+                <button type="button" class="t-food-chip t-added" data-ing="egg">Telur</button>
+                <button type="button" class="t-food-chip t-added" data-ing="chicken">Dada Ayam</button>
+                <button type="button" class="t-food-chip" data-ing="spinach">Bayam</button>
+                <button type="button" class="t-food-chip" data-ing="garlic">Bawang Putih</button>
               </div>
               <button type="button" class="btn btn-primary btn-block" id="tut-gen-btn" style="gap:8px">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-                <span>${isEn ? '✨ Generate AI Recipe' : '✨ Jana Resipi AI'}</span>
+                <span style="width:14px;height:14px;display:inline-flex">${icons.sparkles}</span>
+                <span>${isEn ? 'Generate Recipe' : 'Jana Resipi'}</span>
               </button>
               <div id="tut-gen-res" style="display:none;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:8px 12px;font-size:11.5px">
-                <div style="color:#34d399;font-weight:800">🍳 ${isEn ? 'Stir-Fry Garlic Chicken & Egg (280 kcal)' : 'Tumis Ayam Telur Bawang Putih (280 kcal)'}</div>
-                <div class="xs muted" style="margin-top:2px">36g Protein · Ready in 10 mins · Low sodium & oil</div>
+                <div style="color:#34d399;font-weight:700">Tumis Dada Ayam & Bayam Bawang Putih</div>
+                <div class="xs muted" style="margin-top:2px">280 kcal · 36g Protein · Siap dalam 10 minit · Rendah minyak</div>
               </div>
             </div>
           `,
@@ -654,35 +724,35 @@ function getTutorialConfig(pageKey, isEn) {
 
             btn?.addEventListener('click', () => {
               btn.disabled = true;
-              btn.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px"></span> <span>${isEn ? 'Cooking with AI...' : 'AI Sedang Menjana...'}</span>`;
+              btn.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px"></span> <span>${isEn ? 'Generating...' : 'Menjana...'}</span>`;
               soundboard.playUISound('confirm');
               setTimeout(() => {
                 btn.disabled = false;
-                btn.innerHTML = `<span>${isEn ? '✓ Recipe Ready!' : '✓ Resipi Siap!'}</span>`;
+                btn.innerHTML = `<span style="width:14px;height:14px;display:inline-flex">${icons.check}</span> <span>${isEn ? 'Recipe Ready' : 'Resipi Siap'}</span>`;
                 if (res) res.style.display = 'block';
                 soundboard.playUISound('confirm');
-              }, 420);
+              }, 400);
             });
           },
         },
         {
-          tag: isEn ? 'Step 4: Market Shopping Tips' : 'Langkah 4: Panduan Pasar Segar',
-          title: isEn ? 'Malaysian Grocer & Wet Market Guide' : 'Tips Membeli Di Pasar Pagi & Pasar Raya',
+          tag: isEn ? 'Market Guide' : 'Panduan Pasar',
+          title: isEn ? 'Fresh Market & Grocer Shopping Tips' : 'Tips Pembelian Bahan Segar & Jimat',
           desc: isEn
-            ? 'Learn how to pick fresh lean proteins (kembung fish, chicken breast) and budget greens with maximum satiety.'
-            : 'Ketahui cara memilih sumber protein tinggi (ikan kembung, dada ayam, telur) dan sayur kampung paling jimat berkhasiat.',
+            ? 'Tap the Market Guide card at the bottom of the screen to view strategies for fresh proteins and budget-friendly greens.'
+            : 'Sentuh kad Panduan Pasar di bahagian bawah skrin untuk melihat panduan membeli bahan basah segar dan jimat.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Smart Buyer Tips' : 'Tips Jimat & Sihat'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Malaysian Grocers' : 'Pasar Tempatan'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Grocers & Wet Markets' : 'Pasar Pagi & Pasar Raya'}</span>
               </div>
               <div style="display:flex;flex-direction:column;gap:6px">
                 <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 10px;font-size:11.5px">
-                  <strong style="color:#60a5fa">🐟 Ikan Kembung & Siakap:</strong> <span style="color:#cbd5e1">${isEn ? 'High Omega-3, budget friendly at morning wet markets.' : 'Tinggi Omega-3, harga paling jimat di pasar pagi.'}</span>
+                  <strong style="color:#60a5fa">Ikan Kembung & Siakap:</strong> <span style="color:#cbd5e1">${isEn ? 'High Omega-3, best value and freshness at morning markets.' : 'Tinggi Omega-3, kualiti paling segar dan jimat di pasar pagi.'}</span>
                 </div>
                 <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 10px;font-size:11.5px">
-                  <strong style="color:#34d399">🍗 Dada Ayam Segar:</strong> <span style="color:#cbd5e1">${isEn ? '31g protein per 100g. Request skinless cut.' : '31g protein setiap 100g. Minta buang kulit & lemak.'}</span>
+                  <strong style="color:#34d399">Dada Ayam Segar:</strong> <span style="color:#cbd5e1">${isEn ? '31g protein per 100g. Request skinless cut.' : '31g protein per 100g. Minta buang kulit dan lemak.'}</span>
                 </div>
               </div>
             </div>
@@ -693,20 +763,20 @@ function getTutorialConfig(pageKey, isEn) {
     },
 
     activity: {
-      category: isEn ? 'GPS Activity Tracker' : 'Penjejak GPS Aktiviti',
+      category: isEn ? 'GPS Activity Tracker' : 'Penjejak Aktiviti GPS',
       icon: icons.run,
       steps: [
         {
-          tag: isEn ? 'Step 1: Live GPS Running HUD' : 'Langkah 1: HUD GPS Masa Nyata',
-          title: isEn ? 'Strava-Style Outdoor Running HUD' : 'Paparan HUD Larian & Kayuhan Bergaya Strava',
+          tag: isEn ? 'Live GPS HUD' : 'GPS Masa Nyata',
+          title: isEn ? 'Strava-Style Outdoor Activity HUD' : 'Paparan HUD Aktiviti Luar Bergaya Strava',
           desc: isEn
-            ? 'Track your pace, distance, and calories burned with real-time HUD metrics and live GPS mapping.'
-            : 'Pantau kelajuan, jarak, purata pace (min/km), dan kalori terbakar dengan paparan HUD berprestasi tinggi.',
+            ? 'Track your outdoor walks, runs, and rides with live distance, elapsed time, average pace (min/km), and estimated calories burned.'
+            : 'Pantau aktiviti jalan, larian atau kayuhan dengan paparan masa nyata: jarak (km), masa, purata pace (min/km), dan kalori terbakar.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Live HUD Simulator' : 'Simulasi HUD Masa Nyata'}</span>
-                <span class="tutorial-widget-tip" id="tut-gps-status" style="color:#34d399">● READY</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip" id="tut-gps-status" style="color:#34d399">READY</span>
               </div>
               <div class="t-hud-grid">
                 <div class="t-hud-item">
@@ -714,7 +784,7 @@ function getTutorialConfig(pageKey, isEn) {
                   <div class="t-hud-val"><span id="tut-hud-dist">1.42</span> km</div>
                 </div>
                 <div class="t-hud-item">
-                  <div class="t-hud-lbl">${isEn ? 'TIME' : 'MASA'}</div>
+                  <div class="t-hud-lbl">${isEn ? 'DURATION' : 'MASA'}</div>
                   <div class="t-hud-val" id="tut-hud-time">08:14</div>
                 </div>
                 <div class="t-hud-item">
@@ -722,13 +792,13 @@ function getTutorialConfig(pageKey, isEn) {
                   <div class="t-hud-val">5'48" /km</div>
                 </div>
                 <div class="t-hud-item">
-                  <div class="t-hud-lbl">${isEn ? 'BURNED' : 'TERBAKAR'}</div>
+                  <div class="t-hud-lbl">${isEn ? 'CALORIES' : 'KALORI'}</div>
                   <div class="t-hud-val"><span id="tut-hud-cal">118</span> kcal</div>
                 </div>
               </div>
               <button type="button" class="btn btn-primary btn-block" id="tut-gps-toggle-btn" style="gap:8px">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                <span>${isEn ? 'Start Workout Demo' : 'Mula Uji Larian'}</span>
+                <span style="width:14px;height:14px;display:inline-flex">${icons.play}</span>
+                <span>${isEn ? 'Start Activity' : 'Mula Aktiviti'}</span>
               </button>
             </div>
           `,
@@ -750,9 +820,9 @@ function getTutorialConfig(pageKey, isEn) {
 
               if (isRunning) {
                 btn.className = 'btn btn-secondary btn-block';
-                btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> <span>${isEn ? 'Pause Workout' : 'Jeda Larian'}</span>`;
+                btn.innerHTML = `<span style="width:14px;height:14px;display:inline-flex">${icons.pause}</span> <span>${isEn ? 'Pause Activity' : 'Jeda Aktiviti'}</span>`;
                 if (statEl) {
-                  statEl.textContent = isEn ? '● TRACKING ACTIVE' : '● GPS MENJEJAK';
+                  statEl.textContent = isEn ? 'RECORDING' : 'MERAKAM';
                   statEl.style.color = '#38bdf8';
                 }
                 timer = setInterval(() => {
@@ -768,9 +838,9 @@ function getTutorialConfig(pageKey, isEn) {
               } else {
                 clearInterval(timer);
                 btn.className = 'btn btn-primary btn-block';
-                btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> <span>${isEn ? 'Resume Workout' : 'Sambung Larian'}</span>`;
+                btn.innerHTML = `<span style="width:14px;height:14px;display:inline-flex">${icons.play}</span> <span>${isEn ? 'Resume Activity' : 'Sambung Aktiviti'}</span>`;
                 if (statEl) {
-                  statEl.textContent = isEn ? '● PAUSED' : '● DIJEDA';
+                  statEl.textContent = isEn ? 'PAUSED' : 'DIJEDA';
                   statEl.style.color = '#fbbf24';
                 }
               }
@@ -780,72 +850,72 @@ function getTutorialConfig(pageKey, isEn) {
           },
         },
         {
-          tag: isEn ? 'Step 2: Simulation Mode' : 'Langkah 2: Mod Simulasi Laluan',
-          title: isEn ? 'Indoor Route Simulation' : 'Uji Laluan Tanpa Perlu Keluar Rumah',
+          tag: isEn ? 'Simulation Mode' : 'Mod Simulasi',
+          title: isEn ? 'Simulation Mode for Indoor Testing' : 'Mod Simulasi untuk Ujian Dalam Rumah',
           desc: isEn
-            ? 'Test route playback and speedometer calculations indoors anytime using CalMal\'s built-in simulation mode.'
-            : 'Gunakan Mod Simulasi untuk menguji sistem GPS dan visualisasi laluan peta tanpa perlu berlari di luar rumah.',
+            ? 'Toggle "Simulation Mode" in the top bar to test route recording, speed, and GPS mapping without stepping outside.'
+            : 'Aktifkan "Mod Simulasi" di bar atas untuk menguji rakaman laluan, kelajuan, dan peta GPS tanpa perlu keluar dari rumah.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Route Simulation' : 'Simulasi Laluan'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Test without stepping outside' : 'Uji dalam bilik'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Test without GPS movement' : 'Uji tanpa pergerakan GPS'}</span>
               </div>
-              <div style="background:#090c10;border-radius:10px;height:70px;position:relative;overflow:hidden;border:1px solid rgba(56,189,248,0.2);display:flex;align-items:center;padding:0 20px">
+              <div style="background:#090c10;border-radius:10px;height:64px;position:relative;overflow:hidden;border:1px solid rgba(56,189,248,0.2);display:flex;align-items:center;padding:0 20px">
                 <div style="position:absolute;left:20px;right:20px;height:3px;background:linear-gradient(90deg, #10b981, #38bdf8);border-radius:3px"></div>
-                <div id="tut-runner-dot" style="position:absolute;left:20px;width:14px;height:14px;border-radius:50%;background:#38bdf8;box-shadow:0 0 10px #38bdf8;transition:left 1.2s ease"></div>
+                <div id="tut-runner-dot" style="position:absolute;left:20px;width:12px;height:12px;border-radius:50%;background:#38bdf8;box-shadow:0 0 10px #38bdf8;transition:left 1s ease"></div>
               </div>
               <div class="row gap-2">
-                <button type="button" class="t-demo-btn" id="tut-speed-walk" style="flex:1">🚶 4 km/j</button>
-                <button type="button" class="t-demo-btn" id="tut-speed-run" style="flex:1;border-color:#10b981;color:#34d399">🏃 9 km/j</button>
-                <button type="button" class="t-demo-btn" id="tut-speed-cycle" style="flex:1">🚴 18 km/j</button>
+                <button type="button" class="t-demo-btn" id="tut-speed-walk" style="flex:1">${isEn ? 'Walk 4 km/h' : 'Jalan 4 km/j'}</button>
+                <button type="button" class="t-demo-btn" id="tut-speed-run" style="flex:1;border-color:#10b981;color:#34d399">${isEn ? 'Run 9 km/h' : 'Lari 9 km/j'}</button>
+                <button type="button" class="t-demo-btn" id="tut-speed-cycle" style="flex:1">${isEn ? 'Cycle 18 km/h' : 'Kayuh 18 km/j'}</button>
               </div>
             </div>
           `,
           mount: (box) => {
             const dot = box.querySelector('#tut-runner-dot');
             box.querySelector('#tut-speed-walk')?.addEventListener('click', () => {
-              if (dot) dot.style.left = '40%';
+              if (dot) dot.style.left = '35%';
               soundboard.playUISound('stepper');
             });
             box.querySelector('#tut-speed-run')?.addEventListener('click', () => {
-              if (dot) dot.style.left = '75%';
+              if (dot) dot.style.left = '70%';
               soundboard.playUISound('stepper');
             });
             box.querySelector('#tut-speed-cycle')?.addEventListener('click', () => {
-              if (dot) dot.style.left = '90%';
+              if (dot) dot.style.left = '92%';
               soundboard.playUISound('confirm');
             });
           },
         },
         {
-          tag: isEn ? 'Step 3: Burn-to-Earn Sync' : 'Langkah 3: Segerak Kalori Terbakar',
-          title: isEn ? 'Burned Calories Boost Daily Budget' : 'Kalori Terbakar Tambah Kuota Makan',
+          tag: isEn ? 'Auto Calorie Sync' : 'Segerak Kalori',
+          title: isEn ? 'Burned Calories Sync to Dashboard' : 'Segerak Kalori Terbakar ke Dashboard',
           desc: isEn
-            ? 'Every workout completed automatically credits burned calories directly back to your dashboard food allowance!'
-            : 'Setiap larian disegerakkan terus ke Dashboard untuk menambah kuota makanan harian anda secara automatik!',
+            ? 'Completed activities automatically credit burned calories directly to your dashboard calorie balance, expanding your food quota.'
+            : 'Aktiviti yang selesai disimpan akan disegerakkan terus ke Dashboard: kalori terbakar ditambah ke baki kuota makanan harian anda.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Calorie Sync Demo' : 'Segerak Automatik'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Tap to sync' : 'Sentuh untuk segerak'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Automatic dashboard sync' : 'Segerak automatik'}</span>
               </div>
               <div style="background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px">
-                <div class="row between" style="font-size:12px;margin-bottom:6px">
-                  <span style="color:#94a3b8">${isEn ? 'Food Allowance Before:' : 'Kuota Makanan Asal:'}</span>
-                  <span style="font-weight:700;color:#fff">1,800 kcal</span>
+                <div class="row between" style="font-size:12px;margin-bottom:5px">
+                  <span style="color:#94a3b8">${isEn ? 'Food Target:' : 'Sasaran Makanan:'}</span>
+                  <span style="font-weight:700;color:#fff">2,000 kcal</span>
                 </div>
-                <div class="row between" style="font-size:12px;margin-bottom:6px">
-                  <span style="color:#38bdf8">${isEn ? 'Workout Burned (5km):' : 'Larian Terbakar (5km):'}</span>
+                <div class="row between" style="font-size:12px;margin-bottom:5px">
+                  <span style="color:#38bdf8">${isEn ? 'Workout Burned:' : 'Larian Terbakar:'}</span>
                   <span style="font-weight:700;color:#38bdf8">+ 350 kcal</span>
                 </div>
                 <div class="row between" style="font-size:13px;padding-top:6px;border-top:1px dashed rgba(255,255,255,0.1)">
-                  <span style="color:#34d399;font-weight:700">${isEn ? 'New Food Budget:' : 'Kuota Baharu Anda:'}</span>
-                  <span style="font-weight:900;color:#34d399;font-size:16px" id="tut-sync-total">2,150 kcal</span>
+                  <span style="color:#34d399;font-weight:700">${isEn ? 'New Calorie Allowance:' : 'Kuota Makanan Baharu:'}</span>
+                  <span style="font-weight:900;color:#34d399;font-size:16px" id="tut-sync-total">2,350 kcal</span>
                 </div>
               </div>
               <button type="button" class="btn btn-primary btn-block" id="tut-sync-btn">
-                <span>⚡ ${isEn ? 'Simulate Activity Sync' : 'Uji Segerak Aktiviti'}</span>
+                <span>${isEn ? 'Simulate Activity Sync' : 'Uji Segerak Aktiviti'}</span>
               </button>
             </div>
           `,
@@ -857,13 +927,13 @@ function getTutorialConfig(pageKey, isEn) {
               btn.disabled = true;
               soundboard.playUISound('confirm');
               if (total) {
-                total.style.transform = 'scale(1.15)';
-                total.style.color = '#fbbf24';
+                total.style.transform = 'scale(1.1)';
+                total.style.color = '#38bdf8';
                 setTimeout(() => {
                   total.style.transform = 'scale(1)';
                   total.style.color = '#34d399';
                   btn.disabled = false;
-                }, 300);
+                }, 250);
               }
             });
           },
@@ -872,40 +942,40 @@ function getTutorialConfig(pageKey, isEn) {
     },
 
     profile: {
-      category: isEn ? 'Profile & Hero Coach' : 'Profil & Jurulatih',
+      category: isEn ? 'Profile & Preferences' : 'Profil & Tetapan',
       icon: icons.user,
       steps: [
         {
-          tag: isEn ? 'Step 1: BMR & TDEE Calibration' : 'Langkah 1: Kalibrasi BMR & TDEE',
-          title: isEn ? 'Scientifically Tailored To Your Body' : 'Kiraan Tepat Mengikut Tubuh Anda',
+          tag: isEn ? 'Body Biometrics' : 'Statistik Badan',
+          title: isEn ? 'Scientific BMR & TDEE Calibration' : 'Kalibrasi BMR & TDEE Saintifik',
           desc: isEn
-            ? 'Mifflin-St Jeor formula calculates your exact calorie targets based on your height, weight, age, and fitness goals.'
-            : 'Formula saintifik mengira keperluan kalori harian berasaskan tinggi, berat, umur, dan matlamat badan anda.',
+            ? 'Tap "Edit Profile" to update height, weight, target goal, and age for exact Mifflin-St Jeor daily calorie targets.'
+            : 'Sentuh "Edit Profil" untuk mengemas kini tinggi, berat, umur dan sasaran bagi pengiraan BMR & TDEE yang tepat.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Fitness Goal Selector' : 'Pilihan Sasaran'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Live target recalibration' : 'Kiraan automatik'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Select fitness goal' : 'Pilih matlamat kecergasan'}</span>
               </div>
               <div class="row gap-2">
-                <button type="button" class="t-demo-btn active" id="goal-fat" style="flex:1;border-color:#10b981;color:#34d399">🔥 ${isEn ? 'Fat Loss' : 'Bakar Lemak'}</button>
-                <button type="button" class="t-demo-btn" id="goal-keep" style="flex:1">⚖️ ${isEn ? 'Maintain' : 'Kekal'}</button>
-                <button type="button" class="t-demo-btn" id="goal-bulk" style="flex:1">💪 ${isEn ? 'Muscle' : 'Bina Otot'}</button>
+                <button type="button" class="t-demo-btn active" id="goal-fat" style="flex:1;border-color:#10b981;color:#34d399">${isEn ? 'Fat Loss' : 'Bakar Lemak'}</button>
+                <button type="button" class="t-demo-btn" id="goal-keep" style="flex:1">${isEn ? 'Maintain' : 'Kekal Berat'}</button>
+                <button type="button" class="t-demo-btn" id="goal-bulk" style="flex:1">${isEn ? 'Build Muscle' : 'Bina Otot'}</button>
               </div>
               <div style="background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px">
                 <div class="row between" style="margin-bottom:4px">
                   <span class="xs muted">${isEn ? 'Daily Calorie Target' : 'Sasaran Kalori Harian'}</span>
                   <span style="font-size:16px;font-weight:900;color:#38bdf8" id="tut-goal-target">1,650 kcal</span>
                 </div>
-                <div class="xs muted" id="tut-goal-macro">Protein: 140g · Carbs: 160g · Fat: 45g</div>
+                <div class="xs muted" id="tut-goal-macro">${isEn ? 'Protein: 140g · Carbs: 160g · Fat: 45g (BMI 24.2)' : 'Protein: 140g · Karbo: 160g · Lemak: 45g (BMI 24.2)'}</div>
               </div>
             </div>
           `,
           mount: (box) => {
             const targets = {
               fat: { kcal: '1,650 kcal', macros: isEn ? 'Deficit -500 kcal · High Protein (140g)' : 'Defisit -500 kcal · Tinggi Protein (140g)' },
-              keep: { kcal: '2,150 kcal', macros: isEn ? 'Maintenance TDEE · Balanced Energy' : 'Kekal Berat TDEE · Nutrisi Seimbang' },
-              bulk: { kcal: '2,450 kcal', macros: isEn ? 'Surplus +300 kcal · Hypertrophy Fuel' : 'Lebihan +300 kcal · Pembinaan Otot' },
+              keep: { kcal: '2,150 kcal', macros: isEn ? 'Maintenance TDEE · Balanced Nutrition' : 'Kekal Berat TDEE · Nutrisi Seimbang' },
+              bulk: { kcal: '2,450 kcal', macros: isEn ? 'Surplus +300 kcal · Muscle Fuel' : 'Lebihan +300 kcal · Pembinaan Otot' },
             };
 
             ['fat', 'keep', 'bulk'].forEach((key) => {
@@ -925,64 +995,111 @@ function getTutorialConfig(pageKey, isEn) {
           },
         },
         {
-          tag: isEn ? 'Step 2: Anime Voice Coach' : 'Langkah 2: Suara Jurulatih Anime',
-          title: isEn ? 'Deku & Bakugou Japanese Dialogue' : 'Suara Asli Anime Deku & Bakugou',
+          tag: isEn ? 'AI Hero Coach' : 'Jurulatih Hero AI',
+          title: isEn ? 'Hero Voice Coach & Sound FX' : 'Suara Asli Jurulatih Deku & Bakugou',
           desc: isEn
-            ? 'Choose between encouraging Deku or fierce Bakugou for genuine anime motivational energy in your workouts!'
-            : 'Pilih antara Deku (penyokong setia) atau Bakugou (motivasi garang) untuk menyemarakkan disiplin kecergasan anda.',
+            ? 'Switch between Deku and Bakugou for motivational voice lines and commentary based on your workout and nutrition.'
+            : 'Pilih antara Deku dan Bakugou untuk suara motivasi dan ulasan audio mengikut pencapaian nutrisi dan senaman anda.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Anime Audio' : 'Audio Anime Asli'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Japanese Voice' : 'Suara Jepun'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Japanese Voice Lines' : 'Suara Asli Jepun'}</span>
               </div>
               <div class="row gap-2">
                 <button type="button" class="btn btn-secondary btn-block" id="tut-prof-deku" style="flex:1;border-color:rgba(16,185,129,0.4)">
-                  <span>🥦 Deku</span>
+                  <span>Izuku Midoriya (Deku)</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-block" id="tut-prof-baku" style="flex:1;border-color:rgba(249,115,22,0.4)">
-                  <span>💥 Bakugou</span>
+                  <span>Katsuki Bakugou</span>
                 </button>
               </div>
               <div id="tut-prof-quote" style="background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;font-size:11.5px">
-                <div style="font-weight:700;color:#34d399" id="tut-prof-ja">大丈夫！(Daijoubu!)</div>
-                <div class="xs muted" id="tut-prof-ms">"Jangan risau, mari capai matlamat kecergasan hari ini!"</div>
+                <div class="row" style="gap:6px;align-items:center;font-size:11.5px;color:#34d399;margin-bottom:3px;font-weight:600">
+                  <span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1)">JP</span>
+                  <span id="tut-prof-ja">大丈夫！</span>
+                </div>
+                <div class="xs muted" id="tut-prof-ms">
+                  ${isEn ? 'Don’t worry, you’ve got this! Let’s break through limits!' : 'Jangan risau, semuanya akan baik-baik saja! Mari melepasi had batasan!'}
+                </div>
               </div>
+              <button type="button" class="btn btn-secondary btn-block" id="tut-prof-play-btn" style="gap:8px">
+                <span style="width:14px;height:14px;display:inline-flex">${icons.sound}</span>
+                <span id="tut-prof-play-label">${isEn ? 'Play Hero Voice Line' : 'Dengar Suara Hero'}</span>
+              </button>
             </div>
           `,
           mount: (box) => {
-            box.querySelector('#tut-prof-deku')?.addEventListener('click', () => {
-              box.querySelector('#tut-prof-ja').textContent = '大丈夫！(Daijoubu!)';
-              box.querySelector('#tut-prof-ms').textContent = isEn ? '"Don’t worry, you’ve got this!"' : '"Jangan risau, mari capai sasaran hari ini!"';
-              box.querySelector('#tut-prof-ja').style.color = '#34d399';
-              soundboard.playSound('deku', 'greet');
+            let activeChar = 'deku';
+            const dekuBtn = box.querySelector('#tut-prof-deku');
+            const bakuBtn = box.querySelector('#tut-prof-baku');
+            const jaEl = box.querySelector('#tut-prof-ja');
+            const msEl = box.querySelector('#tut-prof-ms');
+            const playBtn = box.querySelector('#tut-prof-play-btn');
+            const playLabel = box.querySelector('#tut-prof-play-label');
+
+            dekuBtn?.addEventListener('click', () => {
+              activeChar = 'deku';
+              dekuBtn.style.borderColor = '#10b981';
+              bakuBtn.style.borderColor = 'rgba(255,255,255,0.12)';
+              jaEl.textContent = '大丈夫！';
+              jaEl.style.color = '#34d399';
+              msEl.textContent = isEn
+                ? 'Don’t worry, you’ve got this! Let’s break through limits!'
+                : 'Jangan risau, semuanya akan baik-baik saja! Mari melepasi had batasan!';
+              soundboard.playUISound('toggle-on');
             });
 
-            box.querySelector('#tut-prof-baku')?.addEventListener('click', () => {
-              box.querySelector('#tut-prof-ja').textContent = 'おいおいおい！(Oi oi oi!)';
-              box.querySelector('#tut-prof-ms').textContent = isEn ? '"Hey! Break through your limits!"' : '"Pecahkan had batasan kau, jangan malas!"';
-              box.querySelector('#tut-prof-ja').style.color = '#f97316';
-              soundboard.playSound('bakugou', 'greet');
+            bakuBtn?.addEventListener('click', () => {
+              activeChar = 'bakugou';
+              bakuBtn.style.borderColor = '#f97316';
+              dekuBtn.style.borderColor = 'rgba(255,255,255,0.12)';
+              jaEl.textContent = 'おいおいおい！';
+              jaEl.style.color = '#f97316';
+              msEl.textContent = isEn
+                ? 'Oi oi oi! Break through your limits, don’t slack off!'
+                : 'Oi oi oi! Pecahkan had batasan kau, jangan malas!';
+              soundboard.playUISound('toggle-on');
+            });
+
+            playBtn?.addEventListener('click', () => {
+              playBtn.disabled = true;
+              if (playLabel) playLabel.textContent = isEn ? 'Playing Audio...' : 'Memainkan Suara...';
+
+              const picked = soundboard.pickNextLine(activeChar);
+              if (picked?.line) {
+                jaEl.textContent = picked.line.ja;
+                msEl.textContent = isEn ? picked.line.en : picked.line.ms;
+                soundboard.playLineAudio(activeChar, picked.line).catch(() => {});
+              } else {
+                soundboard.play(activeChar, 'greet').catch(() => {});
+              }
+
+              setTimeout(() => {
+                playBtn.disabled = false;
+                if (playLabel) playLabel.textContent = isEn ? 'Play Hero Voice Line' : 'Dengar Suara Hero';
+              }, 2200);
             });
           },
         },
         {
-          tag: isEn ? 'Step 3: Offline Privacy & Language' : 'Langkah 3: Privasi Luar Talian & Bahasa',
-          title: isEn ? 'Local-First Privacy & Bilingual App' : '100% Privasi Tempatan & Dwi-Bahasa',
+          tag: isEn ? 'Privacy & Language' : 'Privasi & Bahasa',
+          title: isEn ? 'Local-First Privacy & Bilingual App' : 'Privasi Tempatan & Dwi-Bahasa',
           desc: isEn
-            ? 'CalMal works completely offline with secure local device storage. Toggle between English and Bahasa Melayu anytime.'
-            : 'CalMal beroperasi luar talian (local-first) tanpa menjual data anda. Tukar antara Bahasa Melayu dan English bila-bila masa.',
+            ? 'CalMal is local-first; personal stats are stored securely on your device. Switch between English and Bahasa Melayu anytime.'
+            : 'CalMal berorientasikan privasi setempat (local-first); data disimpan selamat dalam peranti anda. Beralih bahasa bila-bila masa.',
           renderWidget: () => `
             <div class="tutorial-widget-box" id="tut-widget-box">
               <div class="tutorial-widget-header">
-                <span class="tutorial-widget-badge">⚡ ${isEn ? 'Local Storage' : 'Privasi Peranti'}</span>
-                <span class="tutorial-widget-tip">${isEn ? 'Zero cloud tracking' : 'Bebas penjejakan'}</span>
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Encrypted IndexedDB' : 'Storan selamat'}</span>
               </div>
-              <div style="display:flex;align-items:center;gap:10px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:10px;padding:10px 12px">
-                <div style="font-size:24px">🔒</div>
-                <div>
-                  <div style="font-weight:700;color:#34d399;font-size:12px">${isEn ? '100% Local-First Storage' : '100% Data Disimpan Dalam Peranti'}</div>
-                  <div class="xs muted">${isEn ? 'Encrypted IndexedDB & offline PWA ready' : 'Storan selamat IndexedDB & sokongan PWA'}</div>
+              <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.22);border-radius:10px;padding:10px 12px">
+                <div style="font-weight:700;color:#34d399;font-size:12.5px;margin-bottom:2px">
+                  ${isEn ? 'Local-First Device Storage' : '100% Data Disimpan Selamat Dalam Peranti'}
+                </div>
+                <div class="xs muted" style="line-height:1.45">
+                  ${isEn ? 'Zero cloud tracking. Works fully offline as a standalone Progressive Web App.' : 'Bebas penjejakan awan. Berfungsi sepenuhnya luar talian sebagai Progressive Web App.'}
                 </div>
               </div>
             </div>
@@ -1015,7 +1132,7 @@ export function openPageTutorial(pageKey) {
       <div class="tutorial-topbar">
         <div class="tutorial-badge-row">
           <span class="tutorial-cat-pill">
-            <span style="width:14px;height:14px;display:inline-flex">${config.icon}</span>
+            <span style="width:13px;height:13px;display:inline-flex">${config.icon}</span>
             <span>${esc(config.category)}</span>
           </span>
           <span class="tutorial-step-indicator" id="tut-step-ind">1 / ${totalSteps}</span>
@@ -1107,7 +1224,7 @@ export function openPageTutorial(pageKey) {
     if (nextBtn) {
       if (idx === totalSteps - 1) {
         nextBtn.className = 'btn tutorial-finish-btn tutorial-nav-btn';
-        nextBtn.innerHTML = `<span>${isEn ? '✓ Got It' : '✓ Faham & Selesai'}</span>`;
+        nextBtn.innerHTML = `<span>${isEn ? 'Got It' : 'Faham'}</span>`;
       } else {
         nextBtn.className = 'btn btn-primary tutorial-nav-btn';
         nextBtn.innerHTML = `<span>${isEn ? 'Next ›' : 'Seterusnya ›'}</span>`;
@@ -1119,7 +1236,6 @@ export function openPageTutorial(pageKey) {
       slideContainer.innerHTML = `
         <div class="tutorial-step-header">
           <div class="tutorial-step-tag">
-            <span style="font-size:12px">✨</span>
             <span>${esc(step.tag)}</span>
           </div>
           <h3 class="tutorial-step-title">${esc(step.title)}</h3>
