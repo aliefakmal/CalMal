@@ -7,8 +7,7 @@ import { toast, confirmSheet, routeThumbSVG, openSheet } from '../components/ui.
 import { formatPace, formatDuration, metLabel, metForSpeed } from '../utils/calc.js';
 import { onActivityFinished } from '../services/companionService.js';
 import { esc, fmtTime } from '../utils/helpers.js';
-import { t, getLang, toggleLang } from '../utils/i18n.js';
-import { openPageTutorial } from '../utils/tutorials.js';
+import { t, getLang } from '../utils/i18n.js';
 
 export function renderActivity(container) {
   let map = null;
@@ -33,25 +32,16 @@ export function renderActivity(container) {
           <span class="eyebrow">${t('act_eyebrow')}</span>
           <h1 class="page-title">${t('act_title')}</h1>
         </div>
-        <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">
-          <button type="button" class="btn-guide-pill" id="activity-tutorial-btn" title="${isEn ? 'Activity Tutorial' : 'Panduan Aktiviti'}">
-            ${icons.help}
-            <span>${isEn ? 'Tutorial' : 'Panduan'}</span>
-          </button>
-          <button type="button" class="lang-pill-btn" id="activity-lang-toggle" title="Switch Language / Tukar Bahasa (EN / BM)">
-            <span class="lang-icon">${icons.globe}</span>
-            <span class="lang-cur">${getLang().toUpperCase()}</span>
-            <span class="lang-alt">${getLang() === 'en' ? 'BM' : 'EN'}</span>
-          </button>
-          ${
-            stats.status === 'idle'
-              ? `<label class="chip ${isSim ? 'active' : ''}" id="sim-toggle-btn" style="cursor:pointer">
+        ${
+          stats.status === 'idle'
+            ? `<div class="row" style="gap:8px;align-items:center">
+                <label class="chip ${isSim ? 'active' : ''}" id="sim-toggle-btn" style="cursor:pointer;margin:0">
                   <input type="checkbox" id="sim-checkbox" class="hidden" ${isSim ? 'checked' : ''} />
                   <span>${isEn ? 'Simulation Mode' : 'Mod Simulasi'}</span>
-                </label>`
-              : ''
-          }
-        </div>
+                </label>
+              </div>`
+            : ''
+        }
       </div>
 
       <!-- Location Permission Request Card -->
@@ -472,19 +462,6 @@ export function renderActivity(container) {
         updateMapGraphics(tracker.getStats());
         toast('Map recentered to your position.', 'info');
       }
-    });
-
-    // Page-Level Language Toggle & Tutorial Modal
-    container.querySelector('#activity-lang-toggle')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleLang();
-      render();
-    });
-
-    container.querySelector('#activity-tutorial-btn')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openPageTutorial('activity');
-      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
     });
 
     // Toggle Simulation

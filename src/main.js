@@ -13,6 +13,7 @@ import { renderScanner } from './screens/scanner.js';
 import { renderActivity } from './screens/activity.js';
 import { renderRecipes } from './screens/recipes.js';
 import { renderProfile } from './screens/profile.js';
+import { openPageTutorial } from './utils/tutorials.js';
 
 function getRoutes() {
   return {
@@ -74,6 +75,12 @@ function renderTopbar() {
   document.getElementById('topbar').innerHTML = `
     <a class="brand" href="#/home"><img src="/icon.svg" alt="" />CalMal</a>
     <div class="topbar-actions">
+      <!-- Universal Page Tutorial Button -->
+      <button type="button" class="btn-guide-pill" id="topbar-tutorial-btn" title="${lang === 'en' ? 'Page Guide & Tutorial' : 'Panduan & Tutorial Halaman'}">
+        ${icons.help}
+        <span>${lang === 'en' ? 'Tutorial' : 'Panduan'}</span>
+      </button>
+
       <!-- Universal Language Switcher Pill -->
       <button type="button" class="lang-pill-btn" id="topbar-lang-toggle" title="Switch Language / Tukar Bahasa (EN / BM)">
         <span class="lang-icon">${icons.globe}</span>
@@ -86,6 +93,13 @@ function renderTopbar() {
         <span class="dot"></span>${online ? t('topbar_online') : t('topbar_offline')}
       </span>
     </div>`;
+
+  document.getElementById('topbar-tutorial-btn')?.addEventListener('click', () => {
+    const routeKey = currentRoute();
+    const pageKey = routeKey === 'home' ? 'dashboard' : routeKey;
+    openPageTutorial(pageKey);
+    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+  });
 
   document.getElementById('topbar-lang-toggle')?.addEventListener('click', () => {
     toggleLang();

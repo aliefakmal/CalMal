@@ -6,8 +6,7 @@ import { dashboardMessage } from '../services/companionService.js';
 import { openMealEditor } from '../components/mealEditor.js';
 import { formatPace, formatDuration, calcSuggestedDailyTarget } from '../utils/calc.js';
 import { esc, fmtTime, todayKey } from '../utils/helpers.js';
-import { t, getLang, toggleLang } from '../utils/i18n.js';
-import { openPageTutorial } from '../utils/tutorials.js';
+import { t } from '../utils/i18n.js';
 
 export function renderDashboard(container) {
   let unsub = null;
@@ -46,21 +45,10 @@ export function renderDashboard(container) {
           </div>
           <h1 class="page-title">Hi, ${esc(p.name)}!</h1>
         </div>
-        <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">
-          <button type="button" class="btn-guide-pill" id="dashboard-tutorial-btn" title="${getLang() === 'en' ? 'Dashboard Tutorial' : 'Panduan Dashboard'}">
-            ${icons.help}
-            <span>${getLang() === 'en' ? 'Tutorial' : 'Panduan'}</span>
-          </button>
-          <button type="button" class="lang-pill-btn" id="dashboard-lang-toggle" title="Switch Language / Tukar Bahasa (EN / BM)">
-            <span class="lang-icon">${icons.globe}</span>
-            <span class="lang-cur">${getLang().toUpperCase()}</span>
-            <span class="lang-alt">${getLang() === 'en' ? 'BM' : 'EN'}</span>
-          </button>
-          <a href="#/scan" class="btn btn-sm btn-primary" id="btn-quick-scan">
-            ${icons.camera}
-            <span>${t('dash_scan_btn')}</span>
-          </a>
-        </div>
+        <a href="#/scan" class="btn btn-sm btn-primary" id="btn-quick-scan">
+          ${icons.camera}
+          <span>${t('dash_scan_btn')}</span>
+        </a>
       </div>
 
       <!-- Bento Grid Layout -->
@@ -438,19 +426,6 @@ export function renderDashboard(container) {
   }
 
   function bindEvents() {
-    // 0. Page-Level Language Toggle & Tutorial Modal
-    container.querySelector('#dashboard-lang-toggle')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleLang();
-      render();
-    });
-
-    container.querySelector('#dashboard-tutorial-btn')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openPageTutorial('dashboard');
-      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
-    });
-
     // 1. Adjust Daily Calorie Target Modal (Bug Fixed)
     container.querySelector('#btn-adjust-target')?.addEventListener('click', () => {
       const currentProfile = store.profile || {};

@@ -33,6 +33,26 @@ export function openPageTutorial(pageKey) {
           ];
       break;
 
+    case 'scan':
+      title = isEn ? 'AI Food & Nutrition Scanner Guide' : 'Panduan Pengimbas Makanan & Nutrisi AI';
+      desc = isEn ? 'Effortlessly log meals using camera, voice, barcode, or nutrition labels:' : 'Log hidangan dengan mudah menggunakan kamera, suara, kod bar, atau label nutrisi:';
+      steps = isEn
+        ? [
+            'Live Camera Scan: Point your camera at any meal, snap a photo, and CalMal AI identifies the dish, estimated portions, and macros.',
+            'iPhone / Photo Library: Tap "iPhone Camera" to upload a high-res photo directly from your camera roll.',
+            'Voice Note Logging: Tap "Voice Note" and describe what you ate (e.g., "Nasi lemak ayam goreng with teh tarik kurang manis").',
+            'Barcode & Label OCR: Switch tabs to scan packaged Malaysian food barcodes or snap nutrition facts tables.',
+            'Custom Notes & Quick Chips: Tap chips like "Half rice" or "Less oil" before analyzing to tune calorie accuracy.',
+          ]
+        : [
+            'Imbas Kamera AI: Halakan kamera ke hidangan anda, tangkap foto dan AI CalMal akan mengenal pasti lauk, saiz hidangan, serta makro.',
+            'Kamera Telefon / Galeri: Sentuh "Kamera Telefon" untuk memuat naik foto berkualiti tinggi dari album peranti anda.',
+            'Log Nota Suara: Sentuh "Nota Suara" dan sebut apa yang anda makan (contoh: "Nasi lemak ayam goreng dan teh tarik kurang manis").',
+            'Kod Bar & Label Nutrisi: Tukar tab untuk imbas kod bar makanan bungkusan atau tangkap jadual maklumat pemakanan.',
+            'Cip Tambahan & Catatan: Sentuh cip pantas seperti "Nasi separuh" atau "Kurang minyak" sebelum imbas untuk ketepatan kalori.',
+          ];
+      break;
+
     case 'recipes':
       title = isEn ? 'Recipes & 7-Day Meal Plan Guide' : 'Panduan Resipi & Pelan Makanan 7-Hari';
       desc = isEn ? 'How to filter, customize, swap dishes, and generate AI recipes:' : 'Cara menapis, mengubah suai lauk, dan menjana resipi AI:';

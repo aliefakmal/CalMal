@@ -1334,6 +1334,19 @@
   border-radius: 50%;
 }
 
+.topbar-actions .btn-guide-pill,
+.topbar-actions .lang-pill-btn {
+  height: 30px;
+  box-sizing: border-box;
+  padding: 0 10px;
+}
+
+.topbar-actions .btn-guide-pill {
+  gap: 5px;
+  font-size: 11.5px;
+}
+
+
 .guide-modal-sheet {
   max-width: 520px;
   width: 100%;

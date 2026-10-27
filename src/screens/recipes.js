@@ -6,8 +6,7 @@ import { generateRecipe, generateMealPlan } from '../services/gemini.js';
 import { DIET_FILTERS, PLANNER_QUESTIONS } from '../constants/prompts.js';
 import { compressImage, esc, round1 } from '../utils/helpers.js';
 import { store } from '../services/store.js';
-import { t, getLang, toggleLang, getDaysNames } from '../utils/i18n.js';
-import { openPageTutorial } from '../utils/tutorials.js';
+import { t, getLang, getDaysNames } from '../utils/i18n.js';
 
 // Pool Menu Makanan Sihat Malaysia (Mengikut Waktu & Kategori Preferences)
 export const MALAYSIAN_MEAL_POOL = {
@@ -379,21 +378,10 @@ export function renderRecipes(container) {
 
   function render() {
     container.innerHTML = `
-      <div class="page-head row between" style="align-items:center">
+      <div class="page-head">
         <div>
           <span class="eyebrow">${t('rec_eyebrow')}</span>
           <h1 class="page-title">${t('rec_title')}</h1>
-        </div>
-        <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">
-          <button type="button" class="btn-guide-pill" id="recipes-tutorial-btn" title="${getLang() === 'en' ? 'Recipes Tutorial' : 'Panduan Resipi'}">
-            ${icons.help}
-            <span>${getLang() === 'en' ? 'Tutorial' : 'Panduan'}</span>
-          </button>
-          <button type="button" class="lang-pill-btn" id="recipes-lang-toggle" title="Switch Language / Tukar Bahasa (EN / BM)">
-            <span class="lang-icon">${icons.globe}</span>
-            <span class="lang-cur">${getLang().toUpperCase()}</span>
-            <span class="lang-alt">${getLang() === 'en' ? 'BM' : 'EN'}</span>
-          </button>
         </div>
       </div>
 
@@ -976,20 +964,6 @@ export function renderRecipes(container) {
     }
 
     function bindEvents() {
-      // Page-Level Language Toggle & Tutorial Modal
-      container.querySelector('#recipes-lang-toggle')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleLang();
-        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
-        render();
-      });
-
-      container.querySelector('#recipes-tutorial-btn')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openPageTutorial('recipes');
-        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
-      });
-
       // Market Guide Touch Card Popup
       container.querySelector('#btn-open-market-guide')?.addEventListener('click', (e) => {
         e.stopPropagation();

@@ -9,8 +9,7 @@ import { avatar } from '../components/companion.js';
 import { openProfileEditor } from '../components/profileEditor.js';
 import { soundboard } from '../services/audioService.js';
 import { esc, fmtDate, todayKey } from '../utils/helpers.js';
-import { t, getLang, setLang, toggleLang } from '../utils/i18n.js';
-import { openPageTutorial } from '../utils/tutorials.js';
+import { t, getLang, setLang } from '../utils/i18n.js';
 
 
 export function renderProfile(container) {
@@ -111,21 +110,10 @@ export function renderProfile(container) {
           <span class="eyebrow">${t('prof_eyebrow')}</span>
           <h1 class="page-title">${esc(profile.name)}</h1>
         </div>
-        <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">
-          <button type="button" class="btn-guide-pill" id="profile-tutorial-btn" title="${isEn ? 'Profile Tutorial' : 'Panduan Profil'}">
-            ${icons.help}
-            <span>${isEn ? 'Tutorial' : 'Panduan'}</span>
-          </button>
-          <button type="button" class="lang-pill-btn" id="profile-lang-toggle" title="Switch Language / Tukar Bahasa (EN / BM)">
-            <span class="lang-icon">${icons.globe}</span>
-            <span class="lang-cur">${getLang().toUpperCase()}</span>
-            <span class="lang-alt">${getLang() === 'en' ? 'BM' : 'EN'}</span>
-          </button>
-          <button type="button" class="btn btn-sm btn-primary" id="btn-edit-profile-head">
-            ${icons.edit}
-            <span>${t('prof_edit_btn')}</span>
-          </button>
-        </div>
+        <button type="button" class="btn btn-sm btn-primary" id="btn-edit-profile-head">
+          ${icons.edit}
+          <span>${t('prof_edit_btn')}</span>
+        </button>
       </div>
 
       <div class="stack">
@@ -436,19 +424,6 @@ export function renderProfile(container) {
   }
 
   function bindEvents() {
-    // Page-Level Language Toggle & Tutorial Modal
-    container.querySelector('#profile-lang-toggle')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleLang();
-      render();
-    });
-
-    container.querySelector('#profile-tutorial-btn')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openPageTutorial('profile');
-      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
-    });
-
     // App Language Switcher
     container.querySelectorAll('#app-lang-switcher button').forEach((b) => {
       b.addEventListener('click', () => {
