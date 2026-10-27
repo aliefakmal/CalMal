@@ -6,7 +6,8 @@ import { generateRecipe, generateMealPlan } from '../services/gemini.js';
 import { DIET_FILTERS, PLANNER_QUESTIONS } from '../constants/prompts.js';
 import { compressImage, esc, round1 } from '../utils/helpers.js';
 import { store } from '../services/store.js';
-import { t, getLang, getDaysNames } from '../utils/i18n.js';
+import { t, getLang, toggleLang, getDaysNames } from '../utils/i18n.js';
+import { openPageTutorial } from '../utils/tutorials.js';
 
 // Pool Menu Makanan Sihat Malaysia (Mengikut Waktu & Kategori Preferences)
 export const MALAYSIAN_MEAL_POOL = {
@@ -196,15 +197,40 @@ export function getShoppingTips() {
       ];
 }
 
-export function renderSectionLangToggle() {
-  const lang = getLang();
-  return `
-    <button type="button" class="lang-pill-btn section-lang-toggle" title="Switch Language / Tukar Bahasa (EN / BM)">
-      <span class="lang-icon">${icons.globe}</span>
-      <span class="lang-cur">${lang.toUpperCase()}</span>
-      <span class="lang-alt">${lang === 'en' ? 'BM' : 'EN'}</span>
-    </button>
-  `;
+export function openMarketGuideModal() {
+  const isEn = getLang() === 'en';
+  const tips = getShoppingTips();
+
+  openSheet(`
+    <div class="guide-modal-sheet">
+      <div class="row between" style="align-items:flex-start;margin-bottom:12px">
+        <div style="flex:1;padding-right:12px">
+          <div class="row" style="gap:6px;align-items:center;margin-bottom:4px">
+            <span class="badge ok">${isEn ? 'Market Guide' : 'Panduan Pasar'}</span>
+            <span class="xs muted">${isEn ? 'Malaysian Grocers & Wet Markets' : 'Pasar Pagi & Pasar Raya'}</span>
+          </div>
+          <h3 style="font-size:17px;font-weight:800;color:#fff;margin:0;line-height:1.3">${isEn ? 'Grocery & Market Shopping Tips' : 'Tips Pasar & Bahan Masakan'}</h3>
+          <p class="xs muted" style="margin:4px 0 0;line-height:1.4">${isEn ? 'Smart strategies to buy fresh proteins and budget-friendly greens in Malaysia:' : 'Cara bijak membeli bahan segar, tinggi protein dan jimat di Malaysia:'}</p>
+        </div>
+        <button type="button" class="btn btn-icon btn-ghost btn-sm" data-close aria-label="${t('close')}">
+          ${icons.close}
+        </button>
+      </div>
+
+      <div class="guide-modal-steps">
+        ${tips.map((tip, idx) => `
+          <div class="guide-modal-step-item">
+            <div class="guide-step-num">${idx + 1}</div>
+            <div class="guide-step-text">${esc(tip)}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <button type="button" class="btn btn-primary btn-block" data-close style="margin-top:8px">
+        <span>${isEn ? 'Got It' : 'Faham'}</span>
+      </button>
+    </div>
+  `);
 }
 
 export function renderGuideButton(id, label = '') {
@@ -353,10 +379,21 @@ export function renderRecipes(container) {
 
   function render() {
     container.innerHTML = `
-      <div class="page-head">
+      <div class="page-head row between" style="align-items:center">
         <div>
           <span class="eyebrow">${t('rec_eyebrow')}</span>
           <h1 class="page-title">${t('rec_title')}</h1>
+        </div>
+        <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">
+          <button type="button" class="btn-guide-pill" id="recipes-tutorial-btn" title="${getLang() === 'en' ? 'Recipes Tutorial' : 'Panduan Resipi'}">
+            ${icons.help}
+            <span>${getLang() === 'en' ? 'Tutorial' : 'Panduan'}</span>
+          </button>
+          <button type="button" class="lang-pill-btn" id="recipes-lang-toggle" title="Switch Language / Tukar Bahasa (EN / BM)">
+            <span class="lang-icon">${icons.globe}</span>
+            <span class="lang-cur">${getLang().toUpperCase()}</span>
+            <span class="lang-alt">${getLang() === 'en' ? 'BM' : 'EN'}</span>
+          </button>
         </div>
       </div>
 
@@ -391,10 +428,6 @@ export function renderRecipes(container) {
             <div>
               <span>${t('rec_diet_focus')}</span>
               <span class="xs muted" style="margin-left:6px">${isEn ? 'Halal / Health Focus' : 'Fokus Sihat & Halal'}</span>
-            </div>
-            <div class="row" style="gap:6px;align-items:center">
-              ${renderGuideButton('generator')}
-              ${renderSectionLangToggle()}
             </div>
           </div>
 
@@ -697,25 +730,23 @@ export function renderRecipes(container) {
       <div class="plan-container fade-up">
         <!-- Top Header Card -->
         <div class="plan-header-card">
-          <div class="row between" style="align-items:flex-start">
-            <div>
+          <div class="row between" style="align-items:flex-start;flex-wrap:wrap;gap:12px">
+            <div style="flex:1 1 200px;min-width:180px">
               <span class="eyebrow">${t('rec_tab_planner')}</span>
               <h2 style="font-size:20px;font-weight:800;color:#fff;margin:2px 0 4px">${t('rec_schedule_title')}</h2>
               <p class="xs muted" style="line-height:1.4">${esc(plan.summary || t('rec_schedule_sub'))}</p>
             </div>
-            <div class="row" style="gap:6px;align-items:center">
+            <div class="row" style="gap:6px;align-items:center;flex-shrink:0">
               <button type="button" class="btn btn-sm btn-ghost" id="btn-pref-modal" title="Preferences & Targets">
                 ${icons.settings}
                 <span>${isEn ? 'Preferences' : 'Keutamaan'}</span>
               </button>
-              <button type="button" class="btn btn-sm btn-ghost" id="btn-refresh-suggestions" title="Regenerate Plan">
+              <button type="button" class="btn btn-sm btn-ghost btn-icon" id="btn-refresh-suggestions" title="Regenerate Plan" aria-label="Regenerate Plan">
                 ${icons.refresh}
               </button>
-              <button type="button" class="btn btn-sm btn-ghost" id="btn-print-plan" title="Print / PDF">
+              <button type="button" class="btn btn-sm btn-ghost btn-icon" id="btn-print-plan" title="Print / PDF" aria-label="Print PDF">
                 ${icons.printer}
               </button>
-              ${renderGuideButton('planner')}
-              ${renderSectionLangToggle()}
             </div>
           </div>
         </div>
@@ -756,21 +787,26 @@ export function renderRecipes(container) {
         <!-- Main Plan Content -->
         ${renderPlanContent(plan)}
 
-        <!-- Shopping & Grocery Tips Section -->
-        <div class="card flat stack" style="background:#09090b;border:1px solid rgba(255,255,255,0.08);padding:14px 16px;gap:10px">
+        <!-- Compact Touch UI Market Guide Card -->
+        <div class="card flat market-touch-card" id="btn-open-market-guide" role="button" tabindex="0" style="background:#09090b;border:1px solid rgba(255,255,255,0.09);padding:12px 14px;cursor:pointer;border-radius:12px;margin-top:4px;transition:all 0.2s var(--ease)">
           <div class="row between" style="align-items:center">
-            <div class="row" style="gap:8px;align-items:center">
-              <span class="badge ok">${isEn ? 'Market Guide' : 'Panduan Pasar'}</span>
-              <b class="xs muted" style="text-transform:uppercase;letter-spacing:0.05em">${t('rec_market_tips')}</b>
+            <div class="row" style="gap:10px;align-items:center">
+              <div class="water-icon-circle" style="background:rgba(61,220,151,0.12);color:#3ddc97;width:32px;height:32px">
+                ${icons.bowl}
+              </div>
+              <div>
+                <div class="row" style="gap:6px;align-items:center">
+                  <span class="badge ok" style="font-size:10px;padding:2px 6px">${isEn ? 'Market Guide' : 'Panduan Pasar'}</span>
+                  <b style="font-size:13px;color:#fff">${isEn ? 'Grocery & Wet Market Tips' : 'Tips Pasar & Bahan Masakan'}</b>
+                </div>
+                <div class="xs muted" style="margin-top:2px">${isEn ? 'Tap to view fresh Malaysian proteins & smart shopping tips' : 'Sentuh untuk panduan bahan basah segar & jimat'}</div>
+              </div>
             </div>
-            <div class="row" style="gap:6px;align-items:center">
-              ${renderGuideButton('market')}
-              ${renderSectionLangToggle()}
+            <div class="row" style="gap:4px;align-items:center;color:var(--hero-accent)">
+              <span class="xs bold">${isEn ? 'View' : 'Lihat'}</span>
+              <span style="font-size:14px">›</span>
             </div>
           </div>
-          <ul style="padding-left:18px;margin:2px 0 0;line-height:1.6;font-size:12.5px;color:var(--text-2)">
-            ${getShoppingTips().map((tip) => `<li>${esc(tip)}</li>`).join('')}
-          </ul>
         </div>
       </div>
     `;
@@ -786,10 +822,6 @@ export function renderRecipes(container) {
             <div>
               <span>${t('rec_saved_collection')}</span>
               <span class="muted" style="margin-left:6px">${list.length} ${isEn ? 'recipes' : 'resipi'}</span>
-            </div>
-            <div class="row" style="gap:6px;align-items:center">
-              ${renderGuideButton('saved')}
-              ${renderSectionLangToggle()}
             </div>
           </div>
 
@@ -944,24 +976,25 @@ export function renderRecipes(container) {
     }
 
     function bindEvents() {
-      // Universal Section Language Switchers
-      container.querySelectorAll('.section-lang-toggle').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          toggleLang();
-          if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
-          render();
-        });
+      // Page-Level Language Toggle & Tutorial Modal
+      container.querySelector('#recipes-lang-toggle')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleLang();
+        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+        render();
       });
 
-      // Section Tutorial Modal Buttons (Opens clean popup guide)
-      container.querySelectorAll('.section-guide-btn').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const id = btn.dataset.guide;
-          if (id) openGuideModal(id);
-          if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
-        });
+      container.querySelector('#recipes-tutorial-btn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openPageTutorial('recipes');
+        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+      });
+
+      // Market Guide Touch Card Popup
+      container.querySelector('#btn-open-market-guide')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openMarketGuideModal();
+        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
       });
 
       container.querySelectorAll('#recipe-tabs button').forEach((b) => {

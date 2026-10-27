@@ -7,7 +7,8 @@ import { toast, confirmSheet, routeThumbSVG, openSheet } from '../components/ui.
 import { formatPace, formatDuration, metLabel, metForSpeed } from '../utils/calc.js';
 import { onActivityFinished } from '../services/companionService.js';
 import { esc, fmtTime } from '../utils/helpers.js';
-import { t, getLang } from '../utils/i18n.js';
+import { t, getLang, toggleLang } from '../utils/i18n.js';
+import { openPageTutorial } from '../utils/tutorials.js';
 
 export function renderActivity(container) {
   let map = null;
@@ -27,12 +28,21 @@ export function renderActivity(container) {
     const isEn = getLang() === 'en';
 
     container.innerHTML = `
-      <div class="page-head">
+      <div class="page-head row between" style="align-items:center">
         <div>
           <span class="eyebrow">${t('act_eyebrow')}</span>
           <h1 class="page-title">${t('act_title')}</h1>
         </div>
-        <div class="row" style="gap:8px;flex-wrap:wrap">
+        <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">
+          <button type="button" class="btn-guide-pill" id="activity-tutorial-btn" title="${isEn ? 'Activity Tutorial' : 'Panduan Aktiviti'}">
+            ${icons.help}
+            <span>${isEn ? 'Tutorial' : 'Panduan'}</span>
+          </button>
+          <button type="button" class="lang-pill-btn" id="activity-lang-toggle" title="Switch Language / Tukar Bahasa (EN / BM)">
+            <span class="lang-icon">${icons.globe}</span>
+            <span class="lang-cur">${getLang().toUpperCase()}</span>
+            <span class="lang-alt">${getLang() === 'en' ? 'BM' : 'EN'}</span>
+          </button>
           ${
             stats.status === 'idle'
               ? `<label class="chip ${isSim ? 'active' : ''}" id="sim-toggle-btn" style="cursor:pointer">
@@ -462,6 +472,19 @@ export function renderActivity(container) {
         updateMapGraphics(tracker.getStats());
         toast('Map recentered to your position.', 'info');
       }
+    });
+
+    // Page-Level Language Toggle & Tutorial Modal
+    container.querySelector('#activity-lang-toggle')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleLang();
+      render();
+    });
+
+    container.querySelector('#activity-tutorial-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openPageTutorial('activity');
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
     });
 
     // Toggle Simulation

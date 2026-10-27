@@ -5,8 +5,9 @@ import { companionBubble, bindCompanionEvents } from '../components/companion.js
 import { dashboardMessage } from '../services/companionService.js';
 import { openMealEditor } from '../components/mealEditor.js';
 import { formatPace, formatDuration, calcSuggestedDailyTarget } from '../utils/calc.js';
+import { esc, fmtTime, todayKey } from '../utils/helpers.js';
 import { t, getLang, toggleLang } from '../utils/i18n.js';
-import { renderGuideButton, openGuideModal } from './recipes.js';
+import { openPageTutorial } from '../utils/tutorials.js';
 
 export function renderDashboard(container) {
   let unsub = null;
@@ -37,14 +38,24 @@ export function renderDashboard(container) {
 
     container.innerHTML = `
       <!-- Bento Header -->
-      <div class="page-head bento-header">
+      <div class="page-head bento-header row between" style="align-items:center">
         <div>
           <div class="row" style="gap:8px;align-items:center;margin-bottom:2px">
             <span class="eyebrow">Level ${heroRank.level} · ${esc(heroRank.title)}</span>
             <span class="badge ok" style="font-size:10px;padding:2px 7px">${heroRank.pct}% EXP</span>
-          </div>          <h1 class="page-title">Hi, ${esc(p.name)}!</h1>
+          </div>
+          <h1 class="page-title">Hi, ${esc(p.name)}!</h1>
         </div>
-        <div class="row" style="gap:8px">
+        <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">
+          <button type="button" class="btn-guide-pill" id="dashboard-tutorial-btn" title="${getLang() === 'en' ? 'Dashboard Tutorial' : 'Panduan Dashboard'}">
+            ${icons.help}
+            <span>${getLang() === 'en' ? 'Tutorial' : 'Panduan'}</span>
+          </button>
+          <button type="button" class="lang-pill-btn" id="dashboard-lang-toggle" title="Switch Language / Tukar Bahasa (EN / BM)">
+            <span class="lang-icon">${icons.globe}</span>
+            <span class="lang-cur">${getLang().toUpperCase()}</span>
+            <span class="lang-alt">${getLang() === 'en' ? 'BM' : 'EN'}</span>
+          </button>
           <a href="#/scan" class="btn btn-sm btn-primary" id="btn-quick-scan">
             ${icons.camera}
             <span>${t('dash_scan_btn')}</span>
@@ -61,11 +72,6 @@ export function renderDashboard(container) {
             <div class="card-title row between" style="width:100%;margin-bottom:4px">
               <span>${t('dash_calorie_balance')}</span>
               <div class="row" style="gap:6px;align-items:center">
-                ${renderGuideButton('dash_calorie')}
-                <button type="button" class="lang-pill-btn section-lang-toggle" title="Switch Language" style="padding:2px 7px;font-size:10.5px">
-                  <span class="lang-icon">${icons.globe}</span>
-                  <span class="lang-cur">${getLang().toUpperCase()}</span>
-                </button>
                 <button type="button" class="btn btn-xs btn-ghost" id="btn-adjust-target" title="${t('dash_adjust')}" style="padding:2px 8px;font-size:11px;border:1px solid var(--border-soft);cursor:pointer">
                   ${icons.edit}
                   <span>${t('dash_adjust')}</span>
@@ -155,11 +161,6 @@ export function renderDashboard(container) {
                   </div>
                 </div>
                 <div class="row" style="gap:4px;align-items:center">
-                  ${renderGuideButton('dash_water')}
-                  <button type="button" class="lang-pill-btn section-lang-toggle" title="Switch Language" style="padding:2px 7px;font-size:10.5px">
-                    <span class="lang-icon">${icons.globe}</span>
-                    <span class="lang-cur">${getLang().toUpperCase()}</span>
-                  </button>
                   <button type="button" class="btn btn-xs btn-ghost" id="btn-sub-water" title="Remove 250ml water" style="padding:3px 7px;font-size:11px;border:1px solid var(--border-soft);color:var(--text-muted)">
                     ${icons.minus}
                     <span>250ml</span>
@@ -195,11 +196,6 @@ export function renderDashboard(container) {
             <div class="card-title row between" style="flex-wrap:wrap;gap:8px">
               <span>${t('dash_today_meals')}</span>
               <div class="row" style="gap:6px;align-items:center">
-                ${renderGuideButton('dash_meals')}
-                <button type="button" class="lang-pill-btn section-lang-toggle" title="Switch Language" style="padding:2px 7px;font-size:10.5px">
-                  <span class="lang-icon">${icons.globe}</span>
-                  <span class="lang-cur">${getLang().toUpperCase()}</span>
-                </button>
                 <button type="button" class="btn btn-xs btn-secondary" id="btn-copy-yesterday" title="${t('dash_copy_yesterday')}">
                   ${icons.refresh}
                   <span>${t('dash_copy_yesterday')}</span>
@@ -442,22 +438,17 @@ export function renderDashboard(container) {
   }
 
   function bindEvents() {
-    // 0. Section Language Toggles & Tutorial Modals
-    container.querySelectorAll('.section-lang-toggle').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleLang();
-        render();
-      });
+    // 0. Page-Level Language Toggle & Tutorial Modal
+    container.querySelector('#dashboard-lang-toggle')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleLang();
+      render();
     });
 
-    container.querySelectorAll('.section-guide-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = btn.dataset.guide;
-        if (id) openGuideModal(id);
-        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
-      });
+    container.querySelector('#dashboard-tutorial-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openPageTutorial('dashboard');
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
     });
 
     // 1. Adjust Daily Calorie Target Modal (Bug Fixed)

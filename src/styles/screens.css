@@ -945,6 +945,25 @@
   gap: 12px;
 }
 
+.plan-header-card .row.between {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.market-touch-card {
+  user-select: none;
+}
+
+.market-touch-card:hover {
+  background: rgba(255, 255, 255, 0.035) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  transform: translateY(-1px);
+}
+
+.market-touch-card:active {
+  transform: translateY(0);
+}
+
 /* Filter Dock */
 .plan-filter-dock {
   background: #0b0b0d;
