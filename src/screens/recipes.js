@@ -9,53 +9,53 @@ import { store } from '../services/store.js';
 import { t, getLang, getDaysNames } from '../utils/i18n.js';
 
 // Pool Menu Makanan Sihat Malaysia (Mengikut Waktu & Kategori Preferences)
+// Minimalist, bersih, padat dan tepat mengikut makro & budaya tempatan
 export const MALAYSIAN_MEAL_POOL = {
   breakfast: [
-    { name: 'Roti Bakar Wholemeal, 2 Telur Separuh Masak & Kopi O Kurang Manis', kcal: 320, protein_g: 16, tags: ['protein', 'quick', 'budget', 'all'] },
-    { name: 'Oatmeal Bersama Buah Epal, Kismis & Segelas Susu Rendah Lemak', kcal: 310, protein_g: 14, tags: ['oil', 'quick', 'budget', 'all'] },
-    { name: 'Tosai Garing Bersama Kuah Dhal & Chutney Pudina', kcal: 260, protein_g: 9, tags: ['mamak', 'oil', 'budget', 'all'] },
-    { name: 'Nasi Lemak Sihat (Nasi Separuh, Sambal Kurang Minyak, Telur Rebus & Timun)', kcal: 380, protein_g: 14, tags: ['melayu', 'budget', 'all'] },
-    { name: 'Bihun Sup Ayam Dada Jernih Bersama Daun Bawang & Cili Potong', kcal: 330, protein_g: 22, tags: ['protein', 'oil', 'melayu', 'budget', 'all'] },
-    { name: 'Roti Canai Kosong (1 Keping) Bersama Kuah Kari Ayam Asing', kcal: 340, protein_g: 10, tags: ['mamak', 'budget', 'all'] },
-    { name: 'Scrambled Eggs (2 Biji), Roti Bakar Gandum Penuh & Tomato Ceri', kcal: 290, protein_g: 18, tags: ['protein', 'lowcarb', 'quick', 'all'] },
-    { name: 'Telur Dadar Herba & Sup Sayur Cendawan', kcal: 230, protein_g: 15, tags: ['lowcarb', 'quick', 'oil', 'budget', 'all'] },
-    { name: 'Roti Naan Garlic Bakar Tandoor Bersama Kuah Dhal Pekat', kcal: 350, protein_g: 12, tags: ['mamak', 'budget', 'protein', 'all'] },
-    { name: 'Greek Yogurt Bersama Hirisan Pisang & Sedikit Madu Asli', kcal: 240, protein_g: 15, tags: ['protein', 'quick', 'oil', 'all'] },
+    { name: 'Roti Bakar & Telur Separuh Masak', desc: '2 telur separuh masak · Wholemeal · Kopi O', kcal: 320, protein_g: 17, tags: ['protein', 'quick', 'budget', 'all'] },
+    { name: 'Oatmeal Epal & Susu Rendah Lemak', desc: 'Rolled oat, hirisan epal & susu rendah lemak', kcal: 310, protein_g: 14, tags: ['oil', 'quick', 'budget', 'all'] },
+    { name: 'Tosai Garing & Kuah Dhal', desc: 'Tosai panas, kuah dhal & chutney pudina', kcal: 260, protein_g: 9, tags: ['mamak', 'oil', 'budget', 'all'] },
+    { name: 'Nasi Lemak Sihat Telur Rebus', desc: 'Nasi 1/2 cawan, sambal kurang minyak & timun', kcal: 380, protein_g: 15, tags: ['melayu', 'budget', 'all'] },
+    { name: 'Bihun Sup Ayam Dada Jernih', desc: 'Sup jernih dada ayam, daun bawang & cili', kcal: 330, protein_g: 24, tags: ['protein', 'oil', 'melayu', 'budget', 'all'] },
+    { name: 'Roti Canai Kosong (1 Keping) & Dhal', desc: '1 keping garing & kuah dhal berasingan', kcal: 310, protein_g: 9, tags: ['mamak', 'budget', 'all'] },
+    { name: 'Scrambled Eggs & Roti Wholemeal', desc: '2 telur hancur, tomato ceri & roti bakar', kcal: 300, protein_g: 19, tags: ['protein', 'lowcarb', 'quick', 'all'] },
+    { name: 'Telur Dadar Herba & Sup Cendawan', desc: 'Telur dadar 2 biji & sup sayur bening', kcal: 250, protein_g: 16, tags: ['lowcarb', 'quick', 'oil', 'budget', 'all'] },
+    { name: 'Naan Garlic & Dada Tandoori', desc: 'Naan bakar suku, dada ayam & kuah dhal', kcal: 390, protein_g: 28, tags: ['mamak', 'budget', 'protein', 'all'] },
+    { name: 'Greek Yogurt, Pisang & Madu', desc: 'Greek yogurt tinggi protein, pisang & chia seeds', kcal: 240, protein_g: 15, tags: ['protein', 'quick', 'oil', 'all'] },
   ],
   lunch: [
-    { name: 'Nasi Putih (1/2 Cawan), Ayam Masak Lemak Cili Api (Dada), Kubis Goreng Kunyit & Teh O Ais Kosong', kcal: 850, protein_g: 65, tags: ['melayu', 'protein', 'budget', 'all'] },
-    { name: 'Nasi Putih (1/2 Cawan), Sup Ayam Utara (Dada), Ulam Timun, Sambal Belacan & Limau Ais Kurang Manis', kcal: 820, protein_g: 63, tags: ['melayu', 'oil', 'protein', 'budget', 'all'] },
-    { name: 'Nasi Putih (1/2 Cawan), Ayam Bakar Madu Bersaiz Sederhana, Ulam Raja, Pegaga & Air Kosong', kcal: 830, protein_g: 64, tags: ['melayu', 'protein', 'oil', 'all'] },
-    { name: 'Nasi Kerabu Kelantan Bersama Ayam Percik Dada, Ulam Segar & Telur Masin Separuh', kcal: 780, protein_g: 58, tags: ['melayu', 'protein', 'oil', 'budget', 'all'] },
-    { name: 'Nasi Ayam Hainan Stim (Bahagian Dada), Sup Timun Jernih & Sos Halia Cili', kcal: 680, protein_g: 48, tags: ['protein', 'oil', 'budget', 'quick', 'all'] },
-    { name: 'Nasi Campur Sihat: Nasi 1/2 Senduk, Ikan Kembung Bakar Air Asam, Bendi Rebus & Tauhu Sumbat', kcal: 540, protein_g: 44, tags: ['melayu', 'oil', 'budget', 'protein', 'all'] },
-    { name: 'Nasi Kandar Sihat: Nasi 1/2, Ayam Tandoori Panggang, Bendi Celur & Kuah Dhal Asing', kcal: 690, protein_g: 54, tags: ['mamak', 'protein', 'budget', 'all'] },
-    { name: 'Nasi Goreng Kampung Kurang Minyak Bersama Dada Ayam Kunyit & Kangkung Belacan', kcal: 640, protein_g: 42, tags: ['melayu', 'budget', 'quick', 'protein', 'all'] },
-    { name: 'Sup Daging Empuk Bersama Kentang, Lobak Merah & Nasi Putih Separuh', kcal: 620, protein_g: 45, tags: ['melayu', 'protein', 'oil', 'budget', 'all'] },
-    { name: 'Salad Ulam Kampung Bersama Isi Ayam Panggang Rosemary & Sos Lemon Air Asam', kcal: 450, protein_g: 52, tags: ['lowcarb', 'protein', 'oil', 'quick', 'all'] },
-    { name: 'Nasi Bujang Sihat: Nasi 1/2, Telur Mata 2 Biji, Sup Kosong & Sambal Kicap Cili Padi', kcal: 490, protein_g: 22, tags: ['budget', 'quick', 'all'] },
-    { name: 'Bihun Tomyam Putih Campur Udang Segar & Cendawan Tiram', kcal: 510, protein_g: 36, tags: ['oil', 'quick', 'budget', 'protein', 'all'] },
+    { name: 'Ayam Masak Lemak Cili Api & Nasi', desc: 'Dada ayam tanpa kulit, kubis kunyit & ulam', kcal: 680, protein_g: 54, tags: ['melayu', 'protein', 'budget', 'all'] },
+    { name: 'Sup Ayam Utara & Ulam Kampung', desc: 'Sup jernih dada ayam, timun & sambal belacan', kcal: 620, protein_g: 52, tags: ['melayu', 'oil', 'protein', 'budget', 'all'] },
+    { name: 'Ayam Bakar Madu & Ulam Raja', desc: 'Dada ayam bakar madu, nasi separuh & ulam raja', kcal: 640, protein_g: 52, tags: ['melayu', 'protein', 'oil', 'all'] },
+    { name: 'Nasi Kerabu & Ayam Percik', desc: 'Dada ayam percik bakar, ulam kerabu & telur masin', kcal: 690, protein_g: 56, tags: ['melayu', 'protein', 'oil', 'budget', 'all'] },
+    { name: 'Nasi Ayam Stim Hainan', desc: 'Dada ayam stim, sup timun jernih & sos halia', kcal: 590, protein_g: 46, tags: ['protein', 'oil', 'budget', 'quick', 'all'] },
+    { name: 'Ikan Kembung Bakar Air Asam', desc: 'Ikan kembung bakar, bendi rebus & tauhu sumbat', kcal: 520, protein_g: 44, tags: ['melayu', 'oil', 'budget', 'protein', 'all'] },
+    { name: 'Nasi Kandar Ayam Tandoori', desc: 'Dada tandoori, bendi celur & kuah dhal asing', kcal: 650, protein_g: 54, tags: ['mamak', 'protein', 'budget', 'all'] },
+    { name: 'Nasi Goreng Kampung Dada Ayam', desc: 'Kurang minyak, isi ayam kunyit & kangkung', kcal: 620, protein_g: 42, tags: ['melayu', 'budget', 'quick', 'protein', 'all'] },
+    { name: 'Sup Daging Empuk & Kentang', desc: 'Daging lembu lembut, lobak merah & nasi separuh', kcal: 610, protein_g: 46, tags: ['melayu', 'protein', 'oil', 'budget', 'all'] },
+    { name: 'Salad Ulam Ayam Panggang', desc: 'Dada ayam rosemary, timun & sos air asam', kcal: 450, protein_g: 50, tags: ['lowcarb', 'protein', 'oil', 'quick', 'all'] },
+    { name: 'Nasi Bujang Telur Mata & Sup', desc: 'Nasi separuh, 2 telur mata & sambal kicap cili', kcal: 490, protein_g: 22, tags: ['budget', 'quick', 'all'] },
+    { name: 'Bihun Tomyam Putih Udang', desc: 'Udang segar, cendawan tiram & kuah tomyam jernih', kcal: 490, protein_g: 35, tags: ['oil', 'quick', 'budget', 'protein', 'all'] },
   ],
   dinner: [
-    { name: 'Mee Hoon Sup Ayam (Tanpa Minyak Berlebihan) Dengan Lebihan Isi Ayam Dada & Taugeh', kcal: 890, protein_g: 62, tags: ['melayu', 'oil', 'protein', 'budget', 'all'] },
-    { name: 'Bihun Goreng Putih Kampung Bersama Ayam Cincang & Sawi Hijau', kcal: 940, protein_g: 64, tags: ['melayu', 'protein', 'budget', 'quick', 'all'] },
-    { name: 'Sup Bihun Bersama Isi Ayam Dada & Sayur Campur Segar', kcal: 900, protein_g: 63, tags: ['oil', 'melayu', 'protein', 'budget', 'all'] },
-    { name: 'Ikan Siakap Stim Limau & Halia Bersama Sayur Bayam Bening & Nasi Putih 1/2 Cawan', kcal: 580, protein_g: 52, tags: ['oil', 'protein', 'melayu', 'lowcarb', 'all'] },
-    { name: 'Ayam Dada Panggang Herba, Kentang Putar Tanpa Mentega & Salad Jagung Manis', kcal: 540, protein_g: 56, tags: ['protein', 'quick', 'budget', 'all'] },
-    { name: 'Sup Tulang / Daging Halia Bersama Sayur Sawi & Nasi Putih Separuh', kcal: 620, protein_g: 46, tags: ['melayu', 'protein', 'oil', 'budget', 'all'] },
-    { name: 'Kuey Teow Kungfu Sup Jernih Bersama Telur Putih, Udang & Kobis Bunga', kcal: 560, protein_g: 38, tags: ['oil', 'quick', 'budget', 'protein', 'all'] },
-    { name: 'Yong Tau Foo Rebus Sup Jernih (Tauhu, Bendi, Peria, Telur & Kangkung Celur)', kcal: 420, protein_g: 34, tags: ['oil', 'lowcarb', 'budget', 'quick', 'all'] },
-    { name: 'Chapati Panas (2 Keping) Bersama Kuah Dhal Pekat & Ayam Tandoori Panggang', kcal: 580, protein_g: 48, tags: ['mamak', 'protein', 'oil', 'budget', 'all'] },
-    { name: 'Sup Ayam Kampung Herba Bersama Keledek Manis Rebus', kcal: 490, protein_g: 42, tags: ['oil', 'melayu', 'protein', 'budget', 'all'] },
-    { name: 'Wrap Tortilla Gandum Penuh Bersama Isi Ayam Dada, Salad Timun & Sos Yogurt', kcal: 460, protein_g: 40, tags: ['quick', 'protein', 'lowcarb', 'budget', 'all'] },
+    { name: 'Mee Hoon Sup Ayam & Taugeh', desc: 'Sup jernih tanpa minyak, isi ayam dada & taugeh', kcal: 480, protein_g: 42, tags: ['melayu', 'oil', 'protein', 'budget', 'all'] },
+    { name: 'Bihun Goreng Putih Kampung', desc: 'Ayam cincang, sayur sawi & cili potong', kcal: 530, protein_g: 40, tags: ['melayu', 'protein', 'budget', 'quick', 'all'] },
+    { name: 'Ikan Siakap Stim Limau & Halia', desc: 'Siakap stim, sayur bayam bening & nasi separuh', kcal: 510, protein_g: 48, tags: ['oil', 'protein', 'melayu', 'lowcarb', 'all'] },
+    { name: 'Dada Ayam Panggang & Salad Jagung', desc: 'Ayam herba, kentang bakar & salad jagung manis', kcal: 520, protein_g: 52, tags: ['protein', 'quick', 'budget', 'all'] },
+    { name: 'Sup Tulang Daging Halia', desc: 'Sup daging empuk halia, sayur sawi & nasi separuh', kcal: 550, protein_g: 44, tags: ['melayu', 'protein', 'oil', 'budget', 'all'] },
+    { name: 'Kuey Teow Kungfu Udang', desc: 'Sup jernih telur putih, udang segar & kobis bunga', kcal: 490, protein_g: 36, tags: ['oil', 'quick', 'budget', 'protein', 'all'] },
+    { name: 'Yong Tau Foo Sup Jernih', desc: 'Tauhu kukus, bendi, peria, telur & kangkung celur', kcal: 390, protein_g: 32, tags: ['oil', 'lowcarb', 'budget', 'quick', 'all'] },
+    { name: 'Chapati & Ayam Tandoori', desc: '2 chapati garing, kuah dhal pekat & ayam tandoori', kcal: 550, protein_g: 46, tags: ['mamak', 'protein', 'oil', 'budget', 'all'] },
+    { name: 'Sup Ayam Kampung & Keledek', desc: 'Ayam kampung herba rebus & keledek manis kukus', kcal: 470, protein_g: 42, tags: ['oil', 'melayu', 'protein', 'budget', 'all'] },
+    { name: 'Wrap Tortilla Ayam Panggang', desc: 'Tortilla wholemeal, ayam dada & sos yogurt timun', kcal: 450, protein_g: 40, tags: ['quick', 'protein', 'lowcarb', 'budget', 'all'] },
   ],
   snack: [
-    { name: 'Buah Epal Hijau Bersama 10 Biji Badam Panggang Tanpa Garam', kcal: 180, protein_g: 5, tags: ['oil', 'quick', 'budget', 'all'] },
-    { name: 'Pisang Emas (2 Biji) & Air Kelapa Muda Segar Tanpa Gula', kcal: 140, protein_g: 2, tags: ['quick', 'budget', 'all'] },
-    { name: 'Telur Rebus (1 Biji) Bersama Secawan Kopi O Kosong', kcal: 78, protein_g: 6.5, tags: ['protein', 'quick', 'lowcarb', 'budget', 'all'] },
-    { name: 'Popiah Basah Sayur (1 Gulung) Bersama Sos Kacang Nipis', kcal: 110, protein_g: 4, tags: ['melayu', 'budget', 'all'] },
-    { name: 'Greek Yogurt Rendah Lemak Bersama Sedikit Biji Chia', kcal: 130, protein_g: 11, tags: ['protein', 'quick', 'lowcarb', 'all'] },
-    { name: 'Tempe Bakar Rangup Bersama Sambal Kicap Pedas', kcal: 160, protein_g: 12, tags: ['protein', 'budget', 'melayu', 'all'] },
+    { name: 'Epal Hijau & Badam Panggang', desc: '1 biji epal hijau & 10 biji badam tanpa garam', kcal: 170, protein_g: 5, tags: ['oil', 'quick', 'budget', 'all'] },
+    { name: 'Pisang Emas & Air Kelapa', desc: '2 biji pisang emas & air kelapa muda segar', kcal: 140, protein_g: 2, tags: ['quick', 'budget', 'all'] },
+    { name: 'Telur Rebus & Kopi O Kosong', desc: '1 biji telur rebus segar & kopi o tanpa gula', kcal: 78, protein_g: 6.5, tags: ['protein', 'quick', 'lowcarb', 'budget', 'all'] },
+    { name: 'Popiah Basah Sayur Segar', desc: '1 gulung popiah basah & sos kacang nipis', kcal: 120, protein_g: 4, tags: ['melayu', 'budget', 'all'] },
+    { name: 'Greek Yogurt & Biji Chia', desc: 'Yogurt rendah lemak & taburan biji chia', kcal: 140, protein_g: 12, tags: ['protein', 'quick', 'lowcarb', 'all'] },
+    { name: 'Tempe Bakar Sambal Kicap', desc: 'Tempe rangup bakar & sambal kicap pedas', kcal: 160, protein_g: 12, tags: ['protein', 'budget', 'melayu', 'all'] },
   ]
 };
 
@@ -90,10 +90,10 @@ export function getMealTypeInfo(type = '') {
     return { id: 'breakfast', label: isEn ? 'Breakfast' : 'Sarapan', colorClass: 'breakfast' };
   }
   if (str.includes('tengah hari') || str.includes('lunch') || str.includes('siang')) {
-    return { id: 'lunch', label: isEn ? 'Lunch' : 'Makan Tengah Hari', colorClass: 'lunch' };
+    return { id: 'lunch', label: isEn ? 'Lunch' : 'Tengah Hari', colorClass: 'lunch' };
   }
   if (str.includes('malam') || str.includes('dinner')) {
-    return { id: 'dinner', label: isEn ? 'Dinner' : 'Makan Malam', colorClass: 'dinner' };
+    return { id: 'dinner', label: isEn ? 'Dinner' : 'Malam', colorClass: 'dinner' };
   }
   if (str.includes('snek') || str.includes('snack') || str.includes('petang') || str.includes('afternoon')) {
     return { id: 'snack', label: isEn ? 'Snack' : 'Snek', colorClass: 'snack' };
@@ -121,47 +121,63 @@ export function generateSmartPlan(pref = 'all', targetKcal = 1800, mealCount = 2
   
   function pickMeal(category, dayIdx) {
     const list = MALAYSIAN_MEAL_POOL[category] || MALAYSIAN_MEAL_POOL.lunch;
-    const filtered = pref !== 'all' ? list.filter((m) => m.tags.includes(pref)) : list;
+    const filtered = pref !== 'all' ? list.filter((m) => m.tags && m.tags.includes(pref)) : list;
     const pool = filtered.length ? filtered : list;
     const offset = category === 'breakfast' ? 0 : category === 'lunch' ? 2 : category === 'dinner' ? 5 : 7;
     return pool[(dayIdx + offset) % pool.length];
   }
 
   const days = daysName.map((day, idx) => {
-    let meals = [];
+    let rawMeals = [];
     const bType = isEn ? 'Breakfast' : 'Sarapan';
     const lType = isEn ? 'Lunch' : 'Makan Tengah Hari';
     const dType = isEn ? 'Dinner' : 'Makan Malam';
     const sType = isEn ? 'Snack' : 'Snek';
 
     if (mealCount === 2) {
-      const l = pickMeal('lunch', idx);
-      const d = pickMeal('dinner', idx);
-      meals = [
-        { type: lType, name: l.name, kcal: l.kcal, protein_g: l.protein_g },
-        { type: dType, name: d.name, kcal: d.kcal, protein_g: d.protein_g },
+      rawMeals = [
+        { type: lType, dish: pickMeal('lunch', idx) },
+        { type: dType, dish: pickMeal('dinner', idx) },
       ];
     } else if (mealCount === 3) {
-      const b = pickMeal('breakfast', idx);
-      const l = pickMeal('lunch', idx);
-      const d = pickMeal('dinner', idx);
-      meals = [
-        { type: bType, name: b.name, kcal: b.kcal, protein_g: b.protein_g },
-        { type: lType, name: l.name, kcal: l.kcal, protein_g: l.protein_g },
-        { type: dType, name: d.name, kcal: d.kcal, protein_g: d.protein_g },
+      rawMeals = [
+        { type: bType, dish: pickMeal('breakfast', idx) },
+        { type: lType, dish: pickMeal('lunch', idx) },
+        { type: dType, dish: pickMeal('dinner', idx) },
       ];
     } else {
-      const b = pickMeal('breakfast', idx);
-      const l = pickMeal('lunch', idx);
-      const s = pickMeal('snack', idx);
-      const d = pickMeal('dinner', idx);
-      meals = [
-        { type: bType, name: b.name, kcal: b.kcal, protein_g: b.protein_g },
-        { type: lType, name: l.name, kcal: l.kcal, protein_g: l.protein_g },
-        { type: sType, name: s.name, kcal: s.kcal, protein_g: s.protein_g },
-        { type: dType, name: d.name, kcal: d.kcal, protein_g: d.protein_g },
+      rawMeals = [
+        { type: bType, dish: pickMeal('breakfast', idx) },
+        { type: lType, dish: pickMeal('lunch', idx) },
+        { type: sType, dish: pickMeal('snack', idx) },
+        { type: dType, dish: pickMeal('dinner', idx) },
       ];
     }
+
+    // Accurately calibrate calories to align with targetKcal
+    const baseSum = rawMeals.reduce((sum, item) => sum + (Number(item.dish.kcal) || 500), 0);
+    const ratio = baseSum > 0 ? targetKcal / baseSum : 1;
+
+    let allocatedKcal = 0;
+    const meals = rawMeals.map((item, mIdx) => {
+      const isLast = mIdx === rawMeals.length - 1;
+      let mealKcal;
+      if (isLast) {
+        mealKcal = Math.max(100, targetKcal - allocatedKcal);
+      } else {
+        mealKcal = Math.round(item.dish.kcal * ratio);
+        allocatedKcal += mealKcal;
+      }
+      const mealProtein = Math.round(item.dish.protein_g * ratio);
+
+      return {
+        type: item.type,
+        name: item.dish.name,
+        desc: item.dish.desc || '',
+        kcal: mealKcal,
+        protein_g: mealProtein,
+      };
+    });
 
     const total_kcal = meals.reduce((sum, m) => sum + (Number(m.kcal) || 0), 0);
     return { day, total_kcal, meals };
@@ -172,6 +188,7 @@ export function generateSmartPlan(pref = 'all', targetKcal = 1800, mealCount = 2
     summary: isEn
       ? `7-Day Malaysian style meal plan aligned with ~${targetKcal} kcal daily target focusing on: ${prefLabel}.`
       : `Pelan 7-Hari gaya Malaysia diselaraskan mengikut sasaran ~${targetKcal} kcal sehari dengan fokus: ${prefLabel}.`,
+    days,
     preference: pref,
     shopping_tips: getShoppingTips(),
   };
@@ -367,12 +384,24 @@ export function renderRecipes(container) {
   // Meal Planner state
   let currentStep = 0;
   let mcqAnswers = {};
-  let currentMealPlan = store.state.mealPlan || generateSmartPlan('all', store.macros?.target || 1800, 2);
+
+  function getValidMealPlan() {
+    const plan = store.state.mealPlan;
+    if (plan && Array.isArray(plan.days) && plan.days.length > 0 && plan.days.some((d) => Array.isArray(d.meals) && d.meals.length > 0)) {
+      return plan;
+    }
+    const target = store.macros?.target || 1800;
+    const newPlan = generateSmartPlan('all', target, 2);
+    store.saveMealPlan(newPlan);
+    return newPlan;
+  }
+
+  let currentMealPlan = getValidMealPlan();
   let isGeneratingPlan = false;
 
   // Planner View Modes & Preference states
   let planViewMode = 'day'; // 'day' (Ikut Hari) | 'meal' (Ikut Waktu Makan / Menu)
-  let selectedDayIndex = 0; // 0: Isnin, 1: Selasa, ... or -1 for 'Semua Hari'
+  let selectedDayIndex = -1; // -1 for 'All Days' (default), 0: Isnin, 1: Selasa, ...
   let selectedMealFilter = 'all'; // 'all' | 'breakfast' | 'lunch' | 'dinner' | 'snack'
   let selectedPreference = currentMealPlan?.preference || 'all';
 
@@ -583,29 +612,32 @@ export function renderRecipes(container) {
   }
 
   function renderMealCard(meal, dayIdx, mealIdx, showDayBadge = false, dayName = '') {
+    const isEn = getLang() === 'en';
     const typeInfo = getMealTypeInfo(meal.type);
     return `
       <div class="plan-meal-card">
-        <div>
+        <div class="plan-meal-body">
           <div class="plan-meal-header">
-            <div style="display:flex;align-items:center;gap:6px">
+            <div class="row" style="gap:6px;align-items:center">
               ${showDayBadge ? `<span class="meal-day-pill">${esc(dayName)}</span>` : ''}
               <span class="meal-type-tag ${typeInfo.colorClass}">${esc(typeInfo.label)}</span>
             </div>
-            <div class="meal-metrics-group">
-              <span class="meal-metric-badge kcal">${meal.kcal} kcal</span>
-              <span class="meal-metric-badge protein">${meal.protein_g}g protein</span>
+            <div class="meal-metrics-clean">
+              <span class="meal-metric-kcal">${meal.kcal} <small>kcal</small></span>
+              <span class="meal-metric-dot">·</span>
+              <span class="meal-metric-protein">${meal.protein_g}g <small>protein</small></span>
             </div>
           </div>
-          <div class="plan-meal-title">${esc(meal.name)}</div>
+          <h4 class="plan-meal-title">${esc(meal.name)}</h4>
+          ${meal.desc ? `<p class="plan-meal-desc">${esc(meal.desc)}</p>` : ''}
         </div>
 
         <div class="plan-meal-actions">
           <button type="button" class="plan-action-btn primary btn-log-meal" data-didx="${dayIdx}" data-midx="${mealIdx}" title="Log into today's diary">
-            ${icons.plus} <span>${t('rec_log_meal')}</span>
+            ${icons.plus} <span>${isEn ? 'Log Meal' : 'Log Hidangan'}</span>
           </button>
           <button type="button" class="plan-action-btn btn-swap-meal" data-didx="${dayIdx}" data-midx="${mealIdx}" title="Swap with alternative dish">
-            ${icons.refresh} <span>${t('rec_swap_dish')}</span>
+            ${icons.refresh} <span>${isEn ? 'Swap' : 'Tukar'}</span>
           </button>
         </div>
       </div>
@@ -637,16 +669,20 @@ export function renderRecipes(container) {
               <div class="plan-day-title">${esc(dayName)}</div>
               <div class="xs muted" style="margin-top:2px">${filteredMeals.length} ${isEn ? 'dishes scheduled' : 'hidangan berjadual'}</div>
             </div>
-            <div class="meal-metrics-group">
-              <span class="meal-metric-badge kcal">${dayTotalKcal} kcal total</span>
-              <span class="meal-metric-badge protein">${dayTotalProtein}g protein</span>
+            <div class="meal-metrics-clean" style="font-size:13px">
+              <span class="meal-metric-kcal">${dayTotalKcal} <small>kcal total</small></span>
+              <span class="meal-metric-dot">·</span>
+              <span class="meal-metric-protein">${dayTotalProtein}g <small>protein</small></span>
             </div>
           </div>
 
           ${
             filteredMeals.length === 0
-              ? `<div class="empty" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">
-                  ${t('rec_no_meals_filter')}
+              ? `<div class="empty" style="padding:28px 16px;text-align:center;color:var(--muted);font-size:13px">
+                  <p style="margin-bottom:8px">${t('rec_no_meals_filter')}</p>
+                  <button type="button" class="btn btn-sm btn-ghost btn-reset-filter" style="margin:0 auto">
+                    ${icons.refresh} <span>${isEn ? 'View All Meals' : 'Lihat Semua Hidangan'}</span>
+                  </button>
                 </div>`
               : `<div class="plan-meals-grid">
                   ${filteredMeals.map((meal) => {
@@ -669,8 +705,11 @@ export function renderRecipes(container) {
 
     if (daysWithMatches.length === 0) {
       return `
-        <div class="empty" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">
-          ${t('rec_no_meals_filter')}
+        <div class="empty" style="padding:28px 16px;text-align:center;color:var(--muted);font-size:13px">
+          <p style="margin-bottom:8px">${t('rec_no_meals_filter')}</p>
+          <button type="button" class="btn btn-sm btn-ghost btn-reset-filter" style="margin:0 auto">
+            ${icons.refresh} <span>${isEn ? 'View All Meals' : 'Lihat Semua Hidangan'}</span>
+          </button>
         </div>
       `;
     }
@@ -679,12 +718,15 @@ export function renderRecipes(container) {
       <div class="stack fade-up" style="gap:16px">
         ${daysWithMatches.map((item) => {
           const dayKcal = (item.day.meals || []).reduce((sum, m) => sum + (Number(m.kcal) || 0), 0);
+          const dayProtein = (item.day.meals || []).reduce((sum, m) => sum + (Number(m.protein_g) || 0), 0);
           return `
             <div class="plan-day-section">
               <div class="plan-day-banner">
                 <div class="plan-day-title">${esc(item.dayName)}</div>
-                <div class="meal-metrics-group">
-                  <span class="meal-metric-badge kcal">${dayKcal} kcal</span>
+                <div class="meal-metrics-clean" style="font-size:12.5px">
+                  <span class="meal-metric-kcal">${dayKcal} <small>kcal</small></span>
+                  <span class="meal-metric-dot">·</span>
+                  <span class="meal-metric-protein">${dayProtein}g <small>protein</small></span>
                 </div>
               </div>
               <div class="plan-meals-grid">
@@ -924,18 +966,25 @@ export function renderRecipes(container) {
       const alternatives = pool.filter((m) => m.name !== oldMeal.name);
       const picked = alternatives[Math.floor(Math.random() * alternatives.length)] || pool[0];
 
+      // Keep calories proportional to the slot being swapped
+      const oldKcal = Number(oldMeal.kcal) || picked.kcal;
+      const scale = oldKcal > 0 && picked.kcal > 0 ? oldKcal / picked.kcal : 1;
+      const newKcal = Math.round(picked.kcal * scale);
+      const newProtein = Math.round((picked.protein_g || 20) * scale);
+
       currentMealPlan.days[dayIdx].meals[mealIdx] = {
         type: oldMeal.type,
         name: picked.name,
-        kcal: picked.kcal,
-        protein_g: picked.protein_g,
+        desc: picked.desc || '',
+        kcal: newKcal,
+        protein_g: newProtein,
       };
 
       // Recalculate day total kcal
       currentMealPlan.days[dayIdx].total_kcal = currentMealPlan.days[dayIdx].meals.reduce((sum, m) => sum + (Number(m.kcal) || 0), 0);
 
       store.saveMealPlan(currentMealPlan);
-      toast(getLang() === 'en' ? `Swapped dish to: ${picked.name.slice(0, 32)}...` : `Lauk ditukar kepada: ${picked.name.slice(0, 32)}...`, 'success');
+      toast(getLang() === 'en' ? `Swapped to: ${picked.name}` : `Lauk ditukar: ${picked.name}`, 'success');
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(12);
       render();
     }
@@ -959,7 +1008,7 @@ export function renderRecipes(container) {
         mealType: typeInfo.id === 'breakfast' ? 'Breakfast' : typeInfo.id === 'dinner' ? 'Dinner' : typeInfo.id === 'snack' ? 'Snack' : 'Lunch',
       });
 
-      toast(getLang() === 'en' ? `Logged: ${m.name.slice(0, 30)} (+${kVal} kcal)` : `Berjaya log: ${m.name.slice(0, 30)} (+${kVal} kcal)!`, 'success');
+      toast(getLang() === 'en' ? `Logged: ${m.name} (+${kVal} kcal)` : `Berjaya log: ${m.name} (+${kVal} kcal)!`, 'success');
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([15, 30]);
     }
 
@@ -979,6 +1028,14 @@ export function renderRecipes(container) {
       });
 
       if (tab === 'planner') {
+        // Reset filter button listener
+        container.querySelectorAll('.btn-reset-filter').forEach((b) => {
+          b.addEventListener('click', () => {
+            selectedMealFilter = 'all';
+            render();
+          });
+        });
+
         // Preference chips click (Instantly adapts the plan)
         container.querySelectorAll('#pref-chips button').forEach((btn) => {
           btn.addEventListener('click', () => {

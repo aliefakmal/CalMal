@@ -28,7 +28,7 @@ export const GeminiConfig = {
   },
 
   // Environment key from .env (VITE_GEMINI_API_KEY) — can be overridden in Profile > Settings
-  envApiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
+  envApiKey: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || '',
 };
 
 export const AppConstants = {
