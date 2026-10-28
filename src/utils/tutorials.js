@@ -988,6 +988,92 @@ function getTutorialConfig(pageKey, isEn) {
       icon: icons.user,
       steps: [
         {
+          tag: isEn ? 'Account & Backup' : 'Akaun & Sandaran',
+          title: isEn ? 'Sign In & Biometric Account Backup' : 'Log Masuk & Sandaran Kunci Biometrik',
+          desc: isEn
+            ? 'Sign in or create an account with your password and device biometric key to back up and sync your progress safely across devices.'
+            : 'Log masuk atau cipta akaun menggunakan kata laluan & biometrik peranti untuk menyandar serta segerakkan kemajuan anda dengan selamat.',
+          renderWidget: () => `
+            <div class="tutorial-widget-box" id="tut-widget-box">
+              <div class="tutorial-widget-header">
+                <span class="tutorial-widget-badge">${isEn ? 'Interactive Preview' : 'Pratonton Interaktif'}</span>
+                <span class="tutorial-widget-tip">${isEn ? 'Tap tabs or verify button' : 'Sentuh tab atau butang sahkan'}</span>
+              </div>
+              <div class="auth-tabs" style="margin:2px 0 6px">
+                <div class="auth-tab-slider" id="tut-auth-slider"></div>
+                <button type="button" class="auth-tab-btn active" id="tut-tab-signin">${isEn ? 'Sign In' : 'Log Masuk'}</button>
+                <button type="button" class="auth-tab-btn" id="tut-tab-signup">${isEn ? 'Create Account' : 'Cipta Akaun'}</button>
+              </div>
+              <div style="background:rgba(0,0,0,0.38);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+                <div class="row between" style="align-items:center">
+                  <div class="row" style="gap:8px;align-items:center">
+                    <span style="width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.08);display:grid;place-items:center;color:#fff">${icons.user}</span>
+                    <div>
+                      <div style="font-size:12px;font-weight:700;color:#fff" id="tut-auth-demo-user">@wira_calmal</div>
+                      <div class="xs muted" id="tut-auth-demo-sub">${isEn ? 'Password + Touch ID / Face ID' : 'Kata Laluan + Cap Jari / Wajah'}</div>
+                    </div>
+                  </div>
+                  <span class="account-sync-pill is-synced" id="tut-auth-sync-pill" style="font-size:10.5px">
+                    <span class="dot"></span>
+                    <span id="tut-auth-sync-text">${isEn ? 'Cloud Synced' : 'Disegerakkan'}</span>
+                  </span>
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary btn-block" id="tut-auth-action-btn" style="gap:8px">
+                <span style="width:14px;height:14px;display:inline-flex">${icons.key}</span>
+                <span id="tut-auth-btn-label">${isEn ? 'Simulate Biometric Unlock' : 'Uji Buka Kunci Biometrik'}</span>
+              </button>
+            </div>
+          `,
+          mount: (box) => {
+            let mode = 'sign-in';
+            const slider = box.querySelector('#tut-auth-slider');
+            const tabIn = box.querySelector('#tut-tab-signin');
+            const tabUp = box.querySelector('#tut-tab-signup');
+            const userEl = box.querySelector('#tut-auth-demo-user');
+            const subEl = box.querySelector('#tut-auth-demo-sub');
+            const btn = box.querySelector('#tut-auth-action-btn');
+            const btnLabel = box.querySelector('#tut-auth-btn-label');
+            const syncText = box.querySelector('#tut-auth-sync-text');
+            const syncPill = box.querySelector('#tut-auth-sync-pill');
+
+            const setMode = (m) => {
+              mode = m;
+              const isUp = mode === 'sign-up';
+              if (slider) slider.style.transform = isUp ? 'translateX(100%)' : 'translateX(0%)';
+              tabIn?.classList.toggle('active', !isUp);
+              tabUp?.classList.toggle('active', isUp);
+              if (userEl) userEl.textContent = isUp ? (isEn ? 'New Hero Account' : 'Akaun Wira Baharu') : '@wira_calmal';
+              if (subEl) subEl.textContent = isUp
+                ? (isEn ? 'Register Password + Biometric Key' : 'Daftar Kata Laluan + Kunci Biometrik')
+                : (isEn ? 'Password + Touch ID / Face ID' : 'Kata Laluan + Cap Jari / Wajah');
+              if (btnLabel) btnLabel.textContent = isUp
+                ? (isEn ? 'Register Account & Key' : 'Daftar Akaun & Kunci')
+                : (isEn ? 'Verify & Unlock Session' : 'Sahkan & Buka Sesi');
+              soundboard.playUISound('stepper');
+            };
+
+            tabIn?.addEventListener('click', () => setMode('sign-in'));
+            tabUp?.addEventListener('click', () => setMode('sign-up'));
+
+            btn?.addEventListener('click', () => {
+              btn.disabled = true;
+              btn.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px"></span> <span>${isEn ? 'Verifying Biometric…' : 'Mengesahkan Biometrik…'}</span>`;
+              soundboard.playUISound('confirm');
+
+              setTimeout(() => {
+                btn.disabled = false;
+                btn.className = 'btn btn-secondary btn-block';
+                btn.innerHTML = `<span style="width:14px;height:14px;display:inline-flex;color:var(--ok)">${icons.check}</span> <span>${isEn ? 'Biometric Key Verified!' : 'Kunci Biometrik Disahkan!'}</span>`;
+                if (syncText) syncText.textContent = isEn ? 'Data Synced' : 'Data Disegerak';
+                if (syncPill) syncPill.classList.add('is-synced');
+                soundboard.playUISound('confirm');
+                if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([15, 40, 20]);
+              }, 400);
+            });
+          },
+        },
+        {
           tag: isEn ? 'Body Biometrics' : 'Statistik Badan',
           title: isEn ? 'Scientific BMR & TDEE Calibration' : 'Kalibrasi BMR & TDEE Saintifik',
           desc: isEn
