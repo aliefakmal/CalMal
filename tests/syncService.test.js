@@ -35,10 +35,8 @@ function readQueue(username) {
 }
 
 async function loadSyncService(context, supabaseOverrides = {}) {
-  let resolveUser;
-  const userReady = new Promise((resolve) => { resolveUser = resolve; });
   const cloud = {
-    getCurrentUser: () => userReady,
+    getCurrentUser: async () => ({ id: 'cloud-user' }),
     supabase: {
       from() {
         throw new Error('Unexpected cloud request');
@@ -49,13 +47,12 @@ async function loadSyncService(context, supabaseOverrides = {}) {
   context.mock.module(new URL('../src/services/supabaseClient.js', import.meta.url).href, {
     namedExports: cloud,
   });
-  const service = await import(`../src/services/syncService.js?test=${++importSequence}`);
-  return { service, releaseUser: (user = { id: 'cloud-user' }) => resolveUser(user) };
+  return import(`../src/services/syncService.js?test=${++importSequence}`);
 }
 
 test('no active account cannot enqueue, process, merge, or write sync status', async (context) => {
   let cloudRequests = 0;
-  const { service } = await loadSyncService(context, {
+  const service = await loadSyncService(context, {
     getCurrentUser: async () => { cloudRequests += 1; return { id: 'cloud-user' }; },
     supabase: { from: () => { cloudRequests += 1; } },
   });
@@ -78,18 +75,10 @@ test('queues and statuses are isolated by account and legacy unscoped values sta
   activate('alpha');
   activate('beta');
   auth.resumeLocalAccount('alpha');
-  const { service, releaseUser } = await loadSyncService(context);
-  releaseUser();
+  const service = await loadSyncService(context);
 
   service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'alpha-meal' });
-  const originalWarn = console.warn;
-  console.warn = () => {};
-  try {
-    await service.processSyncQueue();
-  } finally {
-    console.warn = originalWarn;
-  }
-  const alphaStatus = storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha'));
+  await service.processSyncQueue();
   assert.equal(readQueue('alpha').length, 1);
   assert.equal(readQueue('beta').length, 0);
   assert.equal(service.getSyncStatus().status, 'saved_offline');
@@ -103,267 +92,121 @@ test('queues and statuses are isolated by account and legacy unscoped values sta
   await auth.signOut();
   assert.equal(readQueue('alpha').length, 1);
   assert.equal(readQueue('beta').length, 1);
-  assert.equal(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha')), alphaStatus);
+  assert.equal(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha')), null);
   assert.equal(storage.getItem(LEGACY_QUEUE_KEY), legacyQueue);
   assert.equal(storage.getItem(LEGACY_STATUS_KEY), legacyStatus);
 });
 
-test('merge reads only the active account state key', async (context) => {
+test('merge reads only the active account state key and leaves its queue local', async (context) => {
   const alphaKey = activate('alpha');
   activate('beta');
   auth.resumeLocalAccount('alpha');
   storage.setItem('calmal.v1', JSON.stringify({ meals: [{ id: 'legacy-meal', name: 'Legacy' }] }));
   storage.setItem(alphaKey, JSON.stringify({ meals: [{ id: 'alpha-meal', name: 'Active account' }] }));
   storage.setItem(auth.getAccountStorageKey('beta'), JSON.stringify({ meals: [{ id: 'beta-meal', name: 'Other account' }] }));
-  const { service, releaseUser } = await loadSyncService(context);
-  releaseUser(null);
+  const service = await loadSyncService(context);
 
   await service.mergeGuestDataToCloud();
 
   assert.deepEqual(readQueue('alpha').map((item) => item.payload.client_id), ['alpha-meal']);
   assert.equal(readQueue('beta').length, 0);
   assert.equal(storage.getItem('calmal.v1'), JSON.stringify({ meals: [{ id: 'legacy-meal', name: 'Legacy' }] }));
+  assert.equal(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha')), null);
 });
 
-test('a delayed auth response cannot write a failed item into a different account queue', async (context) => {
+test('configured Supabase and an active local account cannot trigger cloud access or queue processing', async (context) => {
+  online = true;
+  activate('alpha');
+  let cloudRequests = 0;
+  const service = await loadSyncService(context, {
+    getCurrentUser: async () => { cloudRequests += 1; return { id: 'persisted-cloud-user' }; },
+    supabase: {
+      from() {
+        cloudRequests += 1;
+        throw new Error('Local account attempted a cloud request');
+      },
+    },
+  });
+  storage.setItem(auth.getAccountStorageKey('alpha'), JSON.stringify({ meals: [{ id: 'state-meal', name: 'Local only' }] }));
+
+  service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'queued-meal' });
+  await service.processSyncQueue();
+  await service.mergeGuestDataToCloud();
+
+  assert.equal(cloudRequests, 0);
+  assert.deepEqual(readQueue('alpha').map((item) => item.payload.client_id), ['queued-meal', 'state-meal']);
+  assert.equal(service.getSyncStatus().status, 'saved_offline');
+  assert.equal(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha')), null);
+});
+
+test('queue processing preserves pending local mutations across account switches and sign out', async (context) => {
   online = true;
   activate('alpha');
   activate('beta');
   auth.resumeLocalAccount('alpha');
-  let releaseUser;
-  const upserts = [];
-  const { service } = await loadSyncService(context, {
-    getCurrentUser: () => new Promise((resolve) => { releaseUser = resolve; }),
-    supabase: {
-      from(table) {
-        return {
-          upsert: async (payload) => {
-            upserts.push({ table, payload });
-            return { error: new Error('Cloud unavailable') };
-          },
-        };
-      },
-    },
-  });
-  online = false;
-  service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'alpha-meal' });
+  const service = await loadSyncService(context);
+  service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'alpha-before' });
   const originalAlphaQueue = storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'alpha'));
-  online = true;
-  const processing = service.processSyncQueue();
-  await new Promise((resolve) => setImmediate(resolve));
+
   auth.resumeLocalAccount('beta');
-  online = false;
   service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'beta-meal' });
   const originalBetaQueue = storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'beta'));
-  releaseUser({ id: 'cloud-user' });
-  await processing;
-
-  assert.equal(upserts.length, 0);
-  assert.equal(storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'alpha')), originalAlphaQueue);
-  assert.equal(storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'beta')), originalBetaQueue);
-  assert.equal(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'beta')), null);
-});
-
-test('a delayed failed upsert cannot rewrite queues or status after sign out', async (context) => {
-  online = true;
-  activate('alpha');
-  let releaseUpsert;
-  const { service, releaseUser } = await loadSyncService(context, {
-    supabase: {
-      from() {
-        return {
-          upsert: () => new Promise((resolve) => {
-            releaseUpsert = () => resolve({ error: new Error('Cloud unavailable') });
-          }),
-        };
-      },
-    },
-  });
-  releaseUser();
-  online = false;
-  service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'alpha-meal' });
-  const originalQueue = storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'alpha'));
-  online = true;
-  const processing = service.processSyncQueue();
-  await new Promise((resolve) => setImmediate(resolve));
-  const syncingStatus = storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha'));
-  assert.equal(JSON.parse(syncingStatus).status, 'syncing');
+  await service.processSyncQueue();
+  auth.resumeLocalAccount('alpha');
+  service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'alpha-during' });
+  await service.processSyncQueue();
   await auth.signOut();
-  const originalWarn = console.warn;
-  console.warn = () => {};
-  try {
-    releaseUpsert();
-    await processing;
-  } finally {
-    console.warn = originalWarn;
-  }
+  await service.processSyncQueue();
 
-  assert.equal(storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'alpha')), originalQueue);
-  assert.equal(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha')), syncingStatus);
-});
-
-for (const outcome of ['successful', 'failed']) {
-  test(`a delayed ${outcome} upsert cannot overwrite either account queue or status after Alpha to Beta switch`, async (context) => {
-    online = true;
-    activate('alpha');
-    activate('beta');
-    auth.resumeLocalAccount('alpha');
-    let releaseUpsert;
-    const { service, releaseUser } = await loadSyncService(context, {
-      supabase: {
-        from() {
-          return {
-            upsert: () => new Promise((resolve) => {
-              releaseUpsert = () => resolve({ error: outcome === 'failed' ? new Error('Cloud unavailable') : null });
-            }),
-          };
-        },
-      },
-    });
-    releaseUser();
-    online = false;
-    service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'alpha-meal' });
-    online = true;
-    const processing = service.processSyncQueue();
-    await new Promise((resolve) => setImmediate(resolve));
-    const alphaSyncingStatus = storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha'));
-    assert.equal(JSON.parse(alphaSyncingStatus).status, 'syncing');
-
-    auth.resumeLocalAccount('beta');
-    online = false;
-    service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'beta-meal' });
-    const originalBetaQueue = storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'beta'));
-    const originalWarn = console.warn;
-    console.warn = () => {};
-    try {
-      releaseUpsert();
-      await processing;
-    } finally {
-      console.warn = originalWarn;
-    }
-
-    assert.deepEqual(readQueue('alpha').map((item) => item.payload.client_id), ['alpha-meal']);
-    assert.equal(storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'beta')), originalBetaQueue);
-    assert.equal(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha')), alphaSyncingStatus);
-    assert.equal(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'beta')), null);
-  });
-}
-
-test('a delayed upsert preserves Alpha mutations added during processing after switching to Beta', async (context) => {
-  online = true;
-  activate('alpha');
-  activate('beta');
-  auth.resumeLocalAccount('alpha');
-  let releaseUpsert;
-  const { service, releaseUser } = await loadSyncService(context, {
-    supabase: {
-      from() {
-        return {
-          upsert: () => new Promise((resolve) => {
-            releaseUpsert = () => resolve({ error: null });
-          }),
-        };
-      },
-    },
-  });
-  releaseUser();
-  online = false;
-  service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'alpha-before' });
-  online = true;
-  const processing = service.processSyncQueue();
-  await new Promise((resolve) => setImmediate(resolve));
-  const alphaSyncingStatus = storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha'));
-
-  auth.resumeLocalAccount('beta');
-  online = false;
-  service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'beta-meal' });
-  auth.resumeLocalAccount('alpha');
-  service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'alpha-during' });
-  auth.resumeLocalAccount('beta');
-  const originalBetaQueue = storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'beta'));
-  releaseUpsert();
-  await processing;
-
-  assert.deepEqual(readQueue('alpha').map((item) => item.payload.client_id), ['alpha-before', 'alpha-during']);
   assert.equal(storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'beta')), originalBetaQueue);
-  assert.equal(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha')), alphaSyncingStatus);
+  assert.deepEqual(readQueue('alpha').map((item) => item.payload.client_id), ['alpha-before', 'alpha-during']);
+  assert.notEqual(storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'alpha')), originalAlphaQueue);
+  assert.equal(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha')), null);
   assert.equal(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'beta')), null);
 });
 
-test('queue completion preserves mutations enqueued while the same account request is pending', async (context) => {
-  online = true;
+test('online and visibility callbacks are not registered for local account cloud sync', async (context) => {
   activate('alpha');
-  let releaseUpsert;
-  const { service, releaseUser } = await loadSyncService(context, {
-    supabase: {
-      from() {
-        return {
-          upsert: () => new Promise((resolve) => {
-            releaseUpsert = () => resolve({ error: null });
-          }),
-        };
-      },
-    },
-  });
-  releaseUser();
-  online = false;
-  service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'alpha-before' });
-  online = true;
-  const processing = service.processSyncQueue();
-  await new Promise((resolve) => setImmediate(resolve));
-  online = false;
-  service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'alpha-during' });
-  releaseUpsert();
-  await processing;
-
-  assert.deepEqual(readQueue('alpha').map((item) => item.payload.client_id), ['alpha-during']);
-  assert.equal(JSON.parse(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha'))).status, 'saved_offline');
-});
-
-test('repeated same-account failed completions retain one failed queue item', async (context) => {
-  online = true;
-  activate('alpha');
-  let attempts = 0;
-  const { service, releaseUser } = await loadSyncService(context, {
-    supabase: {
-      from() {
-        return {
-          upsert: async () => {
-            attempts += 1;
-            return { error: new Error('Cloud unavailable') };
-          },
-        };
-      },
-    },
-  });
-  releaseUser();
-  online = false;
-  service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'alpha-meal' });
-  const originalQueue = storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'alpha'));
-  online = true;
-  const originalWarn = console.warn;
-  console.warn = () => {};
+  const windowListeners = [];
+  const documentListeners = [];
+  globalThis.window = { addEventListener: (type, listener) => windowListeners.push({ type, listener }) };
+  globalThis.document = {
+    visibilityState: 'visible',
+    addEventListener: (type, listener) => documentListeners.push({ type, listener }),
+  };
   try {
-    await service.processSyncQueue();
-    assert.equal(storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'alpha')), originalQueue);
-    await service.processSyncQueue();
+    const service = await loadSyncService(context);
+    assert.equal(windowListeners.filter(({ type }) => type === 'online').length, 0);
+    assert.equal(documentListeners.filter(({ type }) => type === 'visibilitychange').length, 0);
     await service.processSyncQueue();
   } finally {
-    console.warn = originalWarn;
+    delete globalThis.window;
+    delete globalThis.document;
   }
-
-  assert.equal(attempts, 3);
-  assert.equal(storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'alpha')), originalQueue);
-  assert.deepEqual(readQueue('alpha').map((item) => item.payload.client_id), ['alpha-meal']);
-  assert.equal(JSON.parse(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha'))).status, 'saved_offline');
 });
 
 async function loadCloudScheduler(context) {
   let authRequests = 0;
-  let releaseUser;
   const upserts = [];
   context.mock.module('@supabase/supabase-js', {
-    namedExports: { createClient: () => ({ auth: {}, from() {} }) },
+    namedExports: {
+      createClient: () => ({
+        auth: {
+          async getSession() {
+            authRequests += 1;
+            return { data: { session: { user: { id: 'persisted-cloud-user' } } } };
+          },
+        },
+        from(table) {
+          return {
+            async upsert(payload) {
+              upserts.push({ table, payload });
+              return { error: null };
+            },
+          };
+        },
+      }),
+    },
   });
   const previousUrl = process.env.VITE_SUPABASE_URL;
   const previousKey = process.env.VITE_SUPABASE_ANON_KEY;
@@ -377,58 +220,52 @@ async function loadCloudScheduler(context) {
   });
   const client = await import(`../src/services/supabaseClient.js?test=${++importSequence}`);
   assert.equal(client.isSupabaseConfigured, true);
-  client.supabase.auth.getSession = async () => {
-    authRequests += 1;
-    const user = await new Promise((resolve) => { releaseUser = resolve; });
-    return { data: { session: user ? { user } : null } };
-  };
-  client.supabase.from = (table) => ({
-    upsert: async (payload) => {
-      upserts.push({ table, payload, username: auth.getActiveUsername() });
-      return { error: null };
-    },
-  });
+  assert.equal(client.supabase, null);
   return {
     ...client,
     upserts,
     get authRequests() { return authRequests; },
-    releaseUser(user = { id: 'cloud-user' }) { releaseUser(user); },
   };
 }
 
-test('scheduled cloud sync is a storage and cloud no-op without an active account', async (context) => {
-  const client = await loadCloudScheduler(context);
-  client.scheduleCloudSync({ profile: { name: 'Guest' } });
-  await new Promise((resolve) => setTimeout(resolve, 2600));
-  assert.equal(client.authRequests, 0);
-  assert.deepEqual(client.upserts, []);
-  assert.deepEqual(storage.entries(), {});
+test('local-only mode does not construct Supabase even when configuration looks valid', async (context) => {
+  let clientCreations = 0;
+  context.mock.module('@supabase/supabase-js', {
+    namedExports: {
+      createClient: () => {
+        clientCreations += 1;
+        throw new Error('Local account flow initialized Supabase');
+      },
+    },
+  });
+  const previousUrl = process.env.VITE_SUPABASE_URL;
+  const previousKey = process.env.VITE_SUPABASE_ANON_KEY;
+  process.env.VITE_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.VITE_SUPABASE_ANON_KEY = 'anon-key';
+  context.after(() => {
+    if (previousUrl === undefined) delete process.env.VITE_SUPABASE_URL;
+    else process.env.VITE_SUPABASE_URL = previousUrl;
+    if (previousKey === undefined) delete process.env.VITE_SUPABASE_ANON_KEY;
+    else process.env.VITE_SUPABASE_ANON_KEY = previousKey;
+  });
+
+  const client = await import(`../src/services/supabaseClient.js?test=${++importSequence}`);
+
+  assert.equal(client.isSupabaseConfigured, true);
+  assert.equal(client.supabase, null);
+  assert.equal(clientCreations, 0);
 });
 
-test('scheduled cloud sync cannot upsert stale state after account switch or sign out', async (context) => {
-  activate('alpha');
-  activate('beta');
-  auth.resumeLocalAccount('alpha');
+test('scheduled sync and current-user lookup never use a configured client or persisted session', async (context) => {
   const client = await loadCloudScheduler(context);
-  const originalInfo = console.info;
-  console.info = () => {};
-  try {
-    client.scheduleCloudSync({ profile: { username: 'alpha', name: 'Alpha' } });
-    auth.resumeLocalAccount('beta');
-    await new Promise((resolve) => setTimeout(resolve, 2600));
-    assert.equal(client.authRequests, 0);
+  client.scheduleCloudSync({ profile: { name: 'Guest' } });
+  activate('alpha');
+  client.scheduleCloudSync({ profile: { username: 'alpha', name: 'Alpha' } });
+  auth.resumeLocalAccount('alpha');
+  assert.equal(await client.getCurrentUser(), null);
+  await auth.signOut();
+  await new Promise((resolve) => setTimeout(resolve, 2600));
 
-    auth.resumeLocalAccount('alpha');
-    client.scheduleCloudSync({ profile: { username: 'alpha', name: 'Alpha' } });
-    await new Promise((resolve) => setTimeout(resolve, 2600));
-    await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(client.authRequests, 1);
-    await auth.signOut();
-    client.releaseUser();
-    await new Promise((resolve) => setImmediate(resolve));
-  } finally {
-    console.info = originalInfo;
-  }
-
+  assert.equal(client.authRequests, 0);
   assert.deepEqual(client.upserts, []);
 });

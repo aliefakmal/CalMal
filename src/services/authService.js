@@ -14,23 +14,40 @@ function readStorage(key) {
   }
 }
 
-function readAccounts() {
+function parseAccounts(raw, strict = false) {
+  let records;
   try {
-    const records = JSON.parse(readStorage(ACCOUNTS_KEY) || '[]');
-    if (!Array.isArray(records)) return [];
-    const seen = new Set();
-    return records.filter((record) => {
-      if (!record || typeof record !== 'object' || Array.isArray(record)) return false;
-      if (typeof record.username !== 'string' || typeof record.createdAt !== 'string') return false;
-      const username = normalizeUsername(record.username);
-      if (record.username !== username || !validateUsername(username) || !Number.isFinite(Date.parse(record.createdAt))) return false;
-      if (seen.has(username)) return false;
-      seen.add(username);
-      return true;
-    }).map(({ username, createdAt }) => ({ username, createdAt }));
+    records = JSON.parse(raw || '[]');
   } catch {
+    if (strict) throw new Error('Local account storage is corrupted. No account changes were made.');
     return [];
   }
+  if (!Array.isArray(records)) {
+    if (strict) throw new Error('Local account storage is invalid. No account changes were made.');
+    return [];
+  }
+  const seen = new Set();
+  const accounts = records.filter((record) => {
+    if (!record || typeof record !== 'object' || Array.isArray(record)) return false;
+    if (typeof record.username !== 'string' || typeof record.createdAt !== 'string') return false;
+    const username = normalizeUsername(record.username);
+    if (record.username !== username || !validateUsername(username) || !Number.isFinite(Date.parse(record.createdAt))) return false;
+    if (seen.has(username)) return false;
+    seen.add(username);
+    return true;
+  }).map(({ username, createdAt }) => ({ username, createdAt }));
+  if (strict && accounts.length !== records.length) {
+    throw new Error('Local account storage contains invalid records. No account changes were made.');
+  }
+  return accounts;
+}
+
+function readAccounts() {
+  return parseAccounts(readStorage(ACCOUNTS_KEY));
+}
+
+function readAccountsForWrite() {
+  return parseAccounts(localStorage.getItem(ACCOUNTS_KEY), true);
 }
 
 function migrateLegacyAccount() {
@@ -94,13 +111,47 @@ export function createLocalAccount(username, password) {
   if (!validateUsername(normalized)) throw new Error('Username must be 3 to 32 lowercase letters, numbers, or underscores.');
   if (!validatePassword(password)) throw new Error('Password must be 8+ characters with uppercase, lowercase, and a number.');
 
-  const accounts = readAccounts();
+  const accounts = readAccountsForWrite();
   if (accounts.some((account) => account.username === normalized)) throw new Error('This local account already exists.');
   localStorage.setItem(ACCOUNTS_KEY, JSON.stringify([
     ...accounts,
     { username: normalized, createdAt: new Date().toISOString() },
   ]));
+  if (accounts.length === 0) migrateLegacyStateToAccount(normalized);
   return { username: normalized };
+}
+
+export function migrateLegacyStateToAccount(username) {
+  const normalized = normalizeUsername(username);
+  if (!readAccountsForWrite().some((account) => account.username === normalized)) {
+    throw new Error('Create the local account before migrating guest data.');
+  }
+
+  const rawState = localStorage.getItem(LEGACY_STATE_KEY);
+  if (rawState === null) return false;
+  const state = JSON.parse(rawState);
+  if (!state || typeof state !== 'object' || Array.isArray(state)) {
+    throw new Error('Guest data is invalid and was not migrated.');
+  }
+
+  const userKey = getAccountStorageKey(normalized);
+  const destination = localStorage.getItem(userKey);
+  const backup = localStorage.getItem(LEGACY_BACKUP_KEY);
+  if (destination !== null && destination !== rawState) {
+    throw new Error('This account already has data. Guest data was not migrated.');
+  }
+
+  if (destination === null) localStorage.setItem(userKey, rawState);
+  if (backup === null) localStorage.setItem(LEGACY_BACKUP_KEY, rawState);
+  if (localStorage.getItem(userKey) !== rawState || localStorage.getItem(LEGACY_BACKUP_KEY) !== rawState) {
+    throw new Error('Guest data could not be verified. The original data was kept.');
+  }
+
+  localStorage.removeItem(LEGACY_STATE_KEY);
+  if (localStorage.getItem(LEGACY_STATE_KEY) !== null) {
+    throw new Error('Guest data was copied, but its original entry could not be removed.');
+  }
+  return true;
 }
 
 export function listLocalAccounts() {

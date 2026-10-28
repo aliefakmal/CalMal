@@ -186,6 +186,44 @@ test('first run renders Create Account and activates a valid account before onbo
   assert.equal(store.getStorageKey(), 'calmal.user.new_user');
 });
 
+test('Create Account attaches existing guest state before onboarding', async () => {
+  const guestState = JSON.stringify({ profile: { name: 'Guest' }, meals: [{ id: 'guest-meal', name: 'Nasi lemak' }] });
+  storage.setItem('calmal.v1', guestState);
+  const container = new MiniElement();
+  renderAuth(container);
+  container.querySelector('[name=username]').value = 'Guest_User';
+  container.querySelector('[name=password]').value = 'Password1';
+
+  await submit(container.querySelector('#local-auth-form'));
+
+  assert.equal(store.profile.name, 'Guest');
+  assert.deepEqual(store.state.meals.map(({ id }) => id), ['guest-meal']);
+  assert.equal(storage.getItem('calmal.v1'), null);
+  assert.equal(storage.getItem('calmal.v1.backup'), guestState);
+});
+
+test('failed guest migration blocks activation and keeps legacy state available', async () => {
+  const guestState = JSON.stringify({ profile: { name: 'Guest' }, meals: [{ id: 'guest-meal' }] });
+  storage.setItem('calmal.v1', guestState);
+  const originalSetItem = storage.setItem.bind(storage);
+  storage.setItem = (key, value) => {
+    if (key === 'calmal.v1.backup') throw new Error('Backup unavailable');
+    originalSetItem(key, value);
+  };
+  const container = new MiniElement();
+  let completed = false;
+  renderAuth(container, { onSuccess: () => { completed = true; } });
+  container.querySelector('[name=username]').value = 'Guest_User';
+  container.querySelector('[name=password]').value = 'Password1';
+
+  await submit(container.querySelector('#local-auth-form'));
+
+  assert.equal(completed, false);
+  assert.equal(auth.getActiveUsername(), null);
+  assert.equal(storage.getItem('calmal.v1'), guestState);
+  assert.match(container.querySelector('[role=status]').textContent, /Backup unavailable/);
+});
+
 test('saved usernames are native buttons and resume without credentials', async () => {
   auth.createLocalAccount('Saved_User', 'Password1');
   auth.createLocalAccount('other_user', 'Password1');

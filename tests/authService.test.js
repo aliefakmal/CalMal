@@ -150,6 +150,90 @@ test('malformed account and active storage fail closed without exposing invalid 
   assert.deepEqual(auth.listLocalAccounts(), [{ username: 'valid', createdAt: '2026-07-30T00:00:00.000Z' }]);
 });
 
+test('malformed account registry rejects creation without replacing the original registry', () => {
+  for (const malformed of ['{not json', '{"username":"orphan"}', '[null]']) {
+    storage.setItem(ACCOUNTS_KEY, malformed);
+    storage.setItem(LEGACY_STATE_KEY, JSON.stringify({ meals: [{ id: 'guest-meal' }] }));
+
+    assert.throws(() => auth.createLocalAccount('new_user', 'Password1'), /storage|invalid|corrupted/i);
+    assert.equal(storage.getItem(ACCOUNTS_KEY), malformed);
+    assert.equal(storage.getItem(auth.getAccountStorageKey('new_user')), null);
+    assert.equal(storage.getItem(BACKUP_KEY), null);
+  }
+});
+
+test('first account creation migrates guest state without a legacy vault or password-derived identity', () => {
+  const state = JSON.stringify({ profile: { name: 'Guest' }, meals: [{ id: 'guest-meal' }] });
+  storage.setItem(LEGACY_STATE_KEY, state);
+
+  assert.deepEqual(auth.createLocalAccount('First_User', 'Password1'), { username: 'first_user' });
+  assert.equal(storage.getItem(auth.getAccountStorageKey('first_user')), state);
+  assert.equal(storage.getItem(BACKUP_KEY), state);
+  assert.equal(storage.getItem(LEGACY_STATE_KEY), null);
+  assert.equal(storage.getItem(ACTIVE_KEY), null);
+  assertNoPasswordText('Password1');
+});
+
+test('subsequent new accounts do not inherit the migrated guest state or backup', () => {
+  const state = JSON.stringify({ profile: { name: 'Guest' }, meals: [{ id: 'guest-meal' }] });
+  storage.setItem(LEGACY_STATE_KEY, state);
+  auth.createLocalAccount('first_user', 'Password1');
+  const firstState = storage.getItem(auth.getAccountStorageKey('first_user'));
+
+  auth.createLocalAccount('second_user', 'Password2');
+
+  assert.equal(storage.getItem(auth.getAccountStorageKey('second_user')), null);
+  assert.equal(storage.getItem(auth.getAccountStorageKey('first_user')), firstState);
+  assert.equal(storage.getItem(BACKUP_KEY), state);
+  assert.equal(storage.getItem(LEGACY_STATE_KEY), null);
+});
+
+test('guest migration never overwrites an existing destination or backup', () => {
+  const legacyState = JSON.stringify({ profile: { name: 'Guest' } });
+  const existingState = JSON.stringify({ profile: { name: 'Existing' } });
+  const existingBackup = JSON.stringify({ profile: { name: 'Earlier backup' } });
+  storage.setItem(LEGACY_STATE_KEY, legacyState);
+  storage.setItem(auth.getAccountStorageKey('first_user'), existingState);
+  storage.setItem(BACKUP_KEY, existingBackup);
+
+  assert.throws(() => auth.createLocalAccount('first_user', 'Password1'), /already has data/i);
+  assert.deepEqual(auth.listLocalAccounts().map(({ username }) => username), ['first_user']);
+  assert.equal(storage.getItem(auth.getAccountStorageKey('first_user')), existingState);
+  assert.equal(storage.getItem(BACKUP_KEY), existingBackup);
+  assert.equal(storage.getItem(LEGACY_STATE_KEY), legacyState);
+});
+
+test('failed guest destination or backup writes retain legacy state and safe account metadata', () => {
+  for (const blockedKey of [auth.getAccountStorageKey('first_user'), BACKUP_KEY]) {
+    const legacyState = JSON.stringify({ profile: { name: 'Guest' }, meals: [{ id: 'guest-meal' }] });
+    storage = installMockStorage({ [LEGACY_STATE_KEY]: legacyState });
+    const originalSetItem = storage.setItem.bind(storage);
+    storage.setItem = (key, value) => {
+      if (key === blockedKey) throw new Error('Write unavailable');
+      originalSetItem(key, value);
+    };
+
+    assert.throws(() => auth.createLocalAccount('first_user', 'Password1'), /Write unavailable/);
+    assert.deepEqual(auth.listLocalAccounts().map(({ username }) => username), ['first_user']);
+    assert.equal(storage.getItem(LEGACY_STATE_KEY), legacyState, blockedKey);
+    assert.equal(storage.getItem(BACKUP_KEY), null, blockedKey);
+  }
+});
+
+test('unverified guest copies do not remove legacy state', () => {
+  const legacyState = JSON.stringify({ profile: { name: 'Guest' } });
+  storage.setItem(LEGACY_STATE_KEY, legacyState);
+  const originalSetItem = storage.setItem.bind(storage);
+  storage.setItem = (key, value) => {
+    if (key !== BACKUP_KEY) originalSetItem(key, value);
+  };
+
+  assert.throws(() => auth.createLocalAccount('first_user', 'Password1'), /could not be verified/i);
+  assert.equal(storage.getItem(LEGACY_STATE_KEY), legacyState);
+  assert.equal(storage.getItem(auth.getAccountStorageKey('first_user')), legacyState);
+  assert.equal(storage.getItem(BACKUP_KEY), null);
+});
+
 test('legacy vault and state migrate once to account metadata and a user key without activation', async () => {
   const state = JSON.stringify({ profile: { username: 'legacy_user', name: 'Legacy' }, meals: [{ id: 'meal-1' }] });
   storage.setItem(LEGACY_VAULT_KEY, validVault());

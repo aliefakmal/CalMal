@@ -1,11 +1,8 @@
-import { getCurrentUser, supabase } from './supabaseClient.js';
 import { getAccountStorageKey, getActiveUsername } from './authService.js';
 
 export const SYNC_QUEUE_KEY = 'calmal_sync_queue';
 const STATUS_KEY = 'calmal_sync_status';
 const listeners = new Set();
-let processingUsername = null;
-let processingId = 0;
 
 function accountKeys(username) {
   const suffix = encodeURIComponent(username);
@@ -24,10 +21,6 @@ function writeQueue(username, queue) {
   try { localStorage.setItem(accountKeys(username).queue, JSON.stringify(queue)); } catch {}
 }
 function keyOf(payload = {}) { return payload.client_id || payload.id || payload.logged_date; }
-function notify(username, status) {
-  try { localStorage.setItem(accountKeys(username).status, JSON.stringify({ status, at: new Date().toISOString() })); } catch {}
-  listeners.forEach((fn) => fn(status));
-}
 export function subscribeSync(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 export function getSyncStatus() {
   const username = getActiveUsername();
@@ -42,7 +35,6 @@ export function enqueueMutation(table, action, payload) {
   const queue = readQueue(username);
   const key = `${table}:${keyOf(payload)}`;
   writeQueue(username, [...queue.filter((x) => `${x.table}:${keyOf(x.payload)}` !== key), item]);
-  if (typeof navigator !== 'undefined' && navigator.onLine) processSyncQueue();
   return item;
 }
 
@@ -68,60 +60,11 @@ export function enqueueStateSync(state) {
   }));
 }
 
-async function upsert(table, payload) {
-  if (table === 'daily_steps') {
-    const { data, error: readError } = await supabase.from(table).select('id, step_count').eq('logged_date', payload.logged_date).maybeSingle();
-    if (readError) throw readError;
-    if (data) payload.step_count = Math.max(Number(data.step_count) || 0, Number(payload.step_count) || 0);
-  }
-  const conflict = table === 'profiles' ? 'id' : table === 'daily_steps' ? 'user_id,logged_date' : 'client_id';
-  const { error } = await supabase.from(table).upsert(payload, { onConflict: conflict });
-  if (error) throw error;
-}
-async function remove(table, payload) {
-  const column = table === 'profiles' ? 'id' : 'client_id';
-  const { error } = await supabase.from(table).delete().eq(column, keyOf(payload));
-  if (error) throw error;
-}
-export async function processSyncQueue() {
-  const username = getActiveUsername();
-  if (!username || processingUsername || !supabase || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
-  const isCurrentAccount = () => getActiveUsername() === username;
-  const user = await getCurrentUser();
-  if (!user || !isCurrentAccount() || processingUsername) return;
-  processingUsername = username;
-  const runId = ++processingId;
-  notify(username, 'syncing');
-  try {
-    const processed = [];
-    for (const item of readQueue(username)) {
-      if (!isCurrentAccount()) return;
-      try {
-        const payload = { ...item.payload, user_id: user.id };
-        if (item.table === 'profiles') payload.id = user.id;
-        if (item.action === 'DELETE') await remove(item.table, payload); else await upsert(item.table, payload);
-        processed.push(item);
-        if (!isCurrentAccount()) return;
-      } catch (err) {
-        console.warn('[CalMal sync]', item.table, err?.message || err);
-        if (!isCurrentAccount()) return;
-      }
-    }
-    const processedIds = new Set(processed.map((item) => item.id));
-    const remaining = readQueue(username).filter((item) => !processedIds.has(item.id));
-    writeQueue(username, remaining);
-    notify(username, remaining.length ? 'saved_offline' : 'synced');
-  } finally {
-    if (processingId === runId) processingUsername = null;
-  }
-}
+// Local accounts have no cloud identity. Their queues stay on this device.
+export async function processSyncQueue() {}
+
 export async function mergeGuestDataToCloud() {
   const username = getActiveUsername();
-  if (!username) return;
-  if (typeof localStorage !== 'undefined') {
-    try { enqueueStateSync(JSON.parse(localStorage.getItem(getAccountStorageKey(username)) || '{}')); } catch {}
-  }
-  if (getActiveUsername() === username) return processSyncQueue();
+  if (!username || typeof localStorage === 'undefined') return;
+  try { enqueueStateSync(JSON.parse(localStorage.getItem(getAccountStorageKey(username)) || '{}')); } catch {}
 }
-if (typeof window !== 'undefined') window.addEventListener('online', processSyncQueue);
-if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') processSyncQueue(); });
