@@ -34,8 +34,14 @@ function readAccounts() {
 }
 
 function migrateLegacyAccount() {
-  const rawVault = readStorage(LEGACY_VAULT_KEY);
-  const rawState = readStorage(LEGACY_STATE_KEY);
+  let rawVault;
+  let rawState;
+  try {
+    rawVault = localStorage.getItem(LEGACY_VAULT_KEY);
+    rawState = localStorage.getItem(LEGACY_STATE_KEY);
+  } catch {
+    return;
+  }
   if (rawVault === null || rawState === null) return;
 
   try {
@@ -45,16 +51,24 @@ function migrateLegacyAccount() {
     if (!validateUsername(username) || !state || typeof state !== 'object' || Array.isArray(state)) return;
 
     const userKey = getAccountStorageKey(username);
-    if (readStorage(userKey) === null) localStorage.setItem(userKey, rawState);
-    if (readStorage(LEGACY_BACKUP_KEY) === null) localStorage.setItem(LEGACY_BACKUP_KEY, rawState);
-
+    const destination = localStorage.getItem(userKey);
+    const backup = localStorage.getItem(LEGACY_BACKUP_KEY);
+    const rawAccounts = localStorage.getItem(ACCOUNTS_KEY);
+    const parsedAccounts = rawAccounts === null ? [] : JSON.parse(rawAccounts);
+    if (!Array.isArray(parsedAccounts)) return;
     const accounts = readAccounts();
-    if (!accounts.some((account) => account.username === username)) {
-      const createdAt = typeof vault.createdAt === 'string' && Number.isFinite(Date.parse(vault.createdAt))
-        ? vault.createdAt
-        : new Date().toISOString();
-      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify([...accounts, { username, createdAt }]));
-    }
+    const accountExists = accounts.some((account) => account.username === username);
+    const createdAt = typeof vault.createdAt === 'string' && Number.isFinite(Date.parse(vault.createdAt))
+      ? vault.createdAt
+      : new Date().toISOString();
+    const serializedAccounts = accountExists ? rawAccounts : JSON.stringify([...accounts, { username, createdAt }]);
+
+    if (destination === null) localStorage.setItem(userKey, rawState);
+    if (backup === null) localStorage.setItem(LEGACY_BACKUP_KEY, rawState);
+    if (!accountExists) localStorage.setItem(ACCOUNTS_KEY, serializedAccounts);
+    if (localStorage.getItem(userKey) === null || localStorage.getItem(LEGACY_BACKUP_KEY) === null) return;
+    if (localStorage.getItem(ACCOUNTS_KEY) !== serializedAccounts) return;
+    if (!readAccounts().some((account) => account.username === username)) return;
 
     localStorage.removeItem(LEGACY_VAULT_KEY);
     localStorage.removeItem(LEGACY_STATE_KEY);
@@ -115,11 +129,7 @@ export function hasCombinedAuthVault() {
 }
 
 export async function signOut() {
-  try {
-    localStorage.removeItem(ACTIVE_KEY);
-  } catch {
-    // An unavailable storage backend cannot retain a local session.
-  }
+  localStorage.removeItem(ACTIVE_KEY);
 }
 
 migrateLegacyAccount();

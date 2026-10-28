@@ -208,6 +208,62 @@ test('a failed migration write preserves both legacy keys', async () => {
   assert.deepEqual(auth.listLocalAccounts(), []);
 });
 
+test('sign out rejects when the active username cannot be removed', async () => {
+  auth.createLocalAccount('retained', 'Password1');
+  auth.resumeLocalAccount('retained');
+  storage.removeItem = () => {
+    throw new Error('Storage unavailable');
+  };
+
+  await assert.rejects(auth.signOut(), /Storage unavailable/);
+  assert.equal(storage.getItem(ACTIVE_KEY), 'retained');
+  assert.equal(auth.getActiveUsername(), 'retained');
+});
+
+test('migration aborts when destination or backup reads fail', async () => {
+  const userKey = auth.getAccountStorageKey('legacy_user');
+  for (const blockedKey of [userKey, BACKUP_KEY, ACCOUNTS_KEY]) {
+    storage = installMockStorage({
+      [LEGACY_VAULT_KEY]: validVault('legacy_user'),
+      [LEGACY_STATE_KEY]: JSON.stringify({ profile: { name: 'Legacy' } }),
+    });
+    const originalGetItem = storage.getItem.bind(storage);
+    let writes = 0;
+    storage.getItem = (key) => {
+      if (key === blockedKey) throw new Error('Read unavailable');
+      return originalGetItem(key);
+    };
+    storage.setItem = () => {
+      writes += 1;
+    };
+
+    auth = await loadService();
+    assert.equal(writes, 0, `migration wrote after ${blockedKey} read failure`);
+    assert.equal(originalGetItem(LEGACY_VAULT_KEY), validVault('legacy_user'));
+    assert.equal(originalGetItem(LEGACY_STATE_KEY), JSON.stringify({ profile: { name: 'Legacy' } }));
+  }
+});
+
+test('migration retains legacy keys when destination, backup, or metadata writes fail', async () => {
+  const userKey = auth.getAccountStorageKey('legacy_user');
+  for (const blockedKey of [userKey, BACKUP_KEY, ACCOUNTS_KEY]) {
+    const legacyState = JSON.stringify({ profile: { name: 'Legacy' } });
+    storage = installMockStorage({
+      [LEGACY_VAULT_KEY]: validVault('legacy_user'),
+      [LEGACY_STATE_KEY]: legacyState,
+    });
+    const originalSetItem = storage.setItem.bind(storage);
+    storage.setItem = (key, value) => {
+      if (key === blockedKey) throw new Error('Write unavailable');
+      originalSetItem(key, value);
+    };
+
+    auth = await loadService();
+    assert.equal(storage.getItem(LEGACY_VAULT_KEY), validVault('legacy_user'), blockedKey);
+    assert.equal(storage.getItem(LEGACY_STATE_KEY), legacyState, blockedKey);
+  }
+});
+
 test('malformed legacy JSON is ignored without deleting legacy data', async () => {
   storage.setItem(LEGACY_VAULT_KEY, '{bad json');
   storage.setItem(LEGACY_STATE_KEY, '{bad json');
