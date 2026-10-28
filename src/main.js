@@ -16,7 +16,7 @@ import { renderProfile } from './screens/profile.js';
 import { openPageTutorial } from './utils/tutorials.js';
 import { initPwaInstall, isStandalone, promptInstall, subscribeInstallState } from './utils/pwaInstall.js';
 import { soundboard } from './services/audioService.js';
-import { hasCombinedAuthVault, isCombinedAuthActive } from './services/authService.js';
+import { getActiveUsername } from './services/authService.js';
 import { renderAuth } from './screens/auth.js';
 
 function getRoutes() {
@@ -130,18 +130,19 @@ function route() {
   void container.offsetWidth;
   container.style.animation = '';
 
+  const username = getActiveUsername();
+  if (!username) {
+    document.body.classList.add('onboarding');
+    cleanup = renderAuth(container, { onSuccess: route });
+    return;
+  }
   if (!store.profile) {
     document.body.classList.add('onboarding');
     cleanup = renderOnboarding(container, () => {
       document.body.classList.remove('onboarding');
       location.hash = '#/home';
       route();
-    });
-    return;
-  }
-  if (hasCombinedAuthVault() && !isCombinedAuthActive()) {
-    document.body.classList.add('onboarding');
-    cleanup = renderAuth(container, { onSuccess: route });
+    }, { username });
     return;
   }
   document.body.classList.remove('onboarding');

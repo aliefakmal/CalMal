@@ -5,7 +5,7 @@ import { avatar } from '../components/companion.js';
 import { toast } from '../components/ui.js';
 import { icons } from '../components/icons.js';
 
-export function renderOnboarding(container, onComplete) {
+export function renderOnboarding(container, onComplete, { username } = {}) {
   let form = {
     name: 'Hero',
     gender: 'male',
@@ -204,6 +204,7 @@ export function renderOnboarding(container, onComplete) {
       }
 
       store.saveProfile({
+        username,
         name: form.name,
         gender: form.gender,
         age: form.age,
