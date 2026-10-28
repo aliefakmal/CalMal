@@ -41,8 +41,8 @@ export function renderAuth(container, { onSuccess } = {}) {
     submit.textContent = busy ? busyLabel : 'Create Account';
     accountButtons.forEach((button) => { button.disabled = busy; });
   };
-  const activate = (username) => {
-    store.activateAccount(username);
+  const activate = async (username) => {
+    await store.activateAccount(username);
     onSuccess?.({ username });
   };
 
@@ -51,7 +51,7 @@ export function renderAuth(container, { onSuccess } = {}) {
     setStatus('Opening saved account…');
     try {
       const username = button.dataset.account;
-      activate(username);
+      await activate(username);
     } catch (error) {
       setStatus(error.message || 'Could not open this saved account.', true);
     } finally {
@@ -65,9 +65,9 @@ export function renderAuth(container, { onSuccess } = {}) {
     setStatus('Creating account…');
     const data = new FormData(form);
     try {
-      await Promise.resolve().then(() => {
+      await Promise.resolve().then(async () => {
         const account = createLocalAccount(data.get('username'), data.get('password'));
-        activate(account.username);
+        await activate(account.username);
       });
       setStatus('Account created.');
     } catch (error) {

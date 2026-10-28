@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { beforeEach, test } from 'node:test';
+import { beforeEach, mock, test } from 'node:test';
 import { installMockStorage } from './helpers/mockStorage.js';
 
 class MiniElement {
@@ -166,6 +166,7 @@ beforeEach(async () => {
   ({ renderAuth } = await import('../src/screens/auth.js'));
   ({ renderOnboarding } = await import('../src/screens/onboarding.js'));
   ({ renderProfile } = await import('../src/screens/profile.js'));
+  mock.reset();
   if (auth.getActiveUsername()) await store.clearActiveAccount();
 });
 
@@ -185,7 +186,7 @@ test('first run renders Create Account and activates a valid account before onbo
   assert.equal(store.getStorageKey(), 'calmal.user.new_user');
 });
 
-test('saved usernames are escaped native buttons and resume without credentials', async () => {
+test('saved usernames are native buttons and resume without credentials', async () => {
   auth.createLocalAccount('Saved_User', 'Password1');
   auth.createLocalAccount('other_user', 'Password1');
   const container = new MiniElement();
@@ -221,21 +222,46 @@ test('invalid and duplicate submissions preserve accessible feedback and saved d
   assert.equal(storage.getItem('calmal.user.existing'), '{"profile":{"name":"Kept"}}');
 });
 
-test('submission disables the busy control during account creation and restores it afterward', async () => {
+test('submission shows busy state while account activation is pending and completes successfully', async (t) => {
+  const realStore = store;
+  const realStoreModule = await import('../src/services/store.js');
+  let finishActivation;
+  let activationCalls = 0;
+  const storeURL = new URL('../src/services/store.js', import.meta.url);
+  t.mock.module(storeURL, {
+    namedExports: {
+      ...realStoreModule,
+      store: {
+        ...realStore,
+        activateAccount(username) {
+          activationCalls += 1;
+          realStore.activateAccount(username);
+          return new Promise((resolve) => { finishActivation = resolve; });
+        },
+      },
+    },
+  });
+  ({ renderAuth } = await import(`../src/screens/auth.js?busy-test=${Date.now()}`));
+
   const container = new MiniElement();
-  let finishWrite;
-  storage.setItem = () => new Promise((resolve) => { finishWrite = resolve; });
-  renderAuth(container);
+  let completed;
+  renderAuth(container, { onSuccess: (account) => { completed = account; } });
   const button = container.querySelector('[data-submit]');
   container.querySelector('[name=username]').value = 'valid_user';
   container.querySelector('[name=password]').value = 'Password1';
   const pending = submit(container.querySelector('#local-auth-form'));
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.equal(activationCalls, 1);
+  assert.equal(auth.getActiveUsername(), 'valid_user');
   assert.equal(button.disabled, true);
   assert.equal(button.textContent, 'Creating account…');
-  await Promise.resolve();
-  await Promise.resolve();
-  finishWrite();
+  finishActivation();
   await pending;
+
+  assert.deepEqual(completed, { username: 'valid_user' });
+  assert.deepEqual(auth.listLocalAccounts().map(({ username }) => username), ['valid_user']);
   assert.equal(button.disabled, false);
   assert.equal(button.textContent, 'Create Account');
 });
