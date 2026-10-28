@@ -1,8 +1,10 @@
 // Supabase Client — Offline-First & Guest-Friendly Cloud Sync
 import { createClient } from '@supabase/supabase-js';
+import { getActiveUsername } from './authService.js';
 
-const SUPABASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || '';
-const SUPABASE_ANON_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || '';
+const env = (typeof import.meta !== 'undefined' && import.meta.env) || globalThis.process?.env || {};
+const SUPABASE_URL = env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY || '';
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
@@ -37,17 +39,19 @@ export async function getCurrentUser() {
  */
 let syncTimer = null;
 export function scheduleCloudSync(localState) {
-  if (!supabase) return; // Silent no-op for guest/offline mode
-
+  const username = getActiveUsername();
   clearTimeout(syncTimer);
+  if (!supabase || !username) return;
+
   syncTimer = setTimeout(async () => {
+    syncTimer = null;
+    if (getActiveUsername() !== username) return;
     try {
       const user = await getCurrentUser();
-      if (!user) return; // User is not logged in, keep data local
+      if (!user || getActiveUsername() !== username) return;
 
-      // 1. Upsert profile
       if (localState.profile) {
-        await supabase.from('profiles').upsert({
+        const { error } = await supabase.from('profiles').upsert({
           id: user.id,
           username: localState.profile.username || user.user_metadata?.username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
           display_name: localState.profile.name || 'Hero',
@@ -59,8 +63,10 @@ export function scheduleCloudSync(localState) {
           selected_companion: localState.profile.selectedCompanion || 'deku',
           updated_at: new Date().toISOString(),
         });
+        if (error) throw error;
       }
 
+      if (getActiveUsername() !== username) return;
       console.info('[Supabase] Cloud state sync complete.');
     } catch (err) {
       console.warn('[Supabase] Background sync failed:', err.message);
