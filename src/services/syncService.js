@@ -94,7 +94,6 @@ export async function processSyncQueue() {
   notify(username, 'syncing');
   try {
     const processed = [];
-    const pending = [];
     for (const item of readQueue(username)) {
       if (!isCurrentAccount()) return;
       try {
@@ -104,13 +103,12 @@ export async function processSyncQueue() {
         processed.push(item);
         if (!isCurrentAccount()) return;
       } catch (err) {
-        pending.push(item);
         console.warn('[CalMal sync]', item.table, err?.message || err);
         if (!isCurrentAccount()) return;
       }
     }
     const processedIds = new Set(processed.map((item) => item.id));
-    const remaining = [...pending, ...readQueue(username).filter((item) => !processedIds.has(item.id))];
+    const remaining = readQueue(username).filter((item) => !processedIds.has(item.id));
     writeQueue(username, remaining);
     notify(username, remaining.length ? 'saved_offline' : 'synced');
   } finally {

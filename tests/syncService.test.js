@@ -320,6 +320,44 @@ test('queue completion preserves mutations enqueued while the same account reque
   assert.equal(JSON.parse(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha'))).status, 'saved_offline');
 });
 
+test('repeated same-account failed completions retain one failed queue item', async (context) => {
+  online = true;
+  activate('alpha');
+  let attempts = 0;
+  const { service, releaseUser } = await loadSyncService(context, {
+    supabase: {
+      from() {
+        return {
+          upsert: async () => {
+            attempts += 1;
+            return { error: new Error('Cloud unavailable') };
+          },
+        };
+      },
+    },
+  });
+  releaseUser();
+  online = false;
+  service.enqueueMutation('meal_logs', 'UPSERT', { client_id: 'alpha-meal' });
+  const originalQueue = storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'alpha'));
+  online = true;
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  try {
+    await service.processSyncQueue();
+    assert.equal(storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'alpha')), originalQueue);
+    await service.processSyncQueue();
+    await service.processSyncQueue();
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  assert.equal(attempts, 3);
+  assert.equal(storage.getItem(scopedKey(LEGACY_QUEUE_KEY, 'alpha')), originalQueue);
+  assert.deepEqual(readQueue('alpha').map((item) => item.payload.client_id), ['alpha-meal']);
+  assert.equal(JSON.parse(storage.getItem(scopedKey(LEGACY_STATUS_KEY, 'alpha'))).status, 'saved_offline');
+});
+
 async function loadCloudScheduler(context) {
   let authRequests = 0;
   let releaseUser;
