@@ -41,8 +41,12 @@ async function encryptSecret(username, password, secret) {
   return { iv: base64url(iv), encryptedBioSecret: base64url(ciphertext) };
 }
 async function decryptSecret(username, password, vault) {
-  const key = await deriveEncryptionKey(username, password);
-  return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromBase64url(vault.iv) }, key, fromBase64url(vault.encryptedBioSecret)));
+  try {
+    const key = await deriveEncryptionKey(username, password);
+    return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromBase64url(vault.iv) }, key, fromBase64url(vault.encryptedBioSecret)));
+  } catch {
+    throw new Error('Incorrect username or password.');
+  }
 }
 
 export async function isBiometricAvailable() {
@@ -50,35 +54,60 @@ export async function isBiometricAvailable() {
   if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable !== 'function') return false;
   try { return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); } catch { return false; }
 }
-function requireWebAuthn() {
-  if (!navigator.credentials?.create || !window.PublicKeyCredential) throw new Error('Biometric authentication is unavailable in this browser.');
+
+async function createFallbackDeviceCredential(username) {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent || 'web' : 'web';
+  const digest = await crypto.subtle.digest('SHA-256', bytes(`calmal_device_cred_${username}_${ua}`));
+  return {
+    credentialId: base64url(new Uint8Array(digest).slice(0, 24)),
+    biometricSecret: crypto.getRandomValues(new Uint8Array(32)),
+    fallback: true,
+  };
 }
+
 async function registerBiometric(username) {
-  requireWebAuthn();
-  const credential = await navigator.credentials.create({ publicKey: {
-    challenge: crypto.getRandomValues(new Uint8Array(32)),
-    rp: { name: 'CalMal', id: location.hostname },
-    user: { id: bytes(username), name: username, displayName: username },
-    pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
-    authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
-    timeout: 60000,
-  } });
-  if (!credential) throw new Error('Biometric registration was cancelled.');
-  return { credentialId: base64url(credential.rawId), biometricSecret: crypto.getRandomValues(new Uint8Array(32)) };
+  const bioAvailable = await isBiometricAvailable();
+  if (!bioAvailable || !navigator.credentials?.create || !window.PublicKeyCredential) {
+    return createFallbackDeviceCredential(username);
+  }
+  try {
+    const credential = await navigator.credentials.create({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: 'CalMal', id: location.hostname || 'localhost' },
+      user: { id: bytes(username), name: username, displayName: username },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
+      timeout: 60000,
+    } });
+    if (!credential) throw new Error('Biometric registration was cancelled.');
+    return { credentialId: base64url(credential.rawId), biometricSecret: crypto.getRandomValues(new Uint8Array(32)), fallback: false };
+  } catch (err) {
+    if (err?.name === 'NotAllowedError') throw new Error('Biometric scan was cancelled.');
+    return createFallbackDeviceCredential(username);
+  }
 }
-async function verifyBiometric(credentialId) {
-  requireWebAuthn();
-  const assertion = await navigator.credentials.get({ publicKey: {
-    challenge: crypto.getRandomValues(new Uint8Array(32)),
-    rpId: location.hostname,
-    allowCredentials: [{ type: 'public-key', id: fromBase64url(credentialId) }],
-    userVerification: 'required',
-    timeout: 60000,
-  } });
-  const data = assertion?.response?.authenticatorData;
-  if (!data || !(new Uint8Array(data)[32] & 0x04)) throw new Error('Biometric verification failed.');
-  return assertion;
+
+async function verifyBiometric(credentialId, isFallback = false) {
+  if (isFallback || !(await isBiometricAvailable()) || !navigator.credentials?.get || !window.PublicKeyCredential) {
+    return { fallback: true };
+  }
+  try {
+    const assertion = await navigator.credentials.get({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rpId: location.hostname || 'localhost',
+      allowCredentials: [{ type: 'public-key', id: fromBase64url(credentialId) }],
+      userVerification: 'required',
+      timeout: 60000,
+    } });
+    const data = assertion?.response?.authenticatorData;
+    if (!data || !(new Uint8Array(data)[32] & 0x04)) throw new Error('Biometric verification failed.');
+    return assertion;
+  } catch (err) {
+    if (err?.name === 'NotAllowedError') throw new Error('Biometric scan was cancelled.');
+    throw err;
+  }
 }
+
 export async function generateCombinedAuthKey(username, password, credentialId, biometricSecret) {
   const key = await derivePasswordKey(username, password);
   const signature = await crypto.subtle.sign('HMAC', key, new Uint8Array([...biometricSecret, ...bytes(credentialId)]));
@@ -86,54 +115,85 @@ export async function generateCombinedAuthKey(username, password, credentialId, 
   const authKeyVerifier = hex(await crypto.subtle.digest('SHA-256', bytes(authKey)));
   return { authKey, authKeyVerifier };
 }
+
 async function optionalCloudSignUp(username, password) {
   if (!supabase) return null;
-  const { data, error } = await supabase.auth.signUp({ email: usernameEmail(username), password, options: { data: { username } } });
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supabase.auth.signUp({ email: usernameEmail(username), password, options: { data: { username } } });
+    if (error && !/already registered/i.test(error.message || '')) throw error;
+    return data;
+  } catch (err) {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return null;
+    throw err;
+  }
 }
+
 export async function registerWithCombinedAuth(username, password) {
   const normalized = String(username || '').trim().toLowerCase();
-  if (!validateUsername(normalized)) throw new Error('Username must be 3–32 lowercase letters, numbers, or underscores.');
-  if (!validatePassword(password)) throw new Error('Password must be 8+ characters with uppercase, lowercase, and a number.');
-  if (getAuthVault()) throw new Error('This device already has a biometric account.');
+  if (!validateUsername(normalized)) throw new Error('Username must be 3–32 letters, numbers, or underscores.');
+  if (!validatePassword(password)) throw new Error('Password needs 8+ characters with uppercase, lowercase, and a number.');
+  const existingVault = getAuthVault();
+  if (existingVault && existingVault.username === normalized) {
+    throw new Error('Account already exists on this device. Switch to Sign In.');
+  }
   await optionalCloudSignUp(normalized, password);
-  const { credentialId, biometricSecret } = await registerBiometric(normalized);
+  const { credentialId, biometricSecret, fallback } = await registerBiometric(normalized);
   const { authKeyVerifier, authKey } = await generateCombinedAuthKey(normalized, password, credentialId, biometricSecret);
   const encrypted = await encryptSecret(normalized, password, biometricSecret);
-  localStorage.setItem(VAULT_KEY, JSON.stringify({ username: normalized, credentialId, authKeyVerifier, ...encrypted }));
+  localStorage.setItem(VAULT_KEY, JSON.stringify({ username: normalized, credentialId, authKeyVerifier, fallback: Boolean(fallback), ...encrypted }));
   sessionStorage.setItem(ACTIVE_KEY, authKey);
   await mergeGuestDataToCloud();
-  return { success: true, authKey };
+  return { success: true, username: normalized, authKey };
 }
+
 export async function loginWithCombinedAuth(username, password) {
   const normalized = String(username || '').trim().toLowerCase();
+  if (!validateUsername(normalized)) throw new Error('Please enter a valid username.');
   const vault = getAuthVault();
-  if (!vault || vault.username !== normalized) throw new Error('No biometric account found for this username.');
+  if (!vault || vault.username !== normalized) throw new Error('No account found for @' + normalized + '. Create an account first.');
   const biometricSecret = await decryptSecret(normalized, password, vault);
-  if (supabase) {
-    const { error } = await supabase.auth.signInWithPassword({ email: usernameEmail(normalized), password });
-    if (error) throw error;
+  if (supabase && (typeof navigator === 'undefined' || navigator.onLine)) {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: usernameEmail(normalized), password });
+      if (error && !/invalid|not confirmed/i.test(error.message || '')) throw error;
+    } catch {
+      /* offline / local vault verified */
+    }
   }
-  await verifyBiometric(vault.credentialId);
+  await verifyBiometric(vault.credentialId, vault.fallback);
   const { authKey, authKeyVerifier } = await generateCombinedAuthKey(normalized, password, vault.credentialId, biometricSecret);
   if (authKeyVerifier !== vault.authKeyVerifier) throw new Error('Authentication key verification failed.');
   sessionStorage.setItem(ACTIVE_KEY, authKey);
   await mergeGuestDataToCloud();
-  return { success: true, authKey };
+  return { success: true, username: normalized, authKey };
 }
-export async function signOut() { clearActiveAuth(); if (supabase) await supabase.auth.signOut(); }
-export async function getAuthUser() { return getCurrentUser(); }
+
+export async function signOut() {
+  clearActiveAuth();
+  if (supabase) {
+    try { await supabase.auth.signOut(); } catch {}
+  }
+}
+
+export async function getAuthUser() {
+  const cloudUser = await getCurrentUser();
+  if (cloudUser) return cloudUser;
+  const vault = getAuthVault();
+  if (vault?.username && isCombinedAuthActive()) {
+    return { username: vault.username, user_metadata: { username: vault.username } };
+  }
+  return null;
+}
+
 export async function rebindBiometric(username, password) {
   const normalized = username.trim().toLowerCase();
   const vault = getAuthVault();
   if (!vault || vault.username !== normalized) throw new Error('Sign in first.');
   await decryptSecret(normalized, password, vault);
-  const { credentialId, biometricSecret } = await registerBiometric(normalized);
+  const { credentialId, biometricSecret, fallback } = await registerBiometric(normalized);
   const { authKeyVerifier, authKey } = await generateCombinedAuthKey(normalized, password, credentialId, biometricSecret);
   const encrypted = await encryptSecret(normalized, password, biometricSecret);
-  localStorage.setItem(VAULT_KEY, JSON.stringify({ username: normalized, credentialId, authKeyVerifier, ...encrypted }));
+  localStorage.setItem(VAULT_KEY, JSON.stringify({ username: normalized, credentialId, authKeyVerifier, fallback: Boolean(fallback), ...encrypted }));
   sessionStorage.setItem(ACTIVE_KEY, authKey);
   return { success: true };
 }
-

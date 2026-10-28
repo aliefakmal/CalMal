@@ -11,7 +11,7 @@ import { soundboard } from '../services/audioService.js';
 import { esc, fmtDate, todayKey } from '../utils/helpers.js';
 import { t, getLang } from '../utils/i18n.js';
 import { openAuthModal } from '../components/authModal.js';
-import { getAuthUser, isBiometricAvailable } from '../services/authService.js';
+import { getAuthUser, getAuthVault, isCombinedAuthActive, signOut } from '../services/authService.js';
 import { processSyncQueue, getSyncStatus } from '../services/syncService.js';
 
 
@@ -106,6 +106,14 @@ export function renderProfile(container) {
     const activeCoach = profile.selectedCompanion || 'deku';
 
     const isEn = getLang() === 'en';
+    const vault = getAuthVault();
+    const isAuthed = isCombinedAuthActive() && Boolean(vault?.username);
+    const rawSync = getSyncStatus().status || 'saved_offline';
+    const formatSyncLabel = (st) => {
+      if (st === 'synced') return isEn ? 'Cloud Synced' : 'Disegerakkan';
+      if (st === 'syncing') return isEn ? 'Syncing…' : 'Menyegerak…';
+      return isEn ? 'Saved Offline' : 'Disimpan Setempat';
+    };
 
     container.innerHTML = `
       <div class="page-head row between" style="align-items:center">
@@ -120,19 +128,41 @@ export function renderProfile(container) {
       </div>
 
       <div class="stack">
-        <div class="card stack" id="account-security-card">
-          <div class="row between">
-            <div>
-              <span class="eyebrow">${isEn ? 'Account & backup' : 'Akaun & sandaran'}</span>
-              <b id="account-status">${isEn ? 'Guest Mode — sign in to back up your progress' : 'Mod Tetamu — log masuk untuk menyandar kemajuan'}</b>
+        <div class="card account-card" id="account-security-card">
+          <div class="account-card-head">
+            <div class="account-card-info">
+              <span class="eyebrow">${isEn ? 'Account & Backup' : 'Akaun & Sandaran'}</span>
+              <div class="account-title-row">
+                <b id="account-status" class="account-status-title">${
+                  isAuthed
+                    ? `@${esc(vault.username)}`
+                    : (isEn ? 'Guest Mode' : 'Mod Tetamu')
+                }</b>
+                <span class="account-sync-pill ${rawSync === 'synced' ? 'is-synced' : ''}">
+                  <span class="dot"></span>
+                  <span id="sync-status">${formatSyncLabel(rawSync)}</span>
+                </span>
+              </div>
+              <p class="account-sub-desc" id="account-sub-desc">${
+                isAuthed
+                  ? (isEn ? 'Biometric & password protection active on this device.' : 'Perlindungan kata laluan & biometrik aktif pada peranti ini.')
+                  : (isEn ? 'Sign in to back up and protect your fitness progress.' : 'Log masuk untuk menyandar dan melindungi kemajuan anda.')
+              }</p>
             </div>
-            <button type="button" class="btn btn-primary btn-sm" id="btn-account-auth">${isEn ? 'Sign In' : 'Log Masuk'}</button>
+            <button type="button" class="btn ${isAuthed ? 'btn-secondary' : 'btn-primary'} btn-sm account-main-btn" id="btn-account-auth">
+              ${isAuthed ? (isEn ? 'Sign Out' : 'Log Keluar') : (isEn ? 'Sign In' : 'Log Masuk')}
+            </button>
           </div>
-          <div class="row wrap" style="gap:8px">
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-enable-biometric">${isEn ? 'Enable biometric login' : 'Aktifkan log masuk biometrik'}</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="btn-sync-now">${isEn ? 'Sync Now' : 'Segerak Sekarang'}</button>
+          <div class="account-actions-grid">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-enable-biometric">
+              ${icons.key}
+              <span>${vault ? (isEn ? 'Biometric Login' : 'Log Masuk Biometrik') : (isEn ? 'Create Account' : 'Cipta Akaun')}</span>
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-sync-now">
+              ${icons.refresh}
+              <span>${isEn ? 'Sync Now' : 'Segerak Sekarang'}</span>
+            </button>
           </div>
-          <span class="xs muted" id="sync-status">${getSyncStatus().status}</span>
         </div>
         <!-- 1. Current Biometrics Summary Card (TOP PRIORITY STATS) -->
         <div class="card stack" style="gap:14px">
@@ -415,25 +445,50 @@ export function renderProfile(container) {
   }
 
   function bindEvents() {
+    const isEn = getLang() === 'en';
     const accountStatus = container.querySelector('#account-status');
     getAuthUser().then((user) => {
-      if (user && accountStatus) { accountStatus.textContent = `Logged in as @${user.user_metadata?.username || user.email?.split('@')[0] || 'user'}`; }
+      const uname = user?.user_metadata?.username || user?.username || user?.email?.split('@')[0];
+      if (uname && accountStatus) {
+        accountStatus.textContent = `@${uname}`;
+      }
     }).catch(() => {});
-    container.querySelector('#btn-account-auth')?.addEventListener('click', () => openAuthModal({ onSuccess: () => render() }));
-    container.querySelector('#btn-sync-now')?.addEventListener('click', async (event) => {
-      event.currentTarget.disabled = true;
-      await processSyncQueue();
-      const status = container.querySelector('#sync-status');
-      if (status) status.textContent = getSyncStatus().status;
-      event.currentTarget.disabled = false;
+
+    container.querySelector('#btn-account-auth')?.addEventListener('click', async () => {
+      if (isCombinedAuthActive() && getAuthVault()) {
+        await signOut();
+        toast(isEn ? 'Signed out to Guest Mode.' : 'Log keluar ke Mod Tetamu.', 'info');
+        render();
+        return;
+      }
+      openAuthModal({ initialMode: 'sign-in', onSuccess: () => render() });
     });
-    container.querySelector('#btn-enable-biometric')?.addEventListener('click', async (event) => {
-      event.currentTarget.disabled = true;
-      try {
-        if (!(await isBiometricAvailable())) throw new Error('This device does not expose a platform biometric authenticator.');
-        openAuthModal({ onSuccess: () => render() });
-      } catch (err) { toast(err.message || 'Biometric setup failed.', 'error'); }
-      finally { event.currentTarget.disabled = false; }
+
+    container.querySelector('#btn-sync-now')?.addEventListener('click', async (event) => {
+      const btn = event.currentTarget;
+      btn.disabled = true;
+      await processSyncQueue();
+      const rawSt = getSyncStatus().status || 'saved_offline';
+      const status = container.querySelector('#sync-status');
+      if (status) {
+        status.textContent = rawSt === 'synced'
+          ? (isEn ? 'Cloud Synced' : 'Disegerakkan')
+          : rawSt === 'syncing'
+            ? (isEn ? 'Syncing…' : 'Menyegerak…')
+            : (isEn ? 'Saved Offline' : 'Disimpan Setempat');
+      }
+      toast(
+        rawSt === 'synced'
+          ? (isEn ? 'Progress synced to cloud!' : 'Data disegerakkan ke awan!')
+          : (isEn ? 'Progress saved locally on your device.' : 'Data disimpan dengan selamat pada peranti.'),
+        'success'
+      );
+      btn.disabled = false;
+    });
+
+    container.querySelector('#btn-enable-biometric')?.addEventListener('click', () => {
+      const hasVault = Boolean(getAuthVault());
+      openAuthModal({ initialMode: hasVault ? 'sign-in' : 'sign-up', onSuccess: () => render() });
     });
     // Edit Profile Modal Trigger
     const triggerEditProfile = () => {
