@@ -225,3 +225,4 @@ export function renderOnboarding(container, onComplete) {
 
   render();
 }
+

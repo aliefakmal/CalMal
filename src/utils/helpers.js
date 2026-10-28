@@ -147,3 +147,4 @@ export function animateNumber(el, to, { duration = 900, decimals = 0 } = {}) {
   };
   requestAnimationFrame(step);
 }
+

@@ -10,6 +10,9 @@ import { openProfileEditor } from '../components/profileEditor.js';
 import { soundboard } from '../services/audioService.js';
 import { esc, fmtDate, todayKey } from '../utils/helpers.js';
 import { t, getLang } from '../utils/i18n.js';
+import { openAuthModal } from '../components/authModal.js';
+import { getAuthUser, isBiometricAvailable } from '../services/authService.js';
+import { processSyncQueue, getSyncStatus } from '../services/syncService.js';
 
 
 export function renderProfile(container) {
@@ -117,6 +120,20 @@ export function renderProfile(container) {
       </div>
 
       <div class="stack">
+        <div class="card stack" id="account-security-card">
+          <div class="row between">
+            <div>
+              <span class="eyebrow">${isEn ? 'Account & backup' : 'Akaun & sandaran'}</span>
+              <b id="account-status">${isEn ? 'Guest Mode — sign in to back up your progress' : 'Mod Tetamu — log masuk untuk menyandar kemajuan'}</b>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-account-auth">${isEn ? 'Sign In' : 'Log Masuk'}</button>
+          </div>
+          <div class="row wrap" style="gap:8px">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-enable-biometric">${isEn ? 'Enable biometric login' : 'Aktifkan log masuk biometrik'}</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-sync-now">${isEn ? 'Sync Now' : 'Segerak Sekarang'}</button>
+          </div>
+          <span class="xs muted" id="sync-status">${getSyncStatus().status}</span>
+        </div>
         <!-- 1. Current Biometrics Summary Card (TOP PRIORITY STATS) -->
         <div class="card stack" style="gap:14px">
           <div class="row between wrap" style="align-items:center;gap:10px;margin-bottom:2px">
@@ -398,6 +415,26 @@ export function renderProfile(container) {
   }
 
   function bindEvents() {
+    const accountStatus = container.querySelector('#account-status');
+    getAuthUser().then((user) => {
+      if (user && accountStatus) { accountStatus.textContent = `Logged in as @${user.user_metadata?.username || user.email?.split('@')[0] || 'user'}`; }
+    }).catch(() => {});
+    container.querySelector('#btn-account-auth')?.addEventListener('click', () => openAuthModal({ onSuccess: () => render() }));
+    container.querySelector('#btn-sync-now')?.addEventListener('click', async (event) => {
+      event.currentTarget.disabled = true;
+      await processSyncQueue();
+      const status = container.querySelector('#sync-status');
+      if (status) status.textContent = getSyncStatus().status;
+      event.currentTarget.disabled = false;
+    });
+    container.querySelector('#btn-enable-biometric')?.addEventListener('click', async (event) => {
+      event.currentTarget.disabled = true;
+      try {
+        if (!(await isBiometricAvailable())) throw new Error('This device does not expose a platform biometric authenticator.');
+        openAuthModal({ onSuccess: () => render() });
+      } catch (err) { toast(err.message || 'Biometric setup failed.', 'error'); }
+      finally { event.currentTarget.disabled = false; }
+    });
     // Edit Profile Modal Trigger
     const triggerEditProfile = () => {
       openProfileEditor((updatedProfile) => {
@@ -522,3 +559,4 @@ export function renderProfile(container) {
 
   render();
 }
+

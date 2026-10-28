@@ -696,3 +696,4 @@ input[type='range'] { width: 100%; accent-color: #fff; height: 28px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }
+
