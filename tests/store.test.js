@@ -176,6 +176,45 @@ test('malformed account JSON and incorrectly typed fields load safe normalized d
   assert.equal(store.settings.cameraFacing, 'user');
 });
 
+test('account activation does not enqueue or schedule cloud synchronization', async (context) => {
+  const aKey = createAccount('alpha');
+  const bKey = createAccount('beta');
+  store.activateAccount('alpha');
+  store.saveProfile({ name: 'Alpha' });
+  store.addMeal({ id: 'alpha-meal', name: 'Nasi lemak' });
+  store.activateAccount('beta');
+  store.addMeal({ id: 'beta-meal', name: 'Beta meal' });
+  storage.setItem(bKey, JSON.stringify({
+    profile: { name: 'Beta' },
+    meals: [{ id: 'beta-meal', name: 'Beta meal', kcal: 200 }],
+  }));
+  storage.removeItem('calmal_sync_queue');
+  storage.removeItem('calmal_sync_status');
+  let enqueues = 0;
+  let schedules = 0;
+  context.mock.module(new URL('../src/services/supabaseClient.js', import.meta.url).href, {
+    namedExports: { scheduleCloudSync: () => { schedules += 1; } },
+  });
+  context.mock.module(new URL('../src/services/syncService.js', import.meta.url).href, {
+    namedExports: {
+      enqueueMutation: () => {},
+      enqueueStateSync: () => { enqueues += 1; },
+    },
+  });
+  try {
+    await loadStore();
+    store.activateAccount('beta');
+  } finally {
+    context.mock.reset();
+  }
+
+  assert.equal(enqueues, 0);
+  assert.equal(schedules, 0);
+  assert.equal(storage.getItem('calmal_sync_queue'), null);
+  assert.equal(storage.getItem('calmal_sync_status'), null);
+  assert.equal(storage.getItem(aKey) !== null, true);
+});
+
 test('a failed current-account persist rejects switching without changing the active account or state', () => {
   const aKey = createAccount('alpha');
   const bKey = createAccount('beta');
@@ -200,6 +239,41 @@ test('a failed current-account persist rejects switching without changing the ac
   assert.equal(store.getStorageKey(), aKey);
   assert.equal(auth.getActiveUsername(), 'alpha');
   assert.equal(storage.getItem(bKey), null);
+});
+
+test('a failed pruning retry preserves active state identity and thumbnail content', () => {
+  const aKey = createAccount('alpha');
+  const bKey = createAccount('beta');
+  store.activateAccount('alpha');
+  store.addMeal({ id: 'meal-1', name: 'First', thumb: 'first-image' });
+  store.addMeal({ id: 'meal-2', name: 'Second', thumb: 'second-image' });
+  const activeState = store.state;
+  const meals = [...activeState.meals];
+  const serialized = JSON.stringify(activeState);
+  const originalSetItem = storage.setItem.bind(storage);
+  let attempts = 0;
+  storage.setItem = (key, value) => {
+    if (key === aKey) {
+      attempts += 1;
+      throw new Error('Storage unavailable');
+    }
+    originalSetItem(key, value);
+  };
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  try {
+    assert.throws(() => store.activateAccount('beta'), /save current account/i);
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  assert.equal(attempts, 2);
+  assert.strictEqual(store.state, activeState);
+  assert.deepEqual(store.state.meals, meals);
+  assert.equal(JSON.stringify(store.state), serialized);
+  assert.equal(store.state.meals[1].thumb, 'first-image');
+  assert.equal(store.state.meals[0].thumb, 'second-image');
+  assert.equal(auth.getActiveUsername(), 'alpha');
 });
 
 test('a failed current-account persist rejects clearing the active account and emits nothing', async () => {

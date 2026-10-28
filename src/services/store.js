@@ -71,11 +71,13 @@ function persist() {
     localStorage.setItem(key, JSON.stringify(state));
     return true;
   } catch (e) {
-    // Storage full: retry after pruning the oldest image thumbnails.
+    // Retry a staged copy so a failed save leaves the active state untouched.
     console.warn('Storage full, pruning old thumbnails', e);
-    state.meals.slice(0, Math.floor(state.meals.length / 2)).forEach((m) => delete m.thumb);
+    const pruned = { ...state, meals: state.meals.map((meal) => ({ ...meal })) };
+    pruned.meals.slice(0, Math.floor(pruned.meals.length / 2)).forEach((m) => delete m.thumb);
     try {
-      localStorage.setItem(key, JSON.stringify(state));
+      localStorage.setItem(key, JSON.stringify(pruned));
+      state = pruned;
       return true;
     } catch {
       return false;
@@ -107,8 +109,6 @@ export const store = {
     resumeLocalAccount(username);
     state = load();
     if (state.profile?.selectedCompanion) applyHeroTheme(state.profile.selectedCompanion);
-    enqueueStateSync(state);
-    scheduleCloudSync(state);
     listeners.forEach((fn) => fn('account', state));
     return state;
   },
