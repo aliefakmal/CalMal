@@ -4,7 +4,7 @@ import { toast, statusBadge, openSheet } from '../components/ui.js';
 import { analyzeFood, readNutritionLabel, findLocalDish } from '../services/gemini.js';
 import { lookupBarcode, scaleNutrients } from '../services/openFoodFacts.js';
 import { compressImage, esc, round1, int } from '../utils/helpers.js';
-import { companionBubble } from '../components/companion.js';
+import { showMotivationPopup } from '../components/companion.js';
 import { openMealEditor } from '../components/mealEditor.js';
 import { onScanModeUsed, onMealLogged } from '../services/companionService.js';
 import { store } from '../services/store.js';
@@ -353,8 +353,7 @@ export function renderScanner(container) {
               : ''
           }
 
-          ${r.recommendation.deku ? companionBubble('deku', r.recommendation.deku, { compact: true }) : ''}
-          ${r.recommendation.bakugou ? companionBubble('bakugou', r.recommendation.bakugou, { compact: true }) : ''}
+
 
           <!-- 1-Tap Malaysian Food & Beverage Quick Switcher -->
           <div class="card flat" style="background:rgba(255,255,255,0.02);border:1px solid var(--border-soft);padding:10px 12px;margin:10px 0;border-radius:10px">
@@ -471,8 +470,7 @@ export function renderScanner(container) {
             </div>
           </div>
 
-          ${r.recommendation.deku ? companionBubble('deku', r.recommendation.deku, { compact: true }) : ''}
-          ${r.recommendation.bakugou ? companionBubble('bakugou', r.recommendation.bakugou, { compact: true }) : ''}
+
 
           <div class="grid grid-2" style="margin-top:8px">
             <button type="button" class="btn btn-secondary" id="btn-ocr-edit">
@@ -818,6 +816,11 @@ export function renderScanner(container) {
       toast(`AI recognized: ${res.name}`, 'success');
       updateResultsUI();
       container.querySelector('#results-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // Random animated motivation popup from Deku or Bakugou with voice cheer
+      const randomHero = Math.random() < 0.5 ? 'deku' : 'bakugou';
+      const coachAdvice = res?.recommendation?.[randomHero] || '';
+      showMotivationPopup({ who: randomHero, advice: coachAdvice });
     } catch (err) {
       toast(err.message || 'Failed to analyze food.', 'error');
     } finally {
@@ -842,6 +845,11 @@ export function renderScanner(container) {
       toast(`Label scanned: ${res.name}`, 'success');
       updateResultsUI();
       container.querySelector('#results-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // Random animated motivation popup from Deku or Bakugou with voice cheer
+      const randomHero = Math.random() < 0.5 ? 'deku' : 'bakugou';
+      const coachAdvice = res?.recommendation?.[randomHero] || '';
+      showMotivationPopup({ who: randomHero, advice: coachAdvice });
     } catch (err) {
       toast(err.message || 'Failed to read nutrition label.', 'error');
     } finally {

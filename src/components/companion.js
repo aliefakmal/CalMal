@@ -2,7 +2,7 @@
 // 5-State Matrix, Dynamic Animated SVG Avatars & Web Audio Soundboard
 import { esc } from '../utils/helpers.js';
 import { store } from '../services/store.js';
-import { soundboard } from '../services/audioService.js';
+import { soundboard, VOICE_SHUFFLE_CATALOG } from '../services/audioService.js';
 import { icons } from './icons.js';
 
 export const CHARACTERS = {
@@ -516,4 +516,134 @@ export function showMilestoneCelebration({
 
   setTimeout(close, 7500);
 }
+
+let activeMotivationPopup = null;
+
+/**
+ * Animated Hero Motivation Popup (Izuku Midoriya or Katsuki Bakugou)
+ * Randomly triggers on food / nutrition scan with authentic Japanese voice and heroic cheer.
+ */
+export function showMotivationPopup({
+  who = null,
+  advice = '',
+  duration = 7500,
+} = {}) {
+  if (!store.settings?.companions) return;
+
+  if (activeMotivationPopup) {
+    try {
+      activeMotivationPopup.remove();
+    } catch { /* noop */ }
+    activeMotivationPopup = null;
+  }
+  document.querySelectorAll('.motivation-pop').forEach((el) => {
+    try { el.remove(); } catch { /* noop */ }
+  });
+
+  let root = document.getElementById('overlay-root');
+  if (!root) {
+    root = document.createElement('div');
+    root.id = 'overlay-root';
+    document.body.appendChild(root);
+  }
+
+  // Randomize between Deku and Bakugou if not explicitly specified
+  const hero = (who === 'bakugou' || who === 'baku')
+    ? 'bakugou'
+    : (who === 'deku' ? 'deku' : (Math.random() < 0.5 ? 'deku' : 'bakugou'));
+
+  const isBaku = hero === 'bakugou';
+  const isMs = store.settings?.language === 'ms';
+
+  // Pick a fresh motivational voice line from the catalog
+  const picked = soundboard.pickNextLine(hero);
+  const lineObj = picked?.line || (VOICE_SHUFFLE_CATALOG[hero] ? VOICE_SHUFFLE_CATALOG[hero][0] : null);
+
+  const jaText = lineObj?.ja || '';
+  const quoteText = lineObj
+    ? (isMs ? (lineObj.ms || lineObj.en) : (lineObj.en || lineObj.ms))
+    : (isBaku ? 'LEBURKAN SEMUANYA!!' : 'Melangkah Lebih Jauh! PLUS ULTRA!!');
+
+  const heroRole = isBaku ? 'Fitness Coach' : 'Nutrition Coach';
+
+  const el = document.createElement('div');
+  el.className = `motivation-pop motivation-pop-${hero}`;
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-modal', 'false');
+
+  el.innerHTML = `
+    <div class="mp-aura"></div>
+    <div class="mp-avatar-col">
+      ${avatar(hero, 52, 'goal_hit')}
+    </div>
+    <div class="mp-content">
+      <div class="mp-header row between">
+        <span class="mp-badge">${isBaku ? '≡ƒÆÑ BAKUGOU' : 'ΓÜí DEKU'} <small style="opacity:0.75;font-weight:600">(${heroRole})</small></span>
+        <div class="mp-actions row">
+          <button type="button" class="mp-btn-audio btn-ghost" title="${isMs ? 'Mainkan Semula Suara' : 'Replay Voice'}" aria-label="Replay Voice">
+            ≡ƒöè
+          </button>
+          <button type="button" class="mp-btn-close btn-ghost" title="${isMs ? 'Tutup' : 'Close'}" aria-label="Close">
+            ├ù
+          </button>
+        </div>
+      </div>
+      ${jaText ? `
+        <div class="mp-ja-row">
+          <span class="mp-ja-tag">JP</span>
+          <span class="mp-ja-text">${esc(jaText)}</span>
+        </div>
+      ` : ''}
+      <p class="mp-quote">${esc(quoteText)}</p>
+      ${advice ? `<p class="mp-advice">≡ƒÆí ${esc(advice)}</p>` : ''}
+    </div>
+  `;
+
+  root.appendChild(el);
+  activeMotivationPopup = el;
+
+  // Immediately play the authentic Japanese voice line matching the line
+  if (lineObj) {
+    soundboard.playLineAudio(hero, lineObj).catch(() => {});
+  } else {
+    soundboard.play(hero, 'greet').catch(() => {});
+  }
+
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    el.classList.add('out');
+    setTimeout(() => {
+      try { el.remove(); } catch {}
+      if (activeMotivationPopup === el) activeMotivationPopup = null;
+    }, 320);
+  };
+
+  el.querySelector('.mp-btn-close')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    close();
+  });
+
+  el.querySelector('.mp-btn-audio')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (lineObj) {
+      soundboard.playLineAudio(hero, lineObj).catch(() => {});
+    }
+  });
+
+  el.addEventListener('click', (e) => {
+    if (e.target.closest('button')) return;
+    if (lineObj) {
+      soundboard.playLineAudio(hero, lineObj).catch(() => {});
+    }
+  });
+
+  if (duration > 0) {
+    setTimeout(() => {
+      if (!closed) close();
+    }, duration);
+  }
+}
+
 
