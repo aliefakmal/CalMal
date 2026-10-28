@@ -1,203 +1,186 @@
-import { getCurrentUser, supabase } from './supabaseClient.js';
-import { mergeGuestDataToCloud } from './syncService.js';
+const ACCOUNTS_KEY = 'calmal_accounts_v1';
+const ACTIVE_KEY = 'calmal_active_username_v1';
+const LEGACY_VAULT_KEY = 'calmal_auth_vault';
+const LEGACY_STATE_KEY = 'calmal.v1';
+const LEGACY_BACKUP_KEY = 'calmal.v1.backup';
 
-const VAULT_KEY = 'calmal_auth_vault';
-const ACTIVE_KEY = 'calmal_active_auth_key';
-const usernameEmail = (username) => `${username.trim().toLowerCase()}@users.calmal.app`;
+const normalizeUsername = (username) => String(username || '').trim().toLowerCase();
 
-const bytes = (value) => typeof value === 'string' ? new TextEncoder().encode(value) : new Uint8Array(value);
-const base64url = (value) => {
-  let binary = '';
-  for (const byte of new Uint8Array(value)) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-};
-const fromBase64url = (value) => {
-  const binary = atob(String(value).replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4));
-  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
-};
-const hex = (value) => [...new Uint8Array(value)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-
-export function validateUsername(username) { return /^[a-z0-9_]{3,32}$/.test(String(username || '').trim().toLowerCase()); }
-export function validatePassword(password) { return typeof password === 'string' && password.length >= 8 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password); }
-export function getAuthVault() { try { return JSON.parse(localStorage.getItem(VAULT_KEY) || 'null'); } catch { return null; } }
-export function isCombinedAuthActive() { return typeof sessionStorage !== 'undefined' && Boolean(sessionStorage.getItem(ACTIVE_KEY)); }
-export function hasCombinedAuthVault() { return Boolean(getAuthVault()); }
-export function clearActiveAuth() { sessionStorage?.removeItem(ACTIVE_KEY); }
-
-async function derivePasswordKey(username, password) {
-  const salt = await crypto.subtle.digest('SHA-256', bytes(`calmal_salt_${username.trim().toLowerCase()}`));
-  const material = await crypto.subtle.importKey('raw', bytes(password), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, material, { name: 'HMAC', hash: 'SHA-256', length: 256 }, false, ['sign']);
-}
-async function deriveEncryptionKey(username, password) {
-  const salt = await crypto.subtle.digest('SHA-256', bytes(`calmal_vault_${username.trim().toLowerCase()}`));
-  const material = await crypto.subtle.importKey('raw', bytes(password), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, material, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-}
-async function encryptSecret(username, password, secret) {
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveEncryptionKey(username, password);
-  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, secret);
-  return { iv: base64url(iv), encryptedBioSecret: base64url(ciphertext) };
-}
-async function decryptSecret(username, password, vault) {
+function readStorage(key) {
   try {
-    const key = await deriveEncryptionKey(username, password);
-    return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromBase64url(vault.iv) }, key, fromBase64url(vault.encryptedBioSecret)));
+    return localStorage.getItem(key);
   } catch {
-    throw new Error('Incorrect username or password.');
+    return null;
   }
 }
 
-export async function isBiometricAvailable() {
-  if (typeof window === 'undefined' || !window.PublicKeyCredential) return false;
-  if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable !== 'function') return false;
-  try { return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); } catch { return false; }
-}
-
-async function createFallbackDeviceCredential(username) {
-  const ua = typeof navigator !== 'undefined' ? navigator.userAgent || 'web' : 'web';
-  const digest = await crypto.subtle.digest('SHA-256', bytes(`calmal_device_cred_${username}_${ua}`));
-  return {
-    credentialId: base64url(new Uint8Array(digest).slice(0, 24)),
-    biometricSecret: crypto.getRandomValues(new Uint8Array(32)),
-    fallback: true,
-  };
-}
-
-async function registerBiometric(username) {
-  const bioAvailable = await isBiometricAvailable();
-  if (!bioAvailable || !navigator.credentials?.create || !window.PublicKeyCredential) {
-    return createFallbackDeviceCredential(username);
-  }
+function parseAccounts(raw, strict = false) {
+  let records;
   try {
-    const credential = await navigator.credentials.create({
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        rp: { name: 'CalMal', id: location.hostname || 'localhost' },
-        user: { id: bytes(username), name: username, displayName: username },
-        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
-        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
-        timeout: 60000,
-      }
-    });
-    if (!credential) throw new Error('Biometric registration was cancelled.');
-    return { credentialId: base64url(credential.rawId), biometricSecret: crypto.getRandomValues(new Uint8Array(32)), fallback: false };
-  } catch (err) {
-    if (err?.name === 'NotAllowedError') throw new Error('Biometric scan was cancelled.');
-    return createFallbackDeviceCredential(username);
+    records = JSON.parse(raw || '[]');
+  } catch {
+    if (strict) throw new Error('Local account storage is corrupted. No account changes were made.');
+    return [];
   }
+  if (!Array.isArray(records)) {
+    if (strict) throw new Error('Local account storage is invalid. No account changes were made.');
+    return [];
+  }
+  const seen = new Set();
+  const accounts = records.filter((record) => {
+    if (!record || typeof record !== 'object' || Array.isArray(record)) return false;
+    if (typeof record.username !== 'string' || typeof record.createdAt !== 'string') return false;
+    const username = normalizeUsername(record.username);
+    if (record.username !== username || !validateUsername(username) || !Number.isFinite(Date.parse(record.createdAt))) return false;
+    if (seen.has(username)) return false;
+    seen.add(username);
+    return true;
+  }).map(({ username, createdAt }) => ({ username, createdAt }));
+  if (strict && accounts.length !== records.length) {
+    throw new Error('Local account storage contains invalid records. No account changes were made.');
+  }
+  return accounts;
 }
 
-async function verifyBiometric(credentialId, isFallback = false) {
-  if (isFallback || !(await isBiometricAvailable()) || !navigator.credentials?.get || !window.PublicKeyCredential) {
-    return { fallback: true };
-  }
+function readAccounts() {
+  return parseAccounts(readStorage(ACCOUNTS_KEY));
+}
+
+function readAccountsForWrite() {
+  return parseAccounts(localStorage.getItem(ACCOUNTS_KEY), true);
+}
+
+function migrateLegacyAccount() {
+  let rawVault;
+  let rawState;
   try {
-    const assertion = await navigator.credentials.get({
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        rpId: location.hostname || 'localhost',
-        allowCredentials: [{ type: 'public-key', id: fromBase64url(credentialId) }],
-        userVerification: 'required',
-        timeout: 60000,
-      }
-    });
-    const data = assertion?.response?.authenticatorData;
-    if (!data || !(new Uint8Array(data)[32] & 0x04)) throw new Error('Biometric verification failed.');
-    return assertion;
-  } catch (err) {
-    if (err?.name === 'NotAllowedError') throw new Error('Biometric scan was cancelled.');
-    throw err;
+    rawVault = localStorage.getItem(LEGACY_VAULT_KEY);
+    rawState = localStorage.getItem(LEGACY_STATE_KEY);
+  } catch {
+    return;
   }
-}
+  if (rawVault === null || rawState === null) return;
 
-export async function generateCombinedAuthKey(username, password, credentialId, biometricSecret) {
-  const key = await derivePasswordKey(username, password);
-  const signature = await crypto.subtle.sign('HMAC', key, new Uint8Array([...biometricSecret, ...bytes(credentialId)]));
-  const authKey = hex(signature);
-  const authKeyVerifier = hex(await crypto.subtle.digest('SHA-256', bytes(authKey)));
-  return { authKey, authKeyVerifier };
-}
-
-async function optionalCloudSignUp(username, password) {
-  if (!supabase) return null;
   try {
-    const { data, error } = await supabase.auth.signUp({ email: usernameEmail(username), password, options: { data: { username } } });
-    if (error && !/already registered/i.test(error.message || '')) throw error;
-    return data;
-  } catch (err) {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) return null;
-    throw err;
+    const vault = JSON.parse(rawVault);
+    const state = JSON.parse(rawState);
+    const username = normalizeUsername(vault?.username);
+    if (!validateUsername(username) || !state || typeof state !== 'object' || Array.isArray(state)) return;
+
+    const userKey = getAccountStorageKey(username);
+    const destination = localStorage.getItem(userKey);
+    const backup = localStorage.getItem(LEGACY_BACKUP_KEY);
+    const rawAccounts = localStorage.getItem(ACCOUNTS_KEY);
+    const parsedAccounts = rawAccounts === null ? [] : JSON.parse(rawAccounts);
+    if (!Array.isArray(parsedAccounts)) return;
+    const accounts = readAccounts();
+    const accountExists = accounts.some((account) => account.username === username);
+    const createdAt = typeof vault.createdAt === 'string' && Number.isFinite(Date.parse(vault.createdAt))
+      ? vault.createdAt
+      : new Date().toISOString();
+    const serializedAccounts = accountExists ? rawAccounts : JSON.stringify([...accounts, { username, createdAt }]);
+
+    if (destination === null) localStorage.setItem(userKey, rawState);
+    if (backup === null) localStorage.setItem(LEGACY_BACKUP_KEY, rawState);
+    if (!accountExists) localStorage.setItem(ACCOUNTS_KEY, serializedAccounts);
+    if (localStorage.getItem(userKey) === null || localStorage.getItem(LEGACY_BACKUP_KEY) === null) return;
+    if (localStorage.getItem(ACCOUNTS_KEY) !== serializedAccounts) return;
+    if (!readAccounts().some((account) => account.username === username)) return;
+
+    localStorage.removeItem(LEGACY_VAULT_KEY);
+    localStorage.removeItem(LEGACY_STATE_KEY);
+  } catch {
+    // Legacy values remain available for a later migration attempt.
   }
 }
 
-export async function registerWithCombinedAuth(username, password) {
-  const normalized = String(username || '').trim().toLowerCase();
-  if (!validateUsername(normalized)) throw new Error('Username must be 3–32 letters, numbers, or underscores.');
-  if (!validatePassword(password)) throw new Error('Password needs 8+ characters with uppercase, lowercase, and a number.');
-  const existingVault = getAuthVault();
-  if (existingVault && existingVault.username === normalized) {
-    throw new Error('Account already exists on this device. Switch to Sign In.');
-  }
-  await optionalCloudSignUp(normalized, password);
-  const { credentialId, biometricSecret, fallback } = await registerBiometric(normalized);
-  const { authKeyVerifier, authKey } = await generateCombinedAuthKey(normalized, password, credentialId, biometricSecret);
-  const encrypted = await encryptSecret(normalized, password, biometricSecret);
-  localStorage.setItem(VAULT_KEY, JSON.stringify({ username: normalized, credentialId, authKeyVerifier, fallback: Boolean(fallback), ...encrypted }));
-  sessionStorage.setItem(ACTIVE_KEY, authKey);
-  await mergeGuestDataToCloud();
-  return { success: true, username: normalized, authKey };
+export function validateUsername(username) {
+  return /^[a-z0-9_]{3,32}$/.test(String(username || '').trim().toLowerCase());
 }
 
-export async function loginWithCombinedAuth(username, password) {
-  const normalized = String(username || '').trim().toLowerCase();
-  if (!validateUsername(normalized)) throw new Error('Please enter a valid username.');
-  const vault = getAuthVault();
-  if (!vault || vault.username !== normalized) throw new Error('No account found for @' + normalized + '. Create an account first.');
-  const biometricSecret = await decryptSecret(normalized, password, vault);
-  if (supabase && (typeof navigator === 'undefined' || navigator.onLine)) {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email: usernameEmail(normalized), password });
-      if (error && !/invalid|not confirmed/i.test(error.message || '')) throw error;
-    } catch {
-      /* offline / local vault verified */
-    }
+export function validatePassword(password) {
+  return typeof password === 'string' && password.length >= 8 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password);
+}
+
+export function getAccountStorageKey(username) {
+  return `calmal.user.${encodeURIComponent(normalizeUsername(username))}`;
+}
+
+export function createLocalAccount(username, password) {
+  const normalized = normalizeUsername(username);
+  if (!validateUsername(normalized)) throw new Error('Username must be 3 to 32 lowercase letters, numbers, or underscores.');
+  if (!validatePassword(password)) throw new Error('Password must be 8+ characters with uppercase, lowercase, and a number.');
+
+  const accounts = readAccountsForWrite();
+  if (accounts.some((account) => account.username === normalized)) throw new Error('This local account already exists.');
+  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify([
+    ...accounts,
+    { username: normalized, createdAt: new Date().toISOString() },
+  ]));
+  if (accounts.length === 0) migrateLegacyStateToAccount(normalized);
+  return { username: normalized };
+}
+
+export function migrateLegacyStateToAccount(username) {
+  const normalized = normalizeUsername(username);
+  if (!readAccountsForWrite().some((account) => account.username === normalized)) {
+    throw new Error('Create the local account before migrating guest data.');
   }
-  await verifyBiometric(vault.credentialId, vault.fallback);
-  const { authKey, authKeyVerifier } = await generateCombinedAuthKey(normalized, password, vault.credentialId, biometricSecret);
-  if (authKeyVerifier !== vault.authKeyVerifier) throw new Error('Authentication key verification failed.');
-  sessionStorage.setItem(ACTIVE_KEY, authKey);
-  await mergeGuestDataToCloud();
-  return { success: true, username: normalized, authKey };
+
+  const rawState = localStorage.getItem(LEGACY_STATE_KEY);
+  if (rawState === null) return false;
+  const state = JSON.parse(rawState);
+  if (!state || typeof state !== 'object' || Array.isArray(state)) {
+    throw new Error('Guest data is invalid and was not migrated.');
+  }
+
+  const userKey = getAccountStorageKey(normalized);
+  const destination = localStorage.getItem(userKey);
+  const backup = localStorage.getItem(LEGACY_BACKUP_KEY);
+  if (destination !== null && destination !== rawState) {
+    throw new Error('This account already has data. Guest data was not migrated.');
+  }
+
+  if (destination === null) localStorage.setItem(userKey, rawState);
+  if (backup === null) localStorage.setItem(LEGACY_BACKUP_KEY, rawState);
+  if (localStorage.getItem(userKey) !== rawState || localStorage.getItem(LEGACY_BACKUP_KEY) !== rawState) {
+    throw new Error('Guest data could not be verified. The original data was kept.');
+  }
+
+  localStorage.removeItem(LEGACY_STATE_KEY);
+  if (localStorage.getItem(LEGACY_STATE_KEY) !== null) {
+    throw new Error('Guest data was copied, but its original entry could not be removed.');
+  }
+  return true;
+}
+
+export function listLocalAccounts() {
+  return readAccounts().sort((a, b) => a.username.localeCompare(b.username));
+}
+
+export function resumeLocalAccount(username) {
+  const normalized = normalizeUsername(username);
+  if (!validateUsername(normalized)) throw new Error('Enter a valid username.');
+  if (!readAccounts().some((account) => account.username === normalized)) throw new Error('Local account not found.');
+  localStorage.setItem(ACTIVE_KEY, normalized);
+  return { username: normalized };
+}
+
+export function getActiveUsername() {
+  const username = normalizeUsername(readStorage(ACTIVE_KEY));
+  return readAccounts().some((account) => account.username === username) ? username : null;
+}
+
+export function isCombinedAuthActive() {
+  return getActiveUsername() !== null;
+}
+
+export function hasCombinedAuthVault() {
+  return readAccounts().length > 0;
 }
 
 export async function signOut() {
-  clearActiveAuth();
-  if (supabase) {
-    try { await supabase.auth.signOut(); } catch { }
-  }
+  localStorage.removeItem(ACTIVE_KEY);
 }
 
-export async function getAuthUser() {
-  const cloudUser = await getCurrentUser();
-  if (cloudUser) return cloudUser;
-  const vault = getAuthVault();
-  if (vault?.username && isCombinedAuthActive()) {
-    return { username: vault.username, user_metadata: { username: vault.username } };
-  }
-  return null;
-}
-
-export async function rebindBiometric(username, password) {
-  const normalized = username.trim().toLowerCase();
-  const vault = getAuthVault();
-  if (!vault || vault.username !== normalized) throw new Error('Sign in first.');
-  await decryptSecret(normalized, password, vault);
-  const { credentialId, biometricSecret, fallback } = await registerBiometric(normalized);
-  const { authKeyVerifier, authKey } = await generateCombinedAuthKey(normalized, password, credentialId, biometricSecret);
-  const encrypted = await encryptSecret(normalized, password, biometricSecret);
-  localStorage.setItem(VAULT_KEY, JSON.stringify({ username: normalized, credentialId, authKeyVerifier, fallback: Boolean(fallback), ...encrypted }));
-  sessionStorage.setItem(ACTIVE_KEY, authKey);
-  return { success: true };
-}
+migrateLegacyAccount();

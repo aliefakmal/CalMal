@@ -10,9 +10,7 @@ import { openProfileEditor } from '../components/profileEditor.js';
 import { soundboard } from '../services/audioService.js';
 import { esc, fmtDate, todayKey } from '../utils/helpers.js';
 import { t, getLang } from '../utils/i18n.js';
-import { openAuthModal } from '../components/authModal.js';
-import { getAuthUser, getAuthVault, isCombinedAuthActive, signOut } from '../services/authService.js';
-import { processSyncQueue, getSyncStatus } from '../services/syncService.js';
+import { getAccountStorageKey, getActiveUsername } from '../services/authService.js';
 
 
 export function renderProfile(container) {
@@ -106,14 +104,6 @@ export function renderProfile(container) {
     const activeCoach = profile.selectedCompanion || 'deku';
 
     const isEn = getLang() === 'en';
-    const vault = getAuthVault();
-    const isAuthed = isCombinedAuthActive() && Boolean(vault?.username);
-    const rawSync = getSyncStatus().status || 'saved_offline';
-    const formatSyncLabel = (st) => {
-      if (st === 'synced') return isEn ? 'Cloud Synced' : 'Disegerakkan';
-      if (st === 'syncing') return isEn ? 'Syncing…' : 'Menyegerak…';
-      return isEn ? 'Saved Offline' : 'Disimpan Setempat';
-    };
 
     container.innerHTML = `
       <div class="page-head row between" style="align-items:center">
@@ -128,41 +118,14 @@ export function renderProfile(container) {
       </div>
 
       <div class="stack">
-        <div class="card account-card" id="account-security-card">
-          <div class="account-card-head">
-            <div class="account-card-info">
-              <span class="eyebrow">${isEn ? 'Account & Backup' : 'Akaun & Sandaran'}</span>
-              <div class="account-title-row">
-                <b id="account-status" class="account-status-title">${
-                  isAuthed
-                    ? `@${esc(vault.username)}`
-                    : (isEn ? 'Guest Mode' : 'Mod Tetamu')
-                }</b>
-                <span class="account-sync-pill ${rawSync === 'synced' ? 'is-synced' : ''}">
-                  <span class="dot"></span>
-                  <span id="sync-status">${formatSyncLabel(rawSync)}</span>
-                </span>
-              </div>
-              <p class="account-sub-desc" id="account-sub-desc">${
-                isAuthed
-                  ? (isEn ? 'Biometric & password protection active on this device.' : 'Perlindungan kata laluan & biometrik aktif pada peranti ini.')
-                  : (isEn ? 'Sign in to back up and protect your fitness progress.' : 'Log masuk untuk menyandar dan melindungi kemajuan anda.')
-              }</p>
-            </div>
-            <button type="button" class="btn ${isAuthed ? 'btn-secondary' : 'btn-primary'} btn-sm account-main-btn" id="btn-account-auth">
-              ${isAuthed ? (isEn ? 'Sign Out' : 'Log Keluar') : (isEn ? 'Sign In' : 'Log Masuk')}
-            </button>
+        <div class="card stack" id="account-security-card">
+          <div>
+            <span class="eyebrow">${isEn ? 'Local account' : 'Akaun tempatan'}</span>
+            <b class="account-username" id="account-status">${esc(getActiveUsername() || '')}</b>
           </div>
-          <div class="account-actions-grid">
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-enable-biometric">
-              ${icons.key}
-              <span>${vault ? (isEn ? 'Biometric Login' : 'Log Masuk Biometrik') : (isEn ? 'Create Account' : 'Cipta Akaun')}</span>
-            </button>
-            <button type="button" class="btn btn-ghost btn-sm" id="btn-sync-now">
-              ${icons.refresh}
-              <span>${isEn ? 'Sync Now' : 'Segerak Sekarang'}</span>
-            </button>
-          </div>
+          <p class="small muted">${isEn ? 'Your progress is stored in this browser. Signing out keeps your data available under Saved accounts. Anyone using this browser profile can open a saved account.' : 'Kemajuan anda disimpan dalam pelayar ini. Log keluar menyimpan data anda di bawah Akaun tersimpan. Sesiapa yang menggunakan profil pelayar ini boleh membuka akaun tersimpan.'}</p>
+          <div><button type="button" class="btn btn-secondary" id="btn-sign-out">${isEn ? 'Sign Out' : 'Log Keluar'}</button></div>
+          <p class="small" role="status" id="account-action-status"></p>
         </div>
         <!-- 1. Current Biometrics Summary Card (TOP PRIORITY STATS) -->
         <div class="card stack" style="gap:14px">
@@ -386,7 +349,7 @@ export function renderProfile(container) {
             </button>
             <button type="button" class="btn btn-danger btn-sm" id="btn-reset-app">
               ${icons.trash}
-              <span>${isEn ? 'Reset All Data' : 'Set Semula Semua Data'}</span>
+              <span>${isEn ? 'Reset Account Data' : 'Set Semula Data Akaun'}</span>
             </button>
           </div>
         </div>
@@ -445,56 +408,16 @@ export function renderProfile(container) {
   }
 
   function bindEvents() {
-    const isEn = getLang() === 'en';
-    const accountStatus = container.querySelector('#account-status');
-    getAuthUser().then((user) => {
-      const uname = user?.user_metadata?.username || user?.username || user?.email?.split('@')[0];
-      if (uname && accountStatus) {
-        accountStatus.textContent = `@${uname}`;
-        const subDesc = container.querySelector('#account-sub-desc');
-        if (subDesc) {
-          subDesc.textContent = isEn
-            ? 'Biometric & password protection active on this device.'
-            : 'Perlindungan kata laluan & biometrik aktif pada peranti ini.';
-        }
+    container.querySelector('#btn-sign-out')?.addEventListener('click', async (event) => {
+      event.currentTarget.disabled = true;
+      try {
+        await store.clearActiveAccount();
+        location.hash = '#/home';
+      } catch (error) {
+        const status = container.querySelector('#account-action-status');
+        if (status) status.textContent = error.message || 'Could not sign out. Try again.';
+        event.currentTarget.disabled = false;
       }
-    }).catch(() => {});
-
-    container.querySelector('#btn-account-auth')?.addEventListener('click', async () => {
-      if (isCombinedAuthActive() && getAuthVault()) {
-        await signOut();
-        toast(isEn ? 'Signed out to Guest Mode.' : 'Log keluar ke Mod Tetamu.', 'info');
-        render();
-        return;
-      }
-      openAuthModal({ initialMode: 'sign-in', onSuccess: () => render() });
-    });
-
-    container.querySelector('#btn-sync-now')?.addEventListener('click', async (event) => {
-      const btn = event.currentTarget;
-      btn.disabled = true;
-      await processSyncQueue();
-      const rawSt = getSyncStatus().status || 'saved_offline';
-      const status = container.querySelector('#sync-status');
-      if (status) {
-        status.textContent = rawSt === 'synced'
-          ? (isEn ? 'Cloud Synced' : 'Disegerakkan')
-          : rawSt === 'syncing'
-            ? (isEn ? 'Syncing…' : 'Menyegerak…')
-            : (isEn ? 'Saved Offline' : 'Disimpan Setempat');
-      }
-      toast(
-        rawSt === 'synced'
-          ? (isEn ? 'Progress synced to cloud!' : 'Data disegerakkan ke awan!')
-          : (isEn ? 'Progress saved locally on your device.' : 'Data disimpan dengan selamat pada peranti.'),
-        'success'
-      );
-      btn.disabled = false;
-    });
-
-    container.querySelector('#btn-enable-biometric')?.addEventListener('click', () => {
-      const hasVault = Boolean(getAuthVault());
-      openAuthModal({ initialMode: hasVault ? 'sign-in' : 'sign-up', onSuccess: () => render() });
     });
     // Edit Profile Modal Trigger
     const triggerEditProfile = () => {
@@ -602,19 +525,20 @@ export function renderProfile(container) {
       toast('Data exported successfully!', 'success');
     });
 
-    // Reset Data
     container.querySelector('#btn-reset-app')?.addEventListener('click', async () => {
+      const username = getActiveUsername();
+      if (!username) return;
       const ok = await confirmSheet({
-        title: 'Reset All Application Data?',
-        message: 'This will permanently delete your profile, meal logs, runs, and badges.',
-        confirmText: 'Delete All',
+        title: `Reset ${username}'s data?`,
+        message: 'This permanently deletes this account’s profile, meal logs, runs, badges, and pending sync data. Other saved accounts are not affected.',
+        confirmText: 'Reset This Account',
         danger: true,
       });
-      if (ok) {
-        store.reset();
-        localStorage.clear();
-        location.reload();
-      }
+      if (!ok) return;
+      const suffix = encodeURIComponent(username);
+      [getAccountStorageKey(username), `calmal_sync_queue.${suffix}`, `calmal_sync_status.${suffix}`]
+        .forEach((key) => localStorage.removeItem(key));
+      store.reset();
     });
   }
 

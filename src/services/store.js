@@ -2,8 +2,8 @@ import { todayKey, uid } from '../utils/helpers.js';
 import { calcMacros } from '../utils/calc.js';
 import { scheduleCloudSync } from './supabaseClient.js';
 import { enqueueMutation, enqueueStateSync } from './syncService.js';
+import { getAccountStorageKey, getActiveUsername, resumeLocalAccount, signOut } from './authService.js';
 
-const KEY = 'calmal.v1';
 const listeners = new Set();
 
 const defaults = () => ({
@@ -20,8 +20,6 @@ const defaults = () => ({
   settings: { apiKey: '', notifications: false, companions: true, soundEnabled: true, cameraAlwaysOn: true, cameraFacing: 'environment' },
 });
 
-let state = load();
-
 export function applyHeroTheme(coach) {
   if (typeof document === 'undefined') return;
   const isBaku = coach === 'bakugou';
@@ -29,47 +27,97 @@ export function applyHeroTheme(coach) {
   document.documentElement.style.setProperty('--hero-glow', isBaku ? 'rgba(249, 115, 22, 0.28)' : 'rgba(16, 185, 129, 0.28)');
 }
 
+function isRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeState(parsed) {
+  if (!isRecord(parsed)) return defaults();
+  const def = defaults();
+  const merged = { ...def, ...parsed };
+  for (const key of ['meals', 'activities', 'weights', 'recipes']) {
+    merged[key] = Array.isArray(merged[key]) ? merged[key] : [];
+  }
+  for (const key of ['water', 'badges', 'flags']) {
+    merged[key] = isRecord(merged[key]) ? merged[key] : {};
+  }
+  merged.profile = isRecord(merged.profile) ? merged.profile : null;
+  merged.mealPlan = isRecord(merged.mealPlan) ? merged.mealPlan : null;
+  merged.companionLines = isRecord(merged.companionLines) ? merged.companionLines : def.companionLines;
+  merged.settings = { ...def.settings, ...(isRecord(merged.settings) ? merged.settings : {}) };
+  return merged;
+}
+
 function load() {
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return defaults();
-    const parsed = JSON.parse(raw);
-    const def = defaults();
-    const merged = {
-      ...def,
-      ...parsed,
-      settings: { ...def.settings, ...(parsed?.settings || {}) },
-    };
-    if (merged.profile?.selectedCompanion) {
-      applyHeroTheme(merged.profile.selectedCompanion);
-    }
-    return merged;
+    const username = getActiveUsername();
+    if (!username) return defaults();
+    const raw = localStorage.getItem(getAccountStorageKey(username));
+    const loaded = raw ? normalizeState(JSON.parse(raw)) : defaults();
+    if (loaded.profile?.selectedCompanion) applyHeroTheme(loaded.profile.selectedCompanion);
+    return loaded;
   } catch {
     return defaults();
   }
 }
 
+let state = load();
+
 function persist() {
+  const username = getActiveUsername();
+  if (!username) return true;
+  const key = getAccountStorageKey(username);
   try {
-    localStorage.setItem(KEY, JSON.stringify(state));
+    localStorage.setItem(key, JSON.stringify(state));
+    return true;
   } catch (e) {
-    // Storage full — prune oldest image thumbnails
+    // Retry a staged copy so a failed save leaves the active state untouched.
     console.warn('Storage full, pruning old thumbnails', e);
-    state.meals.slice(0, Math.floor(state.meals.length / 2)).forEach((m) => delete m.thumb);
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* noop */ }
+    const pruned = { ...state, meals: state.meals.map((meal) => ({ ...meal })) };
+    pruned.meals.slice(0, Math.floor(pruned.meals.length / 2)).forEach((m) => delete m.thumb);
+    try {
+      localStorage.setItem(key, JSON.stringify(pruned));
+      state = pruned;
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 
+function persistForSwitch() {
+  if (!persist()) throw new Error('Could not save current account state.');
+}
+
 function emit(type) {
-  persist();
+  if (!persist()) return false;
   enqueueStateSync(state);
   scheduleCloudSync(state);
   listeners.forEach((fn) => fn(type, state));
+  return true;
 }
 
 export const store = {
   get state() { return state; },
   subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+  getStorageKey() {
+    const username = getActiveUsername();
+    return username ? getAccountStorageKey(username) : null;
+  },
+  activateAccount(username) {
+    persistForSwitch();
+    resumeLocalAccount(username);
+    state = load();
+    if (state.profile?.selectedCompanion) applyHeroTheme(state.profile.selectedCompanion);
+    listeners.forEach((fn) => fn('account', state));
+    return state;
+  },
+  async clearActiveAccount() {
+    persistForSwitch();
+    await signOut();
+    state = defaults();
+    listeners.forEach((fn) => fn('reset', state));
+  },
 
   // ---------- Profile ----------
   get profile() { return state.profile; },

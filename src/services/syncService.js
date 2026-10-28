@@ -1,32 +1,45 @@
-import { getCurrentUser, supabase } from './supabaseClient.js';
+import { getAccountStorageKey, getActiveUsername } from './authService.js';
 
 export const SYNC_QUEUE_KEY = 'calmal_sync_queue';
 const STATUS_KEY = 'calmal_sync_status';
 const listeners = new Set();
-let processing = false;
 
-function readQueue() { try { return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); } catch { return []; } }
-function writeQueue(queue) { try { localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue)); } catch {} }
-function keyOf(payload = {}) { return payload.client_id || payload.id || payload.logged_date; }
-function notify(status) {
-  try { localStorage.setItem(STATUS_KEY, JSON.stringify({ status, at: new Date().toISOString() })); } catch {}
-  listeners.forEach((fn) => fn(status));
+function accountKeys(username) {
+  const suffix = encodeURIComponent(username);
+  return {
+    queue: `${SYNC_QUEUE_KEY}.${suffix}`,
+    status: `${STATUS_KEY}.${suffix}`,
+  };
 }
+function readQueue(username) {
+  try {
+    const queue = JSON.parse(localStorage.getItem(accountKeys(username).queue) || '[]');
+    return Array.isArray(queue) ? queue : [];
+  } catch { return []; }
+}
+function writeQueue(username, queue) {
+  try { localStorage.setItem(accountKeys(username).queue, JSON.stringify(queue)); } catch {}
+}
+function keyOf(payload = {}) { return payload.client_id || payload.id || payload.logged_date; }
 export function subscribeSync(fn) { listeners.add(fn); return () => listeners.delete(fn); }
-export function getSyncStatus() { try { return JSON.parse(localStorage.getItem(STATUS_KEY) || '{"status":"saved_offline"}'); } catch { return { status: 'saved_offline' }; } }
+export function getSyncStatus() {
+  const username = getActiveUsername();
+  if (!username) return { status: 'saved_offline' };
+  try { return JSON.parse(localStorage.getItem(accountKeys(username).status) || '{"status":"saved_offline"}'); } catch { return { status: 'saved_offline' }; }
+}
 
 export function enqueueMutation(table, action, payload) {
-  if (typeof localStorage === 'undefined') return;
+  const username = getActiveUsername();
+  if (!username || typeof localStorage === 'undefined') return;
   const item = { id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`, table, action, payload, timestamp: Date.now() };
-  const queue = readQueue();
+  const queue = readQueue(username);
   const key = `${table}:${keyOf(payload)}`;
-  writeQueue([...queue.filter((x) => `${x.table}:${keyOf(x.payload)}` !== key), item]);
-  if (typeof navigator !== 'undefined' && navigator.onLine) processSyncQueue();
+  writeQueue(username, [...queue.filter((x) => `${x.table}:${keyOf(x.payload)}` !== key), item]);
   return item;
 }
 
 export function enqueueStateSync(state) {
-  if (!state) return;
+  if (!state || !getActiveUsername()) return;
   if (state.profile) enqueueMutation('profiles', 'UPSERT', {
     id: state.profile.id, username: state.profile.username,
     display_name: state.profile.name || state.profile.displayName || 'Hero',
@@ -47,40 +60,11 @@ export function enqueueStateSync(state) {
   }));
 }
 
-async function upsert(table, payload) {
-  if (table === 'daily_steps') {
-    const { data, error: readError } = await supabase.from(table).select('id, step_count').eq('logged_date', payload.logged_date).maybeSingle();
-    if (readError) throw readError;
-    if (data) payload.step_count = Math.max(Number(data.step_count) || 0, Number(payload.step_count) || 0);
-  }
-  const conflict = table === 'profiles' ? 'id' : table === 'daily_steps' ? 'user_id,logged_date' : 'client_id';
-  const { error } = await supabase.from(table).upsert(payload, { onConflict: conflict });
-  if (error) throw error;
-}
-async function remove(table, payload) {
-  const column = table === 'profiles' ? 'id' : 'client_id';
-  const { error } = await supabase.from(table).delete().eq(column, keyOf(payload));
-  if (error) throw error;
-}
-export async function processSyncQueue() {
-  if (processing || !supabase || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
-  const user = await getCurrentUser(); if (!user) return;
-  processing = true; notify('syncing');
-  try {
-    const pending = [];
-    for (const item of readQueue()) {
-      try {
-        const payload = { ...item.payload, user_id: user.id };
-        if (item.table === 'profiles') payload.id = user.id;
-        if (item.action === 'DELETE') await remove(item.table, payload); else await upsert(item.table, payload);
-      } catch (err) { pending.push(item); console.warn('[CalMal sync]', item.table, err?.message || err); }
-    }
-    writeQueue(pending); notify(pending.length ? 'saved_offline' : 'synced');
-  } finally { processing = false; }
-}
+// Local accounts have no cloud identity. Their queues stay on this device.
+export async function processSyncQueue() {}
+
 export async function mergeGuestDataToCloud() {
-  if (typeof localStorage !== 'undefined') { try { enqueueStateSync(JSON.parse(localStorage.getItem('calmal.v1') || '{}')); } catch {} }
-  return processSyncQueue();
+  const username = getActiveUsername();
+  if (!username || typeof localStorage === 'undefined') return;
+  try { enqueueStateSync(JSON.parse(localStorage.getItem(getAccountStorageKey(username)) || '{}')); } catch {}
 }
-if (typeof window !== 'undefined') window.addEventListener('online', processSyncQueue);
-if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') processSyncQueue(); });
