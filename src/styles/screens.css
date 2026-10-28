@@ -1881,6 +1881,34 @@
   transform: translateY(-1px);
 }
 
+@media (max-width: 480px) {
+  .topbar-actions .btn-guide-pill,
+  .topbar-actions .lang-pill-btn,
+  .topbar-actions .btn-install-pill {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
+    padding: 0;
+    gap: 0;
+  }
+
+  .topbar-actions .btn-guide-pill > span,
+  .topbar-actions .btn-install-pill > span,
+  .topbar-actions .lang-cur,
+  .topbar-actions .lang-alt {
+    display: none;
+  }
+
+  .topbar-actions .btn-guide-pill svg,
+  .topbar-actions .lang-icon svg,
+  .topbar-actions .btn-install-pill svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
 
 .guide-modal-sheet {
   max-width: 520px;
