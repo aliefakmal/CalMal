@@ -71,14 +71,16 @@ async function registerBiometric(username) {
     return createFallbackDeviceCredential(username);
   }
   try {
-    const credential = await navigator.credentials.create({ publicKey: {
-      challenge: crypto.getRandomValues(new Uint8Array(32)),
-      rp: { name: 'CalMal', id: location.hostname || 'localhost' },
-      user: { id: bytes(username), name: username, displayName: username },
-      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
-      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
-      timeout: 60000,
-    } });
+    const credential = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: 'CalMal', id: location.hostname || 'localhost' },
+        user: { id: bytes(username), name: username, displayName: username },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
+        timeout: 60000,
+      }
+    });
     if (!credential) throw new Error('Biometric registration was cancelled.');
     return { credentialId: base64url(credential.rawId), biometricSecret: crypto.getRandomValues(new Uint8Array(32)), fallback: false };
   } catch (err) {
@@ -92,13 +94,15 @@ async function verifyBiometric(credentialId, isFallback = false) {
     return { fallback: true };
   }
   try {
-    const assertion = await navigator.credentials.get({ publicKey: {
-      challenge: crypto.getRandomValues(new Uint8Array(32)),
-      rpId: location.hostname || 'localhost',
-      allowCredentials: [{ type: 'public-key', id: fromBase64url(credentialId) }],
-      userVerification: 'required',
-      timeout: 60000,
-    } });
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rpId: location.hostname || 'localhost',
+        allowCredentials: [{ type: 'public-key', id: fromBase64url(credentialId) }],
+        userVerification: 'required',
+        timeout: 60000,
+      }
+    });
     const data = assertion?.response?.authenticatorData;
     if (!data || !(new Uint8Array(data)[32] & 0x04)) throw new Error('Biometric verification failed.');
     return assertion;
@@ -171,7 +175,7 @@ export async function loginWithCombinedAuth(username, password) {
 export async function signOut() {
   clearActiveAuth();
   if (supabase) {
-    try { await supabase.auth.signOut(); } catch {}
+    try { await supabase.auth.signOut(); } catch { }
   }
 }
 

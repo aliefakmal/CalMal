@@ -451,6 +451,12 @@ export function renderProfile(container) {
       const uname = user?.user_metadata?.username || user?.username || user?.email?.split('@')[0];
       if (uname && accountStatus) {
         accountStatus.textContent = `@${uname}`;
+        const subDesc = container.querySelector('#account-sub-desc');
+        if (subDesc) {
+          subDesc.textContent = isEn
+            ? 'Biometric & password protection active on this device.'
+            : 'Perlindungan kata laluan & biometrik aktif pada peranti ini.';
+        }
       }
     }).catch(() => {});
 

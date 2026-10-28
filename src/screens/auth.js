@@ -124,13 +124,23 @@ export function renderAuth(container, { onSuccess } = {}) {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
+    const data = new FormData(form);
+    const rawUser = String(data.get('username') || '').trim();
+    const rawPass = String(data.get('password') || '');
+    if (!rawUser || rawUser.length < 3) {
+      setStatus(isEn ? 'Username must be at least 3 characters.' : 'Nama pengguna mesti sekurang-kurangnya 3 aksara.', true);
+      return;
+    }
+    if (!rawPass || rawPass.length < 8) {
+      setStatus(isEn ? 'Password must be at least 8 characters.' : 'Kata laluan mesti sekurang-kurangnya 8 aksara.', true);
+      return;
+    }
     submit.disabled = true;
     setStatus(isEn ? 'Waiting for biometric verification…' : 'Menunggu pengesahan biometrik…');
-    const data = new FormData(form);
     try {
       const result = mode === 'sign-up'
-        ? await registerWithCombinedAuth(data.get('username'), data.get('password'))
-        : await loginWithCombinedAuth(data.get('username'), data.get('password'));
+        ? await registerWithCombinedAuth(rawUser, rawPass)
+        : await loginWithCombinedAuth(rawUser, rawPass);
       setStatus(isEn ? 'Authentication key unlocked.' : 'Kunci pengesahan dibuka.');
       onSuccess?.(result);
     } catch (error) {
