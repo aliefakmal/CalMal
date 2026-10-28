@@ -578,13 +578,13 @@ export function showMotivationPopup({
     </div>
     <div class="mp-content">
       <div class="mp-header row between">
-        <span class="mp-badge">${isBaku ? '≡ƒÆÑ BAKUGOU' : 'ΓÜí DEKU'} <small style="opacity:0.75;font-weight:600">(${heroRole})</small></span>
+        <span class="mp-badge">${isBaku ? '💥 BAKUGOU' : '⚡ DEKU'} <small style="opacity:0.75;font-weight:600">(${heroRole})</small></span>
         <div class="mp-actions row">
           <button type="button" class="mp-btn-audio btn-ghost" title="${isMs ? 'Mainkan Semula Suara' : 'Replay Voice'}" aria-label="Replay Voice">
-            ≡ƒöè
+            🔊
           </button>
           <button type="button" class="mp-btn-close btn-ghost" title="${isMs ? 'Tutup' : 'Close'}" aria-label="Close">
-            ├ù
+            ×
           </button>
         </div>
       </div>
@@ -595,7 +595,7 @@ export function showMotivationPopup({
         </div>
       ` : ''}
       <p class="mp-quote">${esc(quoteText)}</p>
-      ${advice ? `<p class="mp-advice">≡ƒÆí ${esc(advice)}</p>` : ''}
+      ${advice ? `<p class="mp-advice">💡 ${esc(advice)}</p>` : ''}
     </div>
   `;
 
