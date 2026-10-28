@@ -93,6 +93,7 @@ export async function processSyncQueue() {
   const runId = ++processingId;
   notify(username, 'syncing');
   try {
+    const processed = [];
     const pending = [];
     for (const item of readQueue(username)) {
       if (!isCurrentAccount()) return;
@@ -100,6 +101,7 @@ export async function processSyncQueue() {
         const payload = { ...item.payload, user_id: user.id };
         if (item.table === 'profiles') payload.id = user.id;
         if (item.action === 'DELETE') await remove(item.table, payload); else await upsert(item.table, payload);
+        processed.push(item);
         if (!isCurrentAccount()) return;
       } catch (err) {
         pending.push(item);
@@ -107,8 +109,10 @@ export async function processSyncQueue() {
         if (!isCurrentAccount()) return;
       }
     }
-    writeQueue(username, pending);
-    notify(username, pending.length ? 'saved_offline' : 'synced');
+    const processedIds = new Set(processed.map((item) => item.id));
+    const remaining = [...pending, ...readQueue(username).filter((item) => !processedIds.has(item.id))];
+    writeQueue(username, remaining);
+    notify(username, remaining.length ? 'saved_offline' : 'synced');
   } finally {
     if (processingId === runId) processingUsername = null;
   }
