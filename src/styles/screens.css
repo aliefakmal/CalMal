@@ -283,6 +283,174 @@
   to { opacity: 0; transform: translateY(20px) scale(0.96); }
 }
 
+
+/* ---------------- Scan Motivation Popup Animation ---------------- */
+.motivation-pop {
+  position: fixed;
+  top: calc(var(--top-h, 54px) + var(--safe-t, 0px) + 12px);
+  left: 16px;
+  right: 16px;
+  max-width: 440px;
+  margin: 0 auto;
+  z-index: 120;
+  background: rgba(22, 22, 24, 0.96);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 24px rgba(0, 0, 0, 0.5);
+  animation: motivationSlideDown 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.motivation-pop.out {
+  animation: motivationSlideUp 0.3s ease forwards;
+}
+
+@keyframes motivationSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-28px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes motivationSlideUp {
+  to {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.94);
+  }
+}
+
+.motivation-pop-deku {
+  border-color: rgba(61, 220, 151, 0.5);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 25px rgba(61, 220, 151, 0.28);
+}
+
+.motivation-pop-bakugou {
+  border-color: rgba(255, 122, 26, 0.5);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 25px rgba(255, 122, 26, 0.28);
+}
+
+.mp-avatar-col {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mp-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.mp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.mp-badge {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.motivation-pop-deku .mp-badge {
+  color: #3ddc97;
+  border: 1px solid rgba(61, 220, 151, 0.3);
+}
+
+.motivation-pop-bakugou .mp-badge {
+  color: #ff7a1a;
+  border: 1px solid rgba(255, 122, 26, 0.3);
+}
+
+.mp-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mp-btn-audio,
+.mp-btn-close {
+  background: transparent;
+  border: none;
+  color: var(--muted, #8e8e93);
+  font-size: 15px;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.mp-btn-audio:hover,
+.mp-btn-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mp-ja-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--hero-accent, #3ddc97);
+  margin-bottom: 3px;
+}
+
+.motivation-pop-bakugou .mp-ja-row {
+  color: #ff7a1a;
+}
+
+.mp-ja-tag {
+  font-size: 8.5px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+
+.mp-ja-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mp-quote {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #ffffff;
+  margin: 0;
+}
+
+.mp-advice {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--text-2, #a1a1aa);
+  margin: 4px 0 0;
+  opacity: 0.9;
+}
+
 /* Fullscreen manga cut-in modal */
 .cutin {
   position: fixed;
