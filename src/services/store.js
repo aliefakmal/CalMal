@@ -1,6 +1,7 @@
 import { todayKey, uid } from '../utils/helpers.js';
 import { calcMacros } from '../utils/calc.js';
 import { scheduleCloudSync } from './supabaseClient.js';
+import { enqueueMutation, enqueueStateSync } from './syncService.js';
 
 const KEY = 'calmal.v1';
 const listeners = new Set();
@@ -61,6 +62,7 @@ function persist() {
 
 function emit(type) {
   persist();
+  enqueueStateSync(state);
   scheduleCloudSync(state);
   listeners.forEach((fn) => fn(type, state));
 }
@@ -136,6 +138,7 @@ export const store = {
   deleteMeal(id) {
     const m = state.meals.find((x) => x.id === id);
     const date = m?.date || todayKey();
+    enqueueMutation('meal_logs', 'DELETE', { client_id: id });
     state.meals = state.meals.filter((x) => x.id !== id);
     this._rearmMilestones(date);
     emit('meals');
@@ -153,6 +156,7 @@ export const store = {
   deleteActivity(id) {
     const a = state.activities.find((x) => x.id === id);
     const date = a?.date || todayKey();
+    enqueueMutation('activity_sessions', 'DELETE', { client_id: id });
     state.activities = state.activities.filter((x) => x.id !== id);
     this._rearmMilestones(date);
     emit('activities');
@@ -371,3 +375,4 @@ export const store = {
   exportJSON() { return JSON.stringify(state, null, 2); },
   reset() { state = defaults(); emit('reset'); },
 };
+

@@ -320,6 +320,8 @@ const DICTIONARY = {
     prof_camera_options: 'Camera Settings',
     prof_api_key: 'Gemini API Key (Optional)',
     prof_save_profile: 'Save Profile Changes',
+    auth_title: 'Protect your progress',
+    auth_subtitle: 'Use your password and device biometric together.',
   },
   ms: {
     // Topbar & Nav
@@ -598,6 +600,8 @@ const DICTIONARY = {
     prof_camera_options: 'Tetapan Kamera',
     prof_api_key: 'Kunci API Gemini (Pilihan)',
     prof_save_profile: 'Simpan Perubahan Profil',
+    auth_title: 'Lindungi kemajuan anda',
+    auth_subtitle: 'Gunakan kata laluan dan biometrik peranti bersama.',
   },
 };
 
@@ -618,3 +622,4 @@ export function getDaysNames() {
     ? ['Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu', 'Ahad']
     : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 }
+

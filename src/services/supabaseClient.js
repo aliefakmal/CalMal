@@ -11,6 +11,9 @@ export const supabase = isSupabaseConfigured
       auth: {
         persistSession: true,
         autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+        storageKey: 'calmal-auth',
       },
     })
   : null;
@@ -46,16 +49,14 @@ export function scheduleCloudSync(localState) {
       if (localState.profile) {
         await supabase.from('profiles').upsert({
           id: user.id,
+          username: localState.profile.username || user.user_metadata?.username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
           display_name: localState.profile.name || 'Hero',
           gender: localState.profile.gender,
           age: localState.profile.age,
           height_cm: localState.profile.height,
           weight_kg: localState.profile.weight,
-          target_weight_kg: localState.profile.targetWeight,
           activity_level: localState.profile.activity,
-          fitness_goal: localState.profile.goal,
           selected_companion: localState.profile.selectedCompanion || 'deku',
-          sound_enabled: localState.settings?.soundEnabled !== false,
           updated_at: new Date().toISOString(),
         });
       }
@@ -66,3 +67,4 @@ export function scheduleCloudSync(localState) {
     }
   }, 2500);
 }
+

@@ -16,6 +16,8 @@ import { renderProfile } from './screens/profile.js';
 import { openPageTutorial } from './utils/tutorials.js';
 import { initPwaInstall, isStandalone, promptInstall, subscribeInstallState } from './utils/pwaInstall.js';
 import { soundboard } from './services/audioService.js';
+import { hasCombinedAuthVault, isCombinedAuthActive } from './services/authService.js';
+import { renderAuth } from './screens/auth.js';
 
 function getRoutes() {
   return {
@@ -135,6 +137,11 @@ function route() {
       location.hash = '#/home';
       route();
     });
+    return;
+  }
+  if (hasCombinedAuthVault() && !isCombinedAuthActive()) {
+    document.body.classList.add('onboarding');
+    cleanup = renderAuth(container, { onSuccess: route });
     return;
   }
   document.body.classList.remove('onboarding');

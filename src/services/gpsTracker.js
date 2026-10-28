@@ -405,3 +405,4 @@ export function discard() {
 
 export const isActive = () => session.status !== 'idle';
 export const getLiveLocation = () => liveLocation;
+

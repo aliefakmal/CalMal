@@ -141,3 +141,4 @@ export function formatDuration(sec) {
 export function strideMeters(heightCm) {
   return (heightCm * 0.415) / 100;
 }
+

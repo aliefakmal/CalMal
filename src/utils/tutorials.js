@@ -1409,3 +1409,4 @@ export function openPageTutorial(pageKey) {
   // Initial step render
   renderStep(0);
 }
+

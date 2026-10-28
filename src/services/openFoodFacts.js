@@ -49,3 +49,4 @@ export function scaleNutrients(per100, grams) {
     fat: Math.round(per100.fat * f * 10) / 10,
   };
 }
+
