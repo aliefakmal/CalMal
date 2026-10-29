@@ -177,11 +177,34 @@ export function ringSVG({ size = 220, stroke = 6, progress = 0, over = false }) 
   </svg>`;
 }
 
+let segmentedRingId = 0;
+
+export function segmentedRingSVG({ size = 220, stroke = 6, segments, state = 'left' }) {
+  const r = (size - stroke * 2) / 2;
+  const c = 2 * Math.PI * r;
+  const clamp = (n) => Math.max(0, Math.min(1, Number(n) || 0));
+  const eaten = clamp(segments?.eaten);
+  const from = clamp(segments?.earnedFrom);
+  const to = clamp(segments?.earnedTo);
+  const earned = to - from;
+  const id = `seg-hatch-${++segmentedRingId}`;
+  const circle = `cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke-width="${stroke}" transform="rotate(-90 ${size / 2} ${size / 2})"`;
+  const earnedArc = earned > 0
+    ? `<circle class="seg-earned" ${circle} stroke="url(#${id})" stroke-dasharray="${c * earned} ${c}" stroke-dashoffset="${-c * from}"/>`
+    : '';
+  return `<svg class="seg-ring seg-${state}" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <defs><pattern id="${id}" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path class="seg-hatch" d="M0 0V6"/></pattern></defs>
+    <circle class="ring-track" ${circle}/>
+    ${earnedArc}
+    <circle class="seg-eaten" ${circle} stroke-dasharray="${c}" stroke-dashoffset="${c}" data-target="${c * (1 - eaten)}"/>
+  </svg>`;
+}
+
 /** Trigger ring animations */
 export function animateRings(root = document) {
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
-      root.querySelectorAll('.ring-fill[data-target]').forEach((c) => { c.style.strokeDashoffset = c.dataset.target; });
+      root.querySelectorAll('.ring-fill[data-target], .seg-eaten[data-target]').forEach((c) => { c.style.strokeDashoffset = c.dataset.target; });
       root.querySelectorAll('.bar > i[data-w]').forEach((b) => { b.style.width = b.dataset.w; });
     })
   );
