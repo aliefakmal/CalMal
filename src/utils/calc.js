@@ -175,3 +175,69 @@ export function cadenceSpeedKmh(stepTimes, nowMs, heightCm) {
   const spm = stepTimes.filter((t) => nowMs - t <= 10000).length * 6;
   return (spm * strideMeters(heightCm || 170) * 60) / 1000;
 }
+
+export function calorieStatus({ goal, target, kin, kout }) {
+  const t = Number(target) > 0 ? Number(target) : 1;
+  const net = Number(kin || 0) - Number(kout || 0);
+  const diff = t - net;
+  const near = Math.abs(net - t) <= t * 0.05;
+  const g = goal === 'lose' || goal === 'gain' ? goal : 'maintain';
+  let state;
+  if (near) state = 'on_target';
+  else if (net < t) state = g === 'lose' ? 'deficit' : g === 'gain' ? 'eat_more' : 'left';
+  else state = g === 'gain' && net <= t * 1.1 ? 'on_target' : 'surplus';
+  return { net, diff, state, label: `cal_${state}` };
+}
+
+export function ringSegments({ target, kin, kout }) {
+  const t = Number(target) > 0 ? Number(target) : 1;
+  const food = Math.max(0, Number(kin) || 0);
+  const burned = Math.max(0, Number(kout) || 0);
+  const allowance = t + burned;
+  const scale = Math.max(allowance, food, 1);
+  return {
+    eaten: food > allowance ? 1 : food / scale,
+    left: Math.max(0, allowance - food) / scale,
+    earnedFrom: t / scale,
+    earnedTo: allowance / scale,
+    over: food > allowance,
+  };
+}
+
+export function macroBreakdown(meals, key, limit = 3) {
+  const rows = (meals || []).map((m) => ({ name: m?.name ?? null, grams: Number(m?.[key]) }))
+    .filter((m) => Number.isFinite(m.grams) && m.grams > 0)
+    .sort((a, b) => b.grams - a.grams);
+  const total = rows.reduce((sum, row) => sum + row.grams, 0);
+  if (!total) return [];
+  const top = rows.slice(0, limit).map(({ name, grams }) => ({ name, grams, share: grams / total }));
+  const rest = rows.slice(limit);
+  if (rest.length) {
+    const grams = rest.reduce((sum, row) => sum + row.grams, 0);
+    top.push({ name: null, others: rest.length, grams, share: grams / total });
+  }
+  return top;
+}
+
+const round1 = (value) => Math.round(value * 10) / 10;
+
+export function healthyWeightRange(heightCm) {
+  const h = Number(heightCm);
+  if (!(h > 0)) return null;
+  const m2 = (h / 100) ** 2;
+  return [round1(18.5 * m2), round1(22.9 * m2)];
+}
+
+export function bmiScalePosition(bmi) {
+  return (Math.max(15, Math.min(35, Number(bmi) || 0)) - 15) / 20;
+}
+
+export function weightProgress({ start, now, target }) {
+  const s = Number(start) || 0;
+  const n = Number(now) || 0;
+  const deltaKg = round1(n - s);
+  const t = Number(target);
+  if (!Number.isFinite(t)) return { pct: 0, deltaKg, toGoKg: null };
+  if (s === t) return { pct: 1, deltaKg, toGoKg: round1(Math.abs(t - n)) };
+  return { pct: Math.max(0, Math.min(1, (s - n) / (s - t))), deltaKg, toGoKg: round1(Math.abs(t - n)) };
+}
