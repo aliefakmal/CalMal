@@ -1,5 +1,6 @@
 // Penjejak GPS ala Strava (pelan §3.4) — Lokasi Langsung, Pengesanan Ketepatan, Jarak, Masa, Pace & Laluan Polyline
-import { haversineKm, metForSpeed, kcalBurned, strideMeters, paceMinPerKm } from '../utils/calc.js';
+import { haversineKm, metForSpeed, kcalBurned, paceMinPerKm, fuseSteps, gapSteps, settleGap, autoPaused, cadenceSpeedKmh } from '../utils/calc.js';
+import { startPedometer, stopPedometer, lastMotionEventAt } from './pedometer.js';
 import { store } from './store.js';
 
 const listeners = new Set();
@@ -8,6 +9,7 @@ let idleWatchId = null;
 let timer = null;
 let simTimer = null;
 let wakeLock = null;
+let tickCount = 0;
 
 // Keadaan Lokasi Langsung (sentiasa diperbaharui walaupun belum mula lari)
 let liveLocation = null; // { lat, lng, accuracy, alt, speed, timestamp }
@@ -28,6 +30,16 @@ const freshSession = () => ({
   accuracy: null,
   error: null,
   simulated: false,
+  motion: 'unsupported', // result of requestMotionPermission()
+  sensorOk: false, // true once the accelerometer delivered events this session
+  sensorSteps: 0,
+  stepTimes: [], // last 30 step timestamps, for cadence
+  lastStepAt: null,
+  activeSince: null, // start/resume time; stillness is measured from here until the first step
+  autoPaused: false,
+  hiddenAt: null,
+  hiddenKm: null,
+  restored: false,
 });
 
 let session = freshSession();
@@ -49,12 +61,14 @@ export function getStats() {
   const profile = store.profile || { height: 170, weight: 70 };
   const currentPace = session.speedKmh > 1.2 ? 60 / session.speedKmh : paceMinPerKm(session.elapsedSec, session.distanceKm);
   const avgPace = paceMinPerKm(session.elapsedSec, session.distanceKm);
+  const fused = fuseSteps({ sensorOk: session.sensorOk, sensorSteps: session.sensorSteps, distanceKm: session.distanceKm, heightCm: profile.height || 170 });
 
   return {
     ...session,
     pace: currentPace,
     avgPace,
-    steps: Math.round((session.distanceKm * 1000) / strideMeters(profile.height || 170)),
+    steps: fused.steps,
+    stepSource: fused.source,
     liveLocation,
     permissionStatus,
   };
@@ -182,21 +196,85 @@ function releaseWakeLock() {
   wakeLock = null;
 }
 
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && session.status === 'running') requestWakeLock();
-});
+// ----------------- Persistence & background resilience -----------------
+function snapshot() {
+  // points duplicate segments; rebuilt on restore to keep each write small
+  const { points, ...rest } = session;
+  return rest;
+}
+
+function saveSnapshot() {
+  if (session.status !== 'idle') store.saveLiveSession(snapshot());
+}
+
+function onHidden() {
+  if (session.status !== 'running' || session.hiddenAt != null) return;
+  tick();
+  session.hiddenAt = Date.now();
+  session.hiddenKm = session.distanceKm;
+  saveSnapshot();
+}
+
+function onVisible() {
+  if (session.status !== 'running' || session.hiddenAt == null) return;
+  const now = Date.now();
+  const gapSec = (now - session.hiddenAt) / 1000;
+  const gapKm = Math.max(0, session.distanceKm - session.hiddenKm);
+  const settled = settleGap({ gapSec, gapKm, weightKg: Number(store.profile?.weight || 70) });
+  session.elapsedSec += settled.movingSec;
+  session.kcal += settled.kcal;
+  // motion events stop while hidden; credit the distance walked meanwhile
+  if (session.sensorOk && settled.movingSec) session.sensorSteps += gapSteps(gapKm, store.profile?.height || 170);
+  session.hiddenAt = null;
+  session.hiddenKm = null;
+  session.lastTick = now;
+  session.activeSince = now;
+  requestWakeLock();
+  saveSnapshot();
+  emit();
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') onHidden();
+    else onVisible();
+  });
+}
+if (typeof window !== 'undefined') window.addEventListener('pagehide', saveSnapshot);
+
+function onStep(n, t) {
+  if (session.status !== 'running') return;
+  session.sensorOk = true;
+  session.sensorSteps += n;
+  session.lastStepAt = t;
+  session.stepTimes = [...session.stepTimes, t].slice(-30);
+}
+
+function startMotion() {
+  if (session.motion === 'granted' && !session.simulated) startPedometer(onStep);
+}
 
 // ----------------- Kitaran Sesi Larian (Strava Recording) -----------------
 function tick() {
-  if (session.status !== 'running') return;
+  if (session.status !== 'running' || session.hiddenAt != null) return;
   const now = Date.now();
   const dt = (now - session.lastTick) / 1000;
   session.lastTick = now;
-  session.elapsedSec += dt;
+  if (!session.sensorOk && session.motion === 'granted' && lastMotionEventAt() != null) session.sensorOk = true;
 
-  // Formula MET dinamik berdasarkan kelajuan dan berat badan pengguna
-  const weight = Number(store.profile?.weight || 70);
-  session.kcal += kcalBurned(metForSpeed(session.speedKmh), weight, dt / 60);
+  session.autoPaused = autoPaused(session.autoPaused, {
+    speedKmh: session.speedKmh,
+    msSinceLastStep: now - (session.lastStepAt ?? session.activeSince ?? now),
+  });
+
+  if (!session.autoPaused) {
+    session.elapsedSec += dt;
+    // Formula MET dinamik berdasarkan kelajuan dan berat badan pengguna; treadmill uses cadence
+    const profile = store.profile || {};
+    const speed = session.speedKmh >= 1 ? session.speedKmh : cadenceSpeedKmh(session.stepTimes, now, profile.height || 170);
+    session.kcal += kcalBurned(metForSpeed(speed), Number(profile.weight || 70), dt / 60);
+  }
+  if (++tickCount % 5 === 0) saveSnapshot();
   emit();
 }
 
@@ -262,6 +340,7 @@ function onRunPosition(pos) {
 
   seg.push(pt);
   session.points.push(pt);
+  saveSnapshot();
   emit();
 }
 
@@ -320,17 +399,21 @@ function startRunSim() {
 }
 
 // ----------------- API Luaran Sesi Larian -----------------
-export function start({ simulate = false } = {}) {
+export function start({ simulate = false, motion = 'unsupported' } = {}) {
   if (session.status !== 'idle') return;
   stopIdleLocationWatch();
 
   session = freshSession();
   session.simulated = simulate;
+  session.motion = motion;
   session.status = 'running';
   session.startedAt = new Date().toISOString();
   session.lastTick = Date.now();
+  session.activeSince = session.lastTick;
 
   startRunWatch();
+  startMotion();
+  saveSnapshot();
   timer = setInterval(tick, 1000);
   requestWakeLock();
   emit();
@@ -341,18 +424,26 @@ export function pause() {
   tick();
   session.status = 'paused';
   session.speedKmh = 0;
+  session.autoPaused = false;
   stopRunWatch();
+  stopPedometer();
   clearInterval(timer);
   releaseWakeLock();
+  saveSnapshot();
   emit();
 }
 
-export function resume() {
+/** motion: pass a fresh requestMotionPermission() result after a reload (iOS forgets the grant). */
+export function resume({ motion } = {}) {
   if (session.status !== 'paused') return;
+  if (motion) session.motion = motion;
   session.status = 'running';
+  session.restored = false;
   session.lastTick = Date.now();
+  session.activeSince = session.lastTick;
   session.segments.push([]);
   startRunWatch();
+  startMotion();
   timer = setInterval(tick, 1000);
   requestWakeLock();
   emit();
@@ -362,21 +453,27 @@ export function resume() {
 export function finish() {
   if (session.status === 'running') tick();
   stopRunWatch();
+  stopPedometer();
   clearInterval(timer);
   releaseWakeLock();
+  store.clearLiveSession();
 
   const stats = getStats();
   const maxPts = 600;
   const step = Math.max(1, Math.ceil(stats.points.length / maxPts));
 
+  const avgKmh = stats.elapsedSec ? (stats.distanceKm / (stats.elapsedSec / 3600)) : 0;
   const result = {
     type: 'Outdoor Run / Walk',
+    activityType: avgKmh >= 7.5 ? 'run' : 'walk',
+    stepSource: stats.stepSource,
+    movingSec: Math.round(stats.elapsedSec),
     startedAt: session.startedAt || new Date().toISOString(),
     endedAt: new Date().toISOString(),
     durationSec: Math.round(stats.elapsedSec),
     distanceKm: Math.round(stats.distanceKm * 1000) / 1000,
     pace: stats.avgPace,
-    avgKmh: stats.elapsedSec ? (stats.distanceKm / (stats.elapsedSec / 3600)) : 0,
+    avgKmh,
     elevGain: Math.round(stats.elevGain),
     steps: stats.steps,
     kcal: Math.round(stats.kcal),
@@ -396,8 +493,10 @@ export function finish() {
 
 export function discard() {
   stopRunWatch();
+  stopPedometer();
   clearInterval(timer);
   releaseWakeLock();
+  store.clearLiveSession();
   session = freshSession();
   emit();
   startIdleLocationWatch();
@@ -406,3 +505,44 @@ export function discard() {
 export const isActive = () => session.status !== 'idle';
 export const getLiveLocation = () => liveLocation;
 
+
+/** Bring back a session saved before a reload/kill. Always paused: we can't know what happened meanwhile. */
+export function restoreLiveSession() {
+  if (session.status !== 'idle') return false;
+  const snap = store.getLiveSession();
+  if (!snap || (snap.status !== 'running' && snap.status !== 'paused')) return false;
+  const segments = Array.isArray(snap.segments) && snap.segments.length ? snap.segments : [[]];
+  const { savedAt, ...rest } = snap;
+  session = {
+    ...freshSession(),
+    ...rest,
+    segments,
+    points: segments.flat(),
+    status: 'paused',
+    speedKmh: 0,
+    autoPaused: false,
+    hiddenAt: null,
+    hiddenKm: null,
+    restored: true,
+  };
+  stopIdleLocationWatch();
+  emit();
+  return true;
+}
+
+/** Called by the store before the active account changes: park this session under the current account. */
+export function freezeForAccountChange() {
+  if (session.status === 'idle') return;
+  if (session.status === 'running') tick();
+  stopRunWatch();
+  stopPedometer();
+  clearInterval(timer);
+  releaseWakeLock();
+  store.saveLiveSession({ ...snapshot(), status: 'paused', speedKmh: 0, autoPaused: false, hiddenAt: null, hiddenKm: null });
+  session = freshSession();
+  emit();
+}
+
+store.onBeforeAccountChange(freezeForAccountChange);
+store.subscribe((type) => { if (type === 'account') restoreLiveSession(); });
+restoreLiveSession();
