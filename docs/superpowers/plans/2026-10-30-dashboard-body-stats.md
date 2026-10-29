@@ -191,20 +191,20 @@ test('surplus ring is red', () => {
 **Interfaces:**
 - Consumes: `healthyWeightRange`, `bmiScalePosition`, `weightProgress` (Task 1); existing `calcBMI`, `bmiLabel`, `calcBMR`, `calcTDEE`, `calcSuggestedDailyTarget`, `calcDailyTarget`, `GOALS`, `renderWeightChart`.
 
-- [ ] **Step 1: Bento** replaces the header badges and the `.equation` row. Tiles:
+- [x] **Step 1: Bento** replaces the header badges and the `.equation` row. Tiles:
   - **BMI** (full width): value, category, four-band scale (15 / 18.5 / 23 / 27.5 / 35) with a marker at `bmiScalePosition`, and the normal-range line only when `healthyWeightRange` is not null.
   - **BMR** and **TDEE** (half width each). TDEE is a `<button aria-expanded>` that toggles the equation row:
     - Normal: `BMR × activity = TDEE ± goal delta = daily target`.
     - `customTarget` set: the last step reads `custom target {n}`.
     - Floor applied (`calcSuggestedDailyTarget` > `TDEE + delta`): adds a `min 1,200` step.
   - **Weight** (full width): `renderWeightChart`, plus a start → now → target bar from `weightProgress`. Start = earliest entry in `store.state.weights` (else `profile.weight`). Header shows `deltaKg` with its sign.
-- [ ] **Step 2: i18n** `body_bmi`, `body_normal_range`, `body_bmr`, `body_bmr_sub`, `body_tdee`, `body_tdee_sub`, `body_weight`, `body_so_far`, `body_start`, `body_now`, `body_target`, `body_min_floor`, `body_custom_target` in `en` + `ms`.
-- [ ] **Step 3: Verify.** `npm test`. In the browser at 390 px:
+- [x] **Step 2: i18n** `body_bmi`, `body_normal_range`, `body_bmr`, `body_bmr_sub`, `body_tdee`, `body_tdee_sub`, `body_weight`, `body_so_far`, `body_start`, `body_now`, `body_target`, `body_min_floor`, `body_custom_target` in `en` + `ms`.
+- [x] **Step 3: Verify.** `npm test`. In the browser at 390 px:
   - Profile with 2+ weights, no `targetWeight`, and with `customTarget`.
   - TDEE toggle by click and by keyboard.
   - Log-weight input still saves.
   - `ms` strings, no overflow.
-- [ ] **Step 4: Commit**: `git commit -m "feat(profile): BMI-first body stats bento"`
+- [x] **Step 4: Commit**: `git commit -m "feat(profile): BMI-first body stats bento"`
 
 ---
 

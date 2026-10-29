@@ -1138,6 +1138,23 @@
 /* Keep tile type colors distinct while the shared progress fill stays quiet. */
 .macro-carbs .macro-breakdown-row i b { background: var(--macro-carbs); }
 .macro-fat .macro-breakdown-row i b { background: var(--macro-fat); }
+.body-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.body-stat-tile { min-width: 0; padding: 14px; border: 1px solid var(--border-soft); border-radius: 14px; background: rgba(255,255,255,.025); }
+.body-stat-tile .body-stat-value { display: block; margin-top: 5px; font-size: 25px; letter-spacing: -.04em; }
+.body-stat-tile small { display: block; margin-top: 3px; font-size: 10px; }
+.tdee-btn { text-align: left; color: inherit; cursor: pointer; }
+.tdee-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.bmi-scale { position: relative; height: 10px; margin: 12px 0 5px; border-radius: 5px; overflow: visible; background: linear-gradient(90deg, var(--warn) 0 17.5%, var(--ok) 17.5% 40%, var(--warn) 40% 62.5%, var(--danger) 62.5%); }
+.bmi-scale i { position: absolute; top: 50%; width: 14px; height: 14px; border: 2px solid var(--bg); border-radius: 50%; background: #fff; transform: translate(-50%, -50%); }
+.body-equation { grid-template-columns: repeat(5, auto); align-items: center; margin-top: 0; }
+.body-equation .eq-step { min-width: 0; text-align: center; }
+.body-equation .eq-step b, .body-equation .eq-step small { display: block; }
+.body-equation .eq-step b { font-size: 17px; }
+.body-equation .eq-step small { color: var(--muted); font-size: 10px; }
+.body-equation .eq-op { color: var(--muted); text-align: center; }
+.weight-tile { overflow: hidden; }
+.weight-progress-bar { height: 7px; margin-top: 10px; background: var(--surface-3); border-radius: 5px; overflow: hidden; }
+.weight-progress-bar i { display: block; height: 100%; background: var(--ok); border-radius: inherit; }
 
 /* Water Tracker */
 .water-widget {
