@@ -213,9 +213,9 @@ test('surplus ring is red', () => {
 **Files:**
 - Modify: `src/screens/recipes.js` (~L1350 recipe result, ~L1420 `renderMealPlanner`), `src/styles/interactions.css`, `src/styles/index.css` (reduced-motion block ~L714), `public/sw.js`
 
-- [ ] **Step 1: Skeletons.** While `isGenerating`, render a skeleton block in place of `renderRecipeCard(currentRecipe)`. While `isGeneratingPlan`, render one in place of the planner question card. Shape: title line, 3 ingredient lines, a macro row, all built with the existing `.skeleton` class. Add `aria-busy="true"` and a visually hidden `rec_generating` label.
-- [ ] **Step 2: Press feedback.** In `interactions.css`, `.macro-tile, .seg-ring-btn, .tdee-btn, .step-row` get `:active { transform: scale(0.97) }` (120 ms) and a `:focus-visible` outline.
-- [ ] **Step 3: Reduced motion.** Under `prefers-reduced-motion: reduce`: `.skeleton { animation: none }` and ring fills `transition: none`.
-- [ ] **Step 4: SW.** Bump `CACHE` to `calmal-v28`.
-- [ ] **Step 5: Verify.** `npm test` all pass; `npm run build`. In the browser, stub `generateRecipe` with a delayed promise and screenshot the skeleton. Emulate reduced motion and confirm no transitions on the dashboard.
-- [ ] **Step 6: Commit**: `git commit -m "feat(ui): AI skeletons, press feedback, reduced-motion rings"`
+- [x] **Step 1: Skeletons.** While `isGenerating`, render a skeleton block in place of `renderRecipeCard(currentRecipe)`. While `isGeneratingPlan`, render one in place of the planner question card. Shape: title line, 3 ingredient lines, a macro row, all built with the existing `.skeleton` class. Add `aria-busy="true"` and a visually hidden `rec_generating` label.
+- [x] **Step 2: Press feedback.** In `interactions.css`, `.macro-tile, .seg-ring-btn, .tdee-btn, .step-row` get `:active { transform: scale(0.97) }` (120 ms) and a `:focus-visible` outline.
+- [x] **Step 3: Reduced motion.** Under `prefers-reduced-motion: reduce`: `.skeleton { animation: none }` and ring fills `transition: none`.
+- [x] **Step 4: SW.** Bump `CACHE` to `calmal-v28`.
+- [x] **Step 5: Verify.** `npm test` all pass; `npm run build`. In the browser, stub `generateRecipe` with a delayed promise and screenshot the skeleton. Emulate reduced motion and confirm no transitions on the dashboard.
+- [x] **Step 6: Commit**: `git commit -m "feat(ui): AI skeletons, press feedback, reduced-motion rings"`

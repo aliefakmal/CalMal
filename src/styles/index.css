@@ -721,10 +721,11 @@ input[type='range'] { width: 100%; accent-color: #fff; height: 28px; }
 .delay-4 { animation-delay: 0.24s; }
 
 .hidden { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
   .skeleton { animation: none; }
-  .seg-ring .seg-eaten { transition: none; }
+  .ring-fill, .seg-ring .seg-eaten { transition: none; }
 }
 
