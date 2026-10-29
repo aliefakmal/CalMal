@@ -3182,3 +3182,92 @@
 }
 
 
+
+/* ---------------- Streak chip, fasting strip, fit card, day strip ---------------- */
+.streak-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  margin-top: 6px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+}
+/* Extends the tap target to 44px without changing the visual size */
+.streak-chip::after { content: ''; position: absolute; inset: -6px 0; }
+.streak-chip svg { width: 16px; height: 16px; color: var(--baku); }
+.streak-chip.is-zero svg { color: var(--muted); }
+.streak-chip span { color: var(--muted); }
+.streak-shield { display: inline-flex; align-items: center; gap: 3px; margin-left: 4px; font-style: normal; color: var(--ok); }
+.streak-shield svg { width: 14px; height: 14px; color: var(--ok); }
+
+.fasting-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+}
+.fasting-icon { display: inline-flex; color: var(--warn); }
+.fasting-icon svg { width: 20px; height: 20px; }
+.fasting-times { display: flex; flex-wrap: wrap; gap: 4px 14px; flex: 1; min-width: 0; font-size: 13px; color: var(--muted); }
+.fasting-times b { color: var(--text); }
+.fasting-next { font-size: 14px; color: var(--hero-accent); white-space: nowrap; }
+
+.fit-card .btn-fit-log { min-height: 44px; flex-shrink: 0; }
+.fit-card #btn-fit-ai { min-height: 44px; }
+
+.day-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.day-strip::-webkit-scrollbar { display: none; }
+.day-chip {
+  flex: 0 0 auto;
+  min-width: 52px;
+  min-height: 56px;
+  padding: 6px 8px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #0d0d0e;
+  color: #d1d1d6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.day-chip b { font-size: 17px; }
+.day-chip .day-dot { width: 6px; height: 6px; border-radius: 50%; background: transparent; }
+.day-chip.has-data .day-dot { background: var(--hero-accent); }
+.day-chip.active { background: #fff; color: #000; border-color: #fff; }
+.day-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px; }
+.day-summary .stat b { font-size: 18px; }
+.day-pin {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #000;
+}

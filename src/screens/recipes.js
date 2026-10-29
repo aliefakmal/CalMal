@@ -4,7 +4,10 @@ import { icons } from '../components/icons.js';
 import { toast, openSheet } from '../components/ui.js';
 import { generateRecipe, generateMealPlan } from '../services/gemini.js';
 import { DIET_FILTERS, PLANNER_QUESTIONS } from '../constants/prompts.js';
-import { compressImage, esc, round1 } from '../utils/helpers.js';
+import { compressImage, esc, round1, mealTypeNow } from '../utils/helpers.js';
+import { onMealLogged } from '../services/companionService.js';
+import { suggestFoods } from '../utils/suggest.js';
+import { MALAYSIAN_FOODS } from '../constants/malaysianFoods.js';
 import { store } from '../services/store.js';
 import { t, getLang, getDaysNames } from '../utils/i18n.js';
 
@@ -1172,6 +1175,7 @@ export function renderRecipes(container) {
   let ingredientImage = null;
   let currentRecipe = null;
   let isGenerating = false;
+  let fitFoods = [];
 
   // Meal Planner state
   let currentStep = 0;
@@ -1267,10 +1271,41 @@ export function renderRecipes(container) {
     bindEvents();
   }
 
+  function renderFitCard() {
+    const remaining = store.summary().remaining;
+    fitFoods = suggestFoods(remaining, MALAYSIAN_FOODS, 3);
+    return `
+      <div class="card stack fit-card">
+        <div class="card-title row between" style="align-items:baseline">
+          <span>${t('fit_title')} <b class="num" style="color:var(--hero-accent)">${Math.max(0, remaining)} kcal</b></span>
+        </div>
+        ${
+          fitFoods.length
+            ? `<div class="list">${fitFoods
+                .map(
+                  (f, i) => `
+                <div class="list-item">
+                  <div class="li-main">
+                    <div class="li-title" title="${esc(f.name)}">${esc(f.name)}</div>
+                    <div class="li-sub"><span class="num">${f.kcal} kcal · P ${round1(f.protein)}g</span></div>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-secondary btn-fit-log" data-i="${i}">${icons.plus}<span>${t('fit_log')}</span></button>
+                </div>`
+                )
+                .join('')}</div>`
+            : `<p class="small muted" style="margin:0">${t('fit_empty')}</p>`
+        }
+        <button type="button" class="btn btn-ghost btn-block" id="btn-fit-ai" ${remaining < 80 || isGenerating ? 'disabled' : ''} style="border:1px solid var(--border-soft)">
+          ${icons.sparkles}<span>${t('fit_ai')}</span>
+        </button>
+      </div>`;
+  }
+
   function renderRecipeGenerator() {
     const isEn = getLang() === 'en';
     return `
       <div class="stack fade-up">
+        ${renderFitCard()}
         <div class="card stack">
           <div class="card-title row between" style="align-items:center">
             <div>
@@ -1831,7 +1866,7 @@ export function renderRecipes(container) {
       const cVal = Math.round((kVal * 0.45) / 4);
       const fVal = Math.round((kVal * 0.25) / 9);
 
-      store.addMeal({
+      onMealLogged(store.addMeal({
         name: m.name,
         kcal: kVal,
         protein: pVal,
@@ -1839,7 +1874,7 @@ export function renderRecipes(container) {
         fat: fVal,
         weight_g: 350,
         mealType: typeInfo.id === 'breakfast' ? 'Breakfast' : typeInfo.id === 'dinner' ? 'Dinner' : typeInfo.id === 'snack' ? 'Snack' : 'Lunch',
-      });
+      }));
 
       toast(getLang() === 'en' ? `Logged: ${m.name} (+${kVal} kcal)` : `Berjaya log: ${m.name} (+${kVal} kcal)!`, 'success');
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([15, 30]);
@@ -2081,6 +2116,22 @@ export function renderRecipes(container) {
         render();
       });
 
+      container.querySelectorAll('.btn-fit-log').forEach((b) => {
+        b.addEventListener('click', () => {
+          const food = fitFoods[Number(b.dataset.i)];
+          if (!food) return;
+          const { category, ...meal } = food;
+          onMealLogged(store.addMeal({ ...meal, mealType: mealTypeNow() }));
+          toast(`${t('fit_log')}: ${food.name} (+${food.kcal} kcal)`, 'success');
+          render();
+        });
+      });
+
+      container.querySelector('#btn-fit-ai')?.addEventListener('click', () => {
+        recipeTextRequest = t('fit_ai_prompt').replace('{kcal}', Math.max(0, store.summary().remaining));
+        container.querySelector('#btn-gen-recipe')?.click();
+      });
+
       container.querySelector('#btn-gen-recipe')?.addEventListener('click', async () => {
         isGenerating = true;
         render();
@@ -2110,14 +2161,15 @@ export function renderRecipes(container) {
       container.querySelector('#btn-log-recipe-meal')?.addEventListener('click', () => {
         if (!currentRecipe) return;
         const n = currentRecipe.nutrition || {};
-        store.addMeal({
+        onMealLogged(store.addMeal({
           name: currentRecipe.title,
           kcal: n.calories_kcal || 500,
           protein: n.protein_g || 30,
           carbs: n.carbs_g || 50,
           fat: n.fat_g || 15,
           weight_g: 350,
-        });
+          mealType: mealTypeNow(),
+        }));
         toast(`Meal "${currentRecipe.title}" logged for today!`, 'success');
       });
     }
