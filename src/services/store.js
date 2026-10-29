@@ -16,6 +16,7 @@ const defaults = () => ({
   water: {},
   badges: {},
   flags: {},
+  scanCache: {},
   companionLines: { deku: null, bakugou: null },
   settings: { apiKey: '', notifications: false, companions: true, soundEnabled: true, cameraAlwaysOn: true, cameraFacing: 'environment' },
 });
@@ -41,6 +42,9 @@ function normalizeState(parsed) {
   for (const key of ['water', 'badges', 'flags']) {
     merged[key] = isRecord(merged[key]) ? merged[key] : {};
   }
+  merged.scanCache = isRecord(merged.scanCache)
+    ? Object.fromEntries(Object.entries(merged.scanCache).filter(([, value]) => isRecord(value) && Number.isFinite(value.savedAt)))
+    : {};
   merged.profile = isRecord(merged.profile) ? merged.profile : null;
   merged.mealPlan = isRecord(merged.mealPlan) ? merged.mealPlan : null;
   merged.companionLines = isRecord(merged.companionLines) ? merged.companionLines : def.companionLines;
@@ -62,6 +66,12 @@ function load() {
 }
 
 let state = load();
+let beforeAccountChange = null;
+const LIVE_MAX_AGE_MS = 12 * 3600e3;
+const liveKey = () => {
+  const username = getActiveUsername();
+  return username ? `${getAccountStorageKey(username)}.live` : null;
+};
 
 function persist() {
   const username = getActiveUsername();
@@ -105,6 +115,7 @@ export const store = {
     return username ? getAccountStorageKey(username) : null;
   },
   activateAccount(username) {
+    beforeAccountChange?.();
     persistForSwitch();
     resumeLocalAccount(username);
     state = load();
@@ -113,10 +124,70 @@ export const store = {
     return state;
   },
   async clearActiveAccount() {
+    beforeAccountChange?.();
     persistForSwitch();
     await signOut();
     state = defaults();
     listeners.forEach((fn) => fn('reset', state));
+  },
+
+  // Lets the GPS tracker freeze its session before the account key changes, without store importing it.
+  onBeforeAccountChange(fn) { beforeAccountChange = fn; },
+
+  // ---------- Live activity session (separate key: written every few seconds, never synced) ----------
+  getLiveSession(nowMs = Date.now()) {
+    const key = liveKey();
+    if (!key) return null;
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const snap = JSON.parse(raw);
+      if (isRecord(snap) && Number.isFinite(snap.savedAt) && nowMs - snap.savedAt <= LIVE_MAX_AGE_MS) return snap;
+    } catch { /* corrupt snapshot: drop it below */ }
+    try { localStorage.removeItem(key); } catch { /* noop */ }
+    return null;
+  },
+  saveLiveSession(snapshot) {
+    const key = liveKey();
+    if (!key) return;
+    try { localStorage.setItem(key, JSON.stringify({ ...snapshot, savedAt: Date.now() })); } catch { /* storage full: keep running */ }
+  },
+  clearLiveSession() {
+    const key = liveKey();
+    if (!key) return;
+    try { localStorage.removeItem(key); } catch { /* noop */ }
+  },
+
+  // ---------- Verified scanner cache ----------
+  getScanCache(identity) {
+    const key = String(identity || '').trim();
+    const value = key ? state.scanCache?.[key] : null;
+    return isRecord(value) ? { ...value } : null;
+  },
+  saveScanCache(identity, record) {
+    const key = String(identity || '').trim();
+    if (!key || !isRecord(record)) return null;
+    const safe = {};
+    for (const field of ['code', 'name', 'brand', 'servingLabel', 'servingSize', 'quantity', 'image', 'per100', 'perServing', 'kcal', 'protein', 'carbs', 'fat', 'items', 'recommendation']) {
+      if (record[field] == null || (field === 'image' && String(record[field]).startsWith('data:'))) continue;
+      safe[field] = record[field];
+    }
+    safe.savedAt = Date.now();
+    state.scanCache = { ...(state.scanCache || {}), [key]: safe };
+    const entries = Object.entries(state.scanCache).sort((a, b) => (a[1].savedAt || 0) - (b[1].savedAt || 0));
+    state.scanCache = Object.fromEntries(entries.slice(-50));
+    emit('scanCache');
+    enqueueMutation('food_scan_cache', 'UPSERT', { identity: key, product: safe, updated_at: new Date().toISOString() });
+    return { ...safe };
+  },
+  clearScanCache(identity) {
+    const key = String(identity || '').trim();
+    if (!key || !state.scanCache?.[key]) return;
+    const next = { ...state.scanCache };
+    delete next[key];
+    state.scanCache = next;
+    emit('scanCache');
+    enqueueMutation('food_scan_cache', 'DELETE', { identity: key });
   },
 
   // ---------- Profile ----------

@@ -29,6 +29,7 @@ export function openProfileEditor(onSaved) {
     activity: Number(current.activity) || 1.375,
     goal: current.goal || 'lose',
     selectedCompanion: current.selectedCompanion || 'deku',
+    stepGoal: Number(current.stepGoal) || 8000,
   };
 
   function calculatePreview() {
@@ -107,6 +108,11 @@ export function openProfileEditor(onSaved) {
           <input class="input num" id="pe-target-w" type="number" step="0.1" min="30" max="250" value="${formState.targetWeight}" />
           <span>kg</span>
         </div>
+      </div>
+
+      <div class="field">
+        <label for="pe-step-goal">${t('prof_step_goal')}:</label>
+        <input class="input num" id="pe-step-goal" type="number" min="1000" max="50000" step="500" value="${formState.stepGoal}" />
       </div>
 
       <!-- Activity Level -->
@@ -216,6 +222,10 @@ export function openProfileEditor(onSaved) {
       });
     });
 
+    sheet.querySelector('#pe-step-goal')?.addEventListener('input', (e) => {
+      formState.stepGoal = Number(e.target.value);
+    });
+
     sheet.querySelector('#pe-activity')?.addEventListener('change', (e) => {
       formState.activity = Number(e.target.value);
       updateLivePreview();
@@ -236,6 +246,11 @@ export function openProfileEditor(onSaved) {
       }
       if (formState.weight < 30 || formState.weight > 250) {
         toast('Please enter a valid weight between 30 and 250 kg.', 'error');
+        return;
+      }
+
+      if (!(formState.stepGoal >= 1000 && formState.stepGoal <= 50000)) {
+        toast(t('prof_step_goal_err'), 'error');
         return;
       }
 

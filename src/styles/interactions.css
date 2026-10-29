@@ -7,6 +7,9 @@
   -webkit-tap-highlight-color: transparent;
   transition: transform 160ms var(--ease), background-color 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease;
 }
+.macro-tile, .seg-ring-btn, .tdee-btn, .step-row { transition: transform 120ms var(--ease); }
+.macro-tile:active, .seg-ring-btn:active, .tdee-btn:active, .step-row:active { transform: scale(.97); }
+.macro-tile:focus-visible, .seg-ring-btn:focus-visible, .tdee-btn:focus-visible, .step-row:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 button:not(:disabled), a, select { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .55; }
 button:disabled:active { transform: none; filter: none; }

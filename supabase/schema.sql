@@ -41,11 +41,19 @@ create table if not exists public.user_passkeys (
   device_name text, created_at timestamptz not null default now()
 );
 
+create table if not exists public.food_scan_cache (
+  id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade,
+  identity text not null, product jsonb not null, updated_at timestamptz not null default now(),
+  unique(user_id, identity)
+);
+create index if not exists food_scan_cache_identity_idx on public.food_scan_cache(user_id, identity);
+
 alter table public.profiles enable row level security;
 alter table public.meal_logs enable row level security;
 alter table public.daily_steps enable row level security;
 alter table public.activity_sessions enable row level security;
 alter table public.user_passkeys enable row level security;
+alter table public.food_scan_cache enable row level security;
 
 drop policy if exists profiles_owner on public.profiles;
 create policy profiles_owner on public.profiles for all using (auth.uid() = id) with check (auth.uid() = id);
@@ -57,6 +65,8 @@ drop policy if exists activity_sessions_owner on public.activity_sessions;
 create policy activity_sessions_owner on public.activity_sessions for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 drop policy if exists user_passkeys_owner on public.user_passkeys;
 create policy user_passkeys_owner on public.user_passkeys for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists food_scan_cache_owner on public.food_scan_cache;
+create policy food_scan_cache_owner on public.food_scan_cache for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create or replace function public.set_updated_at() returns trigger language plpgsql as $$
 begin new.updated_at = now(); return new; end $$;

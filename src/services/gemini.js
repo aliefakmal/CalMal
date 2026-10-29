@@ -56,7 +56,7 @@ async function generateJSON({ prompt, images = [], temperature = 0.4, signal }) 
   }
 
   const parts = [
-    ...images.map((img) => ({ inlineData: { mimeType: img.mime, data: img.base64 } })),
+    ...images.filter(Boolean).map((img) => ({ inlineData: { mimeType: img.mime, data: img.base64 } })),
     { text: prompt },
   ];
 
@@ -483,26 +483,49 @@ export async function analyzeFood({ image, note, signal }) {
   if (!r || r.is_food === false) {
     r = fallbackFoodAnalysis(note);
   }
-  return normalizeFood(r);
+  return normalizeFood(r, note);
 }
 
-export function normalizeFood(r) {
+function finiteNonNegative(value) {
+  return value !== '' && Number.isFinite(Number(value)) && Number(value) >= 0;
+}
+
+export function normalizeFoodAnalysis(r) {
+  if (!r || typeof r !== 'object') return null;
   const m = r.macros || {};
+  const fields = [r.estimated_weight_g, r.calories_kcal, m.protein_g, m.carbs_g, m.fat_g];
+  if (!String(r.food_name || '').trim() || fields.some((value) => !finiteNonNegative(value))) return null;
+  const items = [];
+  const seen = new Set();
+  for (const item of Array.isArray(r.items_breakdown) ? r.items_breakdown : []) {
+    const name = String(item?.name || '').trim();
+    const weight = Number(item?.weight_g);
+    const kcal = Number(item?.calories_kcal);
+    if (!name || seen.has(name.toLowerCase()) || !Number.isFinite(weight) || weight <= 0 || !finiteNonNegative(item?.calories_kcal)) continue;
+    const itemMacros = item.macros || item;
+    const protein = itemMacros.protein_g == null ? 0 : Number(itemMacros.protein_g);
+    const carbs = itemMacros.carbs_g == null ? 0 : Number(itemMacros.carbs_g);
+    const fat = itemMacros.fat_g == null ? 0 : Number(itemMacros.fat_g);
+    if (![protein, carbs, fat].every((value) => Number.isFinite(value) && value >= 0)) continue;
+    seen.add(name.toLowerCase());
+    items.push({ name, weight_g: Math.round(weight), kcal: Math.round(kcal), protein, carbs, fat });
+  }
+  if (!items.length) return null;
   return {
-    name: r.food_name || 'Dish',
-    weight_g: Math.round(Number(r.estimated_weight_g) || 0),
-    kcal: Math.round(Number(r.calories_kcal) || 0),
-    protein: Number(m.protein_g) || 0,
-    carbs: Number(m.carbs_g) || 0,
-    fat: Number(m.fat_g) || 0,
+    name: String(r.food_name).trim(),
+    weight_g: Math.round(Number(r.estimated_weight_g)),
+    kcal: Math.round(Number(r.calories_kcal)),
+    protein: Number(m.protein_g),
+    carbs: Number(m.carbs_g),
+    fat: Number(m.fat_g),
     is_fallback: !!r.is_fallback,
-    items: (r.items_breakdown || []).map((i) => ({
-      name: i.name,
-      weight_g: Math.round(Number(i.weight_g) || 0),
-      kcal: Math.round(Number(i.calories_kcal) || 0),
-    })),
+    items,
     recommendation: normalizeReco(r.body_weight_recommendation),
   };
+}
+
+export function normalizeFood(r, note = '') {
+  return normalizeFoodAnalysis(r) || normalizeFoodAnalysis(fallbackFoodAnalysis(note));
 }
 
 function normalizeReco(b = {}) {

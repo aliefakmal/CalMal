@@ -269,3 +269,19 @@ test('scheduled sync and current-user lookup never use a configured client or pe
   assert.equal(client.authRequests, 0);
   assert.deepEqual(client.upserts, []);
 });
+
+test('state sync maps step goal and activity type', async (context) => {
+  activate('alpha');
+  const service = await loadSyncService(context);
+  service.enqueueStateSync({
+    profile: { name: 'A', stepGoal: 9000 },
+    meals: [],
+    activities: [{ id: 'act-1', activityType: 'run', startedAt: '2026-10-29T01:00:00Z', endedAt: '2026-10-29T01:30:00Z', distanceKm: 5 }],
+  });
+  const queue = readQueue('alpha');
+  assert.equal(queue.find((i) => i.table === 'profiles').payload.daily_step_goal, 9000);
+  const act = queue.find((i) => i.table === 'activity_sessions').payload;
+  assert.equal(act.activity_type, 'run');
+  assert.equal(act.start_time, '2026-10-29T01:00:00Z');
+  assert.equal(act.end_time, '2026-10-29T01:30:00Z');
+});
