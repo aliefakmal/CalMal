@@ -9,6 +9,7 @@ import { openMealEditor } from '../components/mealEditor.js';
 import { onScanModeUsed, onMealLogged } from '../services/companionService.js';
 import { store } from '../services/store.js';
 import { t, getLang } from '../utils/i18n.js';
+import { createScanGuard, imageFingerprint, normalizeBarcode } from '../utils/scanner.js';
 
 export function renderScanner(container) {
   let mode = 'food'; // 'food' | 'barcode' | 'ocr'
@@ -20,6 +21,8 @@ export function renderScanner(container) {
   let selectedChips = new Set();
   let customContextNote = '';
   let analysisInterval = null;
+  let requestGeneration = 0;
+  const scanGuard = createScanGuard({ cooldownMs: 1200 });
 
   let cameraState = 'starting'; // 'starting' | 'active' | 'denied' | 'error'
   let cameraErrorMessage = '';
@@ -667,6 +670,9 @@ export function renderScanner(container) {
   }
 
   function stopCamera() {
+    requestGeneration += 1;
+    scanGuard.invalidate();
+    if (analysisInterval) { clearInterval(analysisInterval); analysisInterval = null; }
     if (stream) {
       try {
         stream.getTracks().forEach((t) => {
@@ -749,6 +755,8 @@ export function renderScanner(container) {
   }
 
   async function processFoodScan(imgObj) {
+    const generation = requestGeneration;
+    if (!scanGuard.begin(`image:${imageFingerprint(imgObj?.dataUrl || imgObj?.thumb || '')}`)) return;
     // Kosongkan keputusan lama serta-merta agar UI tidak tersekat pada hidangan sebelum ini
     analysisResult = null;
     updateResultsUI();
@@ -812,6 +820,7 @@ export function renderScanner(container) {
 
       const allNotes = [...selectedChips, customContextNote, detectedText].filter(Boolean).join(', ');
       const res = await analyzeFood({ image: imgObj, note: allNotes });
+      if (generation !== requestGeneration) return;
       analysisResult = res;
       toast(`AI recognized: ${res.name}`, 'success');
       updateResultsUI();
@@ -822,13 +831,17 @@ export function renderScanner(container) {
       const coachAdvice = res?.recommendation?.[randomHero] || '';
       showMotivationPopup({ who: randomHero, advice: coachAdvice });
     } catch (err) {
+      if (generation !== requestGeneration) return;
       toast(err.message || 'Failed to analyze food.', 'error');
     } finally {
+      scanGuard.invalidate();
       setAnalyzing(false);
     }
   }
 
   async function processOcrScan(imgObj) {
+    const generation = requestGeneration;
+    if (!scanGuard.begin(`image:${imageFingerprint(imgObj?.dataUrl || imgObj?.thumb || '')}`)) return;
     setAnalyzing(true);
     try {
       capturedImage = imgObj;
@@ -841,6 +854,7 @@ export function renderScanner(container) {
       }
 
       const res = await readNutritionLabel({ image: imgObj });
+      if (generation !== requestGeneration) return;
       analysisResult = res;
       toast(`Label scanned: ${res.name}`, 'success');
       updateResultsUI();
@@ -851,21 +865,55 @@ export function renderScanner(container) {
       const coachAdvice = res?.recommendation?.[randomHero] || '';
       showMotivationPopup({ who: randomHero, advice: coachAdvice });
     } catch (err) {
+      if (generation !== requestGeneration) return;
       toast(err.message || 'Failed to read nutrition label.', 'error');
     } finally {
+      scanGuard.invalidate();
       setAnalyzing(false);
     }
   }
 
   async function handleBarcodeFound(code) {
-    toast(`Barcode detected: ${code}`, 'info');
+    const normalized = normalizeBarcode(code);
+    const generation = requestGeneration;
+    if (!normalized || !scanGuard.begin(`barcode:${normalized}`)) return;
+    toast(`Barcode detected: ${normalized}`, 'info');
     try {
-      const prod = await lookupBarcode(code);
+      const identity = `barcode:${normalized}`;
+      const cached = store.getScanCache(identity);
+      let prod = cached;
+      if (!prod) {
+        try {
+          prod = await lookupBarcode(normalized);
+        } catch (lookupError) {
+          prod = await analyzeFood({ image: null, note: `barcode ${normalized}` });
+          if (!prod) throw lookupError;
+          prod = {
+            code: normalized,
+            name: prod.name,
+            brand: '',
+            image: '',
+            servingLabel: `${prod.weight_g || 100} g`,
+            servingSize: prod.weight_g || 100,
+            quantity: '',
+            per100: (() => {
+              const factor = 100 / Math.max(1, prod.weight_g || 100);
+              return { kcal: Math.round(prod.kcal * factor), protein: prod.protein * factor, carbs: prod.carbs * factor, fat: prod.fat * factor };
+            })(),
+            is_fallback: true,
+          };
+        }
+      }
+      if (generation !== requestGeneration) return;
       analysisResult = prod;
+      if (!cached) store.saveScanCache(identity, prod);
       updateResultsUI();
       toast(`Product found: ${prod.name}`, 'success');
     } catch (err) {
+      if (generation !== requestGeneration) return;
       toast(err.message || 'Product not found.', 'error');
+    } finally {
+      scanGuard.invalidate();
     }
   }
 
@@ -873,6 +921,10 @@ export function renderScanner(container) {
     // 1. Switch Mode Tabs
     container.querySelectorAll('#scanner-mode-tabs button').forEach((b) => {
       b.addEventListener('click', () => {
+        requestGeneration += 1;
+        scanGuard.invalidate();
+        if (analysisInterval) { clearInterval(analysisInterval); analysisInterval = null; }
+        stopCamera();
         mode = b.dataset.m;
         analysisResult = null;
         updateResultsUI();
@@ -1199,6 +1251,7 @@ export function renderScanner(container) {
         weight_g: analysisResult.weight_g,
         thumb: capturedImage?.thumb || capturedImage?.dataUrl || '',
       });
+      if (capturedImage?.dataUrl) store.saveScanCache(`image:${imageFingerprint(capturedImage.dataUrl)}`, analysisResult);
       toast(`${savedName} berjaya disimpan ke log makanan!`, 'success');
       onMealLogged(meal);
 
@@ -1243,6 +1296,7 @@ export function renderScanner(container) {
         weight_g: grams,
         thumb: analysisResult.image || '',
       });
+      if (analysisResult.code) store.saveScanCache(`barcode:${normalizeBarcode(analysisResult.code)}`, analysisResult);
       toast(`${analysisResult.name} saved!`, 'success');
       onMealLogged(meal);
       resetToLiveCamera();

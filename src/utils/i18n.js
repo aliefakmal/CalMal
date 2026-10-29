@@ -185,6 +185,9 @@ const DICTIONARY = {
     scan_log_meal: 'Log to Diary',
     scan_edit_details: 'Fine-Tune / Edit',
     scan_switch_cam: 'Flip Camera',
+    scan_duplicate: 'Already scanning this item. Wait a moment.',
+    scan_lookup_fallback: 'Product lookup failed. Using AI estimate.',
+    scan_stale: 'Scan cancelled because scanner mode changed.',
 
     // Recipes & 7-Day Plan
     rec_eyebrow: 'AI Nutrition & Culinary Kitchen',
@@ -559,6 +562,9 @@ const DICTIONARY = {
     scan_log_meal: 'Rekod ke Diari',
     scan_edit_details: 'Ubah Suai / Laras',
     scan_switch_cam: 'Tukar Kamera',
+    scan_duplicate: 'Item sedang diimbas. Tunggu sebentar.',
+    scan_lookup_fallback: 'Carian produk gagal. Anggaran AI digunakan.',
+    scan_stale: 'Imbasan dibatalkan kerana mod berubah.',
 
     // Recipes & 7-Day Plan
     rec_eyebrow: 'Dapur Kulinari & Nutrisi AI',

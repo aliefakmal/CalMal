@@ -56,7 +56,7 @@ async function generateJSON({ prompt, images = [], temperature = 0.4, signal }) 
   }
 
   const parts = [
-    ...images.map((img) => ({ inlineData: { mimeType: img.mime, data: img.base64 } })),
+    ...images.filter(Boolean).map((img) => ({ inlineData: { mimeType: img.mime, data: img.base64 } })),
     { text: prompt },
   ];
 
