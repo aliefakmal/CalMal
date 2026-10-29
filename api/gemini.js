@@ -42,6 +42,7 @@ export default async function handler(req, res) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(targetModel)}:generateContent?key=${apiKey}`;
 
     const payload = { contents };
+    if (!generationConfig) payload.generationConfig = { responseMimeType: 'application/json' };
     if (generationConfig) payload.generationConfig = generationConfig;
     if (systemInstruction) payload.systemInstruction = systemInstruction;
 
