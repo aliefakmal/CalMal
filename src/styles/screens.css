@@ -3322,3 +3322,46 @@
   font-weight: 800;
   color: #000;
 }
+
+/* Step goal ring + last 7 days */
+.step-goal { display: grid; gap: 14px; }
+.step-goal-head { display: flex; align-items: center; gap: 14px; }
+.step-goal-head > div:last-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.step-ring { flex: none; width: 84px; height: 84px; }
+.step-ring .ring-fill { stroke: #fff; transition: stroke-dashoffset 0.6s var(--ease); }
+.step-ring.goal-met .ring-fill { stroke: var(--ok); }
+.step-count { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; }
+.step-src { font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 600; }
+.step-week { display: grid; gap: 8px; }
+.step-bars { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 96px; padding-bottom: 18px; }
+.step-bars::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(18px + (100% - 18px) * var(--goal-y));
+  border-top: 1px dashed var(--muted-2);
+  pointer-events: none;
+}
+.step-bar {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.step-bar i { display: block; width: 100%; max-width: 28px; border-radius: 6px 6px 2px 2px; background: var(--surface-3); }
+.step-bar.met i { background: var(--muted); }
+.step-bar.today i { background: #fff; }
+.step-bar.today.met i { background: var(--ok); }
+.step-bar span { position: absolute; bottom: -18px; font-size: 11px; font-weight: 700; }
+.step-bar.today span { color: #fff; }
+.step-bar.active i { outline: 2px solid var(--hero-accent); outline-offset: 2px; }
+.step-bar:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 6px; }
+.restore-card { margin-bottom: 16px; border-color: var(--warn); }
+.restore-card p { margin: 4px 0 0; line-height: 1.4; }

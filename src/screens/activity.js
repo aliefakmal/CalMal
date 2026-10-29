@@ -3,7 +3,8 @@ import L from 'leaflet';
 import * as tracker from '../services/gpsTracker.js';
 import { store } from '../services/store.js';
 import { icons } from '../components/icons.js';
-import { toast, confirmSheet, routeThumbSVG, openSheet } from '../components/ui.js';
+import { toast, confirmSheet, routeThumbSVG, openSheet, ringSVG, animateRings } from '../components/ui.js';
+import { requestMotionPermission } from '../services/pedometer.js';
 import { formatPace, formatDuration, metLabel, metForSpeed } from '../utils/calc.js';
 import { onActivityFinished } from '../services/companionService.js';
 import { esc, fmtTime, todayKey } from '../utils/helpers.js';
@@ -98,8 +99,8 @@ export function renderActivity(container) {
         <!-- Floating HUD Overlay -->
         <div class="strava-floating-hud">
           <div class="strava-hud-pill">
-            <span class="badge ${stats.status === 'running' ? 'live' : stats.status === 'paused' ? 'warn' : 'ok'}">
-              ${stats.status === 'running' ? (isEn ? 'RECORDING' : 'MERAKAM') : stats.status === 'paused' ? (isEn ? 'PAUSED' : 'DIJEDA') : (isEn ? 'READY' : 'SEDIA')}
+            <span class="badge ${stats.status === 'running' && !stats.autoPaused ? 'live' : stats.status === 'idle' ? 'ok' : 'warn'}" id="hud-badge">
+              ${badgeText(stats)}
             </span>
             <span class="num">${stats.status === 'running' ? metLabel(stats.speedKmh) : liveLoc ? `GPS ±${liveLoc.accuracy}m` : (isEn ? 'Acquiring GPS...' : 'Mengesan GPS...')}</span>
           </div>
@@ -110,6 +111,13 @@ export function renderActivity(container) {
       </div>
 
       ${stats.status === 'idle' ? dayStripHTML(history) : ''}
+
+      ${stepGoalHTML(stats, history)}
+
+      ${stats.restored ? `<div class="card restore-card" role="status">
+          <b>${t('act_restored_title')}</b>
+          <p class="small muted">${t('act_restored_body')}</p>
+        </div>` : ''}
 
       <!-- Primary Strava Metrics (4 Columns) -->
       <div class="grid grid-2 md-grid-4" style="margin-bottom:16px">
@@ -133,12 +141,12 @@ export function renderActivity(container) {
 
       <div class="grid grid-2" style="margin-bottom:16px">
         <div class="stat">
-          <span>${isEn ? 'Elevation Gain' : 'Kenaikan Ketinggian'}</span>
+          <span>${t('act_elev')}</span>
           <b class="num" id="hud-elev">+${Math.round(stats.elevGain)}<small>m</small></b>
         </div>
         <div class="stat">
-          <span>${isEn ? 'Est. Steps' : 'Anggaran Langkah'}</span>
-          <b class="num" id="hud-steps">${stats.steps}<small>${isEn ? 'step' : 'langkah'}</small></b>
+          <span>${t('act_steps')} · <i class="step-src" id="hud-step-src">${t(stats.stepSource === 'sensor' ? 'steps_src_sensor' : 'steps_src_gps')}</i></span>
+          <b class="num" id="hud-steps">${stats.steps.toLocaleString()}</b>
         </div>
       </div>
 
@@ -231,6 +239,75 @@ export function renderActivity(container) {
 
     bindEvents();
     initMap();
+    animateRings(container);
+  }
+
+  function badgeText(st) {
+    const isEn = getLang() === 'en';
+    if (st.status === 'running') return st.autoPaused ? t('act_auto_paused') : (isEn ? 'RECORDING' : 'MERAKAM');
+    if (st.status === 'paused') return isEn ? 'PAUSED' : 'DIJEDA';
+    return isEn ? 'READY' : 'SEDIA';
+  }
+
+  const stepGoal = () => Number(store.profile?.stepGoal) || 8000;
+  const todaySteps = (st) => dayRoutes(store.state.activities, todayKey()).steps + (st.status !== 'idle' ? st.steps : 0);
+
+  function stepGoalHTML(st, history) {
+    const goal = stepGoal();
+    const steps = todaySteps(st);
+    const met = steps >= goal;
+    const locale = getLang() === 'ms' ? 'ms-MY' : 'en-GB';
+    let bars = '';
+    if (st.status === 'idle') {
+      const days = lastNDays(7).reverse().map((key) => ({ key, n: dayRoutes(history, key).steps }));
+      const scale = Math.max(goal, ...days.map((d) => d.n));
+      const total = days.reduce((s, d) => s + d.n, 0);
+      bars = `
+        <div class="step-week">
+          <div class="row between xs muted"><span>${t('steps_week')}</span><span class="num">${t('steps_week_total').replace('{n}', total.toLocaleString())}</span></div>
+          <div class="step-bars" style="--goal-y:${(goal / scale).toFixed(4)}">
+            ${days.map(({ key, n }) => {
+              const [y, m, d] = key.split('-').map(Number);
+              const date = new Date(y, m - 1, d);
+              const label = t('steps_bar_label').replace('{date}', date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'short' })).replace('{n}', n.toLocaleString());
+              return `<button type="button" class="step-bar ${key === todayKey() ? 'today' : ''} ${n >= goal ? 'met' : ''} ${selectedDay === key ? 'active' : ''}" data-day="${key}" aria-label="${esc(label)}" title="${esc(label)}">
+                  <i style="height:${Math.max(2, (n / scale) * 100)}%"></i>
+                  <span>${date.toLocaleDateString(locale, { weekday: 'narrow' })}</span>
+                </button>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="card step-goal" style="margin-bottom:16px">
+        <div class="step-goal-head">
+          <div class="step-ring ${met ? 'goal-met' : ''}" id="step-ring">
+            ${ringSVG({ size: 84, stroke: 7, progress: steps / goal })}
+          </div>
+          <div>
+            <span class="eyebrow">${t('steps_today')}</span>
+            <b class="num step-count" id="hud-goal-steps">${steps.toLocaleString()}</b>
+            <span class="small muted" id="hud-goal-sub">${met ? t('steps_goal_met') : t('steps_goal_of').replace('{goal}', goal.toLocaleString())}</span>
+          </div>
+        </div>
+        ${bars}
+      </div>`;
+  }
+
+  function updateStepGoal(st) {
+    const goal = stepGoal();
+    const steps = todaySteps(st);
+    const count = container.querySelector('#hud-goal-steps');
+    if (count) count.textContent = steps.toLocaleString();
+    const sub = container.querySelector('#hud-goal-sub');
+    if (sub) sub.textContent = steps >= goal ? t('steps_goal_met') : t('steps_goal_of').replace('{goal}', goal.toLocaleString());
+    const ring = container.querySelector('#step-ring');
+    const fill = ring?.querySelector('.ring-fill');
+    if (fill) {
+      const c = Number(fill.getAttribute('stroke-dasharray'));
+      fill.style.strokeDashoffset = c * (1 - Math.min(1, steps / goal));
+      ring.classList.toggle('goal-met', steps >= goal);
+    }
   }
 
   function dayStripHTML(history) {
@@ -564,12 +641,22 @@ export function renderActivity(container) {
       });
     });
 
+    container.querySelectorAll('.step-bar[data-day]').forEach((b) => {
+      b.addEventListener('click', () => {
+        selectedDay = b.dataset.day;
+        inspectingActivityId = null;
+        render();
+      });
+    });
+
     container.querySelector('#btn-day-live')?.addEventListener('click', () => {
       selectedDay = null;
       render();
     });
 
     container.querySelector('#btn-start-run')?.addEventListener('click', async () => {
+      // First await: iOS only shows the motion prompt inside the tap gesture.
+      const motion = isSim ? 'unsupported' : await requestMotionPermission();
       inspectingActivityId = null;
       selectedDay = null;
       if (!isSim && !tracker.getLiveLocation()) {
@@ -579,8 +666,9 @@ export function renderActivity(container) {
           // continue anyway
         }
       }
-      tracker.start({ simulate: isSim });
-      toast('Run session started! Strava tracking active.', 'success');
+      tracker.start({ simulate: isSim, motion });
+      toast(t('act_started'), 'success');
+      if (motion === 'denied') toast(t('act_motion_off'), 'info');
       render();
     });
 
@@ -591,22 +679,23 @@ export function renderActivity(container) {
     });
 
     // Resume Run Session
-    container.querySelector('#btn-resume-run')?.addEventListener('click', () => {
-      tracker.resume();
+    container.querySelector('#btn-resume-run')?.addEventListener('click', async () => {
+      const motion = tracker.getStats().simulated ? undefined : await requestMotionPermission();
+      tracker.resume({ motion });
       render();
     });
 
     // Finish & Save Run Session
     container.querySelector('#btn-finish-run')?.addEventListener('click', async () => {
       const ok = await confirmSheet({
-        title: 'Finish Run Session?',
-        message: 'Your route, distance, pace, and calories burned will be saved and credited to your daily calorie balance.',
-        confirmText: 'Finish & Save',
+        title: t('act_finish_q'),
+        message: t('act_finish_msg'),
+        confirmText: t('act_finish'),
       });
       if (ok) {
         const result = tracker.finish();
         const saved = store.addActivity(result);
-        toast(`Run saved: ${result.distanceKm.toFixed(2)} km · Pace ${formatPace(result.pace)}/km · ${result.kcal} kcal burned!`, 'success');
+        toast(t('act_saved').replace('{km}', result.distanceKm.toFixed(2)).replace('{steps}', result.steps.toLocaleString()).replace('{kcal}', result.kcal), 'success');
         onActivityFinished(saved);
         render();
       }
@@ -615,14 +704,14 @@ export function renderActivity(container) {
     // Discard Run Session
     container.querySelector('#btn-discard-run')?.addEventListener('click', async () => {
       const ok = await confirmSheet({
-        title: 'Discard Run Session?',
-        message: 'All distance and route records for this session will be discarded.',
-        confirmText: 'Discard Session',
+        title: t('act_discard_q'),
+        message: t('act_discard_msg'),
+        confirmText: t('act_discard'),
         danger: true,
       });
       if (ok) {
         tracker.discard();
-        toast('Run session discarded.', 'info');
+        toast(t('act_discarded'), 'info');
         render();
       }
     });
@@ -684,10 +773,13 @@ export function renderActivity(container) {
           </div>
 
           <div class="card flat" style="padding:12px;background:var(--surface-2);border-radius:10px">
-            <b style="color:#fff">Compendium of Physical Activities</b>
-            <p class="small muted" style="margin-top:4px;line-height:1.4">
-              Calorie expenditure is calculated using Metabolic Equivalent of Task (MET) based on velocity: Walking (3.5 MET), Brisk Walk (5.0 MET), Jogging (8.3 MET), and Fast Running (11.0 MET). Formula: MET × 3.5 × Weight (kg) / 200 × Minutes.
-            </p>
+            <b style="color:#fff">${t('act_src_met_title')}</b>
+            <p class="small muted" style="margin-top:4px;line-height:1.4">${t('act_src_met_body')}</p>
+          </div>
+
+          <div class="card flat" style="padding:12px;background:var(--surface-2);border-radius:10px">
+            <b style="color:#fff">${t('act_src_steps_title')}</b>
+            <p class="small muted" style="margin-top:4px;line-height:1.4">${t('act_src_steps_body')}</p>
           </div>
 
           <div class="card flat" style="padding:12px;background:var(--surface-2);border-radius:10px">
@@ -723,7 +815,15 @@ export function renderActivity(container) {
     if (dPace) dPace.innerHTML = `${formatPace(st.pace)}<small>/km</small>`;
     if (dKcal) dKcal.innerHTML = `${Math.round(st.kcal)}<small>kcal</small>`;
     if (dElev) dElev.innerHTML = `+${Math.round(st.elevGain)}<small>m</small>`;
-    if (dSteps) dSteps.innerHTML = `${st.steps}<small>step</small>`;
+    if (dSteps) dSteps.textContent = st.steps.toLocaleString();
+    const dSrc = container.querySelector('#hud-step-src');
+    if (dSrc) dSrc.textContent = t(st.stepSource === 'sensor' ? 'steps_src_sensor' : 'steps_src_gps');
+    const dBadge = container.querySelector('#hud-badge');
+    if (dBadge) {
+      dBadge.textContent = badgeText(st);
+      dBadge.className = `badge ${st.status === 'running' && !st.autoPaused ? 'live' : st.status === 'idle' ? 'ok' : 'warn'}`;
+    }
+    updateStepGoal(st);
 
     if ((!inspectingActivityId && !selectedDay) || st.status !== 'idle') {
       updateMapGraphics(st);
