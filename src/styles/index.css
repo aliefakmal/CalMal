@@ -182,13 +182,26 @@ body::before {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 3px;
-  padding: 6px 0;
+  padding: 6px 2px;
   color: var(--muted);
   text-decoration: none;
   font-size: 10px;
   font-weight: 600;
+  white-space: nowrap;
+  max-width: 100%;
   transition: color 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.nav-item span {
+  display: block;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+  text-align: center;
 }
 .nav-item svg { width: 22px; height: 22px; transition: transform 0.35s var(--spring); }
 .nav-item:active svg { transform: scale(0.86); }
