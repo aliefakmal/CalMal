@@ -70,10 +70,12 @@ export async function buildStoryCard(d) {
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.strokeStyle = p > 1 ? '#ff453a' : d.accent;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, p));
-  ctx.stroke();
+  if (p > 0) {
+    ctx.strokeStyle = p > 1 ? '#ff453a' : d.accent;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, p));
+    ctx.stroke();
+  }
 
   const over = d.remaining < 0;
   ctx.textAlign = 'center';
