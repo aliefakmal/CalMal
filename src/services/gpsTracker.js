@@ -11,6 +11,9 @@ let simTimer = null;
 let wakeLock = null;
 let tickCount = 0;
 
+const VEHICLE_KMH = 25; // faster than any walk/run pace we track: treat as a ride, not exercise
+const GAP_SEC = 30; // fixes further apart than this mean the page was frozen (locked phone)
+
 // Keadaan Lokasi Langsung (sentiasa diperbaharui walaupun belum mula lari)
 let liveLocation = null; // { lat, lng, accuracy, alt, speed, timestamp }
 let permissionStatus = 'unknown'; // 'unknown' | 'prompt' | 'granted' | 'denied' | 'unavailable'
@@ -39,6 +42,7 @@ const freshSession = () => ({
   autoPaused: false,
   hiddenAt: null,
   hiddenKm: null,
+  strideFromKm: null, // sensor was lost at this distance: steps after it come from stride
   restored: false,
 });
 
@@ -62,6 +66,7 @@ export function getStats() {
   const currentPace = session.speedKmh > 1.2 ? 60 / session.speedKmh : paceMinPerKm(session.elapsedSec, session.distanceKm);
   const avgPace = paceMinPerKm(session.elapsedSec, session.distanceKm);
   const fused = fuseSteps({ sensorOk: session.sensorOk, sensorSteps: session.sensorSteps, distanceKm: session.distanceKm, heightCm: profile.height || 170 });
+  if (fused.source === 'sensor' && session.strideFromKm != null) fused.steps += gapSteps(session.distanceKm - session.strideFromKm, profile.height || 170);
 
   return {
     ...session,
@@ -198,9 +203,9 @@ function releaseWakeLock() {
 
 // ----------------- Persistence & background resilience -----------------
 function snapshot() {
-  // points duplicate segments; rebuilt on restore to keep each write small
+  // points duplicate segments; segments stored as [lat, lng, alt, t] tuples to keep each write small
   const { points, ...rest } = session;
-  return rest;
+  return { ...rest, segments: session.segments.map((seg) => seg.map((p) => [+p.lat.toFixed(6), +p.lng.toFixed(6), p.alt, p.t])) };
 }
 
 function saveSnapshot() {
@@ -218,13 +223,10 @@ function onHidden() {
 function onVisible() {
   if (session.status !== 'running' || session.hiddenAt == null) return;
   const now = Date.now();
-  const gapSec = (now - session.hiddenAt) / 1000;
+  // Fixes that arrived while hidden were already added to distance; credit their time too.
+  // A frozen page delivers none: the first fix after unlock settles that gap in onRunPosition.
   const gapKm = Math.max(0, session.distanceKm - session.hiddenKm);
-  const settled = settleGap({ gapSec, gapKm, weightKg: Number(store.profile?.weight || 70) });
-  session.elapsedSec += settled.movingSec;
-  session.kcal += settled.kcal;
-  // motion events stop while hidden; credit the distance walked meanwhile
-  if (session.sensorOk && settled.movingSec) session.sensorSteps += gapSteps(gapKm, store.profile?.height || 170);
+  if (gapKm > 0) creditGap((now - session.hiddenAt) / 1000, gapKm);
   session.hiddenAt = null;
   session.hiddenKm = null;
   session.lastTick = now;
@@ -241,6 +243,15 @@ if (typeof document !== 'undefined') {
   });
 }
 if (typeof window !== 'undefined') window.addEventListener('pagehide', saveSnapshot);
+
+/** Time, kcal and (if the sensor was counting) steps for distance covered while we got no ticks. */
+function creditGap(gapSec, gapKm) {
+  const settled = settleGap({ gapSec, gapKm, weightKg: Number(store.profile?.weight || 70) });
+  session.elapsedSec += settled.movingSec;
+  session.kcal += settled.kcal;
+  // motion events stop while hidden; credit the distance walked meanwhile
+  if (session.sensorOk && session.strideFromKm == null && settled.movingSec) session.sensorSteps += gapSteps(gapKm, store.profile?.height || 170);
+}
 
 function onStep(n, t) {
   if (session.status !== 'running') return;
@@ -309,6 +320,26 @@ function onRunPosition(pos) {
     const d = haversineKm(prev, pt);
     const dt = Math.max(0.5, (pt.t - prev.t) / 1000);
 
+    if (dt > GAP_SEC) {
+      // Page was frozen (locked phone). Average speed over the gap decides walk vs ride.
+      if ((d / dt) * 3600 > VEHICLE_KMH) {
+        session.segments.push([pt]);
+        session.points.push(pt);
+        emit();
+        return;
+      }
+      session.distanceKm += d;
+      creditGap(dt, d);
+      // this gap is settled; onVisible must only credit what comes after it
+      if (session.hiddenAt != null) { session.hiddenAt = Date.now(); session.hiddenKm = session.distanceKm; }
+      session.lastTick = Date.now();
+      session.activeSince = session.lastTick;
+      seg.push(pt);
+      session.points.push(pt);
+      emit();
+      return;
+    }
+
     // Tapis jitter (bergerak kurang daripada 2 meter)
     if (d * 1000 < Math.max(2.2, accuracy * 0.22)) {
       session.speedKmh = speed != null && speed >= 0 ? speed * 3.6 : session.speedKmh * 0.75;
@@ -317,8 +348,11 @@ function onRunPosition(pos) {
     }
 
     const rawKmh = speed != null && speed >= 0 ? speed * 3.6 : (d / dt) * 3600;
-    // Tapis lonjakan teleport tidak munasabah (> 45 km/j untuk larian manusia)
-    if (rawKmh > 45) {
+    // In a vehicle (or a GPS teleport): start a new segment, count no distance
+    if (rawKmh > VEHICLE_KMH || (d / dt) * 3600 > 45) {
+      session.speedKmh = 0;
+      session.segments.push([pt]);
+      session.points.push(pt);
       emit();
       return;
     }
@@ -340,7 +374,6 @@ function onRunPosition(pos) {
 
   seg.push(pt);
   session.points.push(pt);
-  saveSnapshot();
   emit();
 }
 
@@ -437,6 +470,8 @@ export function pause() {
 export function resume({ motion } = {}) {
   if (session.status !== 'paused') return;
   if (motion) session.motion = motion;
+  // Sensor counted before but can't now: continue the count from distance
+  if (session.sensorOk && session.motion !== 'granted' && session.strideFromKm == null) session.strideFromKm = session.distanceKm;
   session.status = 'running';
   session.restored = false;
   session.lastTick = Date.now();
@@ -506,12 +541,42 @@ export const isActive = () => session.status !== 'idle';
 export const getLiveLocation = () => liveLocation;
 
 
+const NUM_FIELDS = ['elapsedSec', 'distanceKm', 'elevGain', 'kcal', 'sensorSteps'];
+
+function validSnapshot(snap) {
+  return (snap.status === 'running' || snap.status === 'paused')
+    && NUM_FIELDS.every((k) => snap[k] === undefined || Number.isFinite(snap[k]))
+    && (snap.stepTimes === undefined || (Array.isArray(snap.stepTimes) && snap.stepTimes.every(Number.isFinite)))
+    && (snap.strideFromKm == null || Number.isFinite(snap.strideFromKm));
+}
+
+/** [[lat, lng, alt, t], ...] per segment back to point objects; null if any point is malformed. */
+function parseSegments(raw) {
+  if (raw === undefined) return [[]];
+  if (!Array.isArray(raw)) return null;
+  const out = [];
+  for (const seg of raw) {
+    if (!Array.isArray(seg)) return null;
+    const pts = [];
+    for (const p of seg) {
+      if (!Array.isArray(p) || !Number.isFinite(p[0]) || !Number.isFinite(p[1])) return null;
+      pts.push({ lat: p[0], lng: p[1], alt: Number.isFinite(p[2]) ? p[2] : null, t: Number.isFinite(p[3]) ? p[3] : 0 });
+    }
+    out.push(pts);
+  }
+  return out.length ? out : [[]];
+}
+
 /** Bring back a session saved before a reload/kill. Always paused: we can't know what happened meanwhile. */
 export function restoreLiveSession() {
   if (session.status !== 'idle') return false;
   const snap = store.getLiveSession();
-  if (!snap || (snap.status !== 'running' && snap.status !== 'paused')) return false;
-  const segments = Array.isArray(snap.segments) && snap.segments.length ? snap.segments : [[]];
+  if (!snap) return false;
+  const segments = parseSegments(snap.segments);
+  if (!segments || !validSnapshot(snap)) {
+    store.clearLiveSession();
+    return false;
+  }
   const { savedAt, ...rest } = snap;
   session = {
     ...freshSession(),
