@@ -1074,6 +1074,24 @@
   max-width: 100%;
   box-sizing: border-box;
 }
+.seg-ring-btn { border: 0; color: inherit; background: transparent; cursor: pointer; padding: 0; }
+.seg-ring-btn:focus-visible { outline: 2px solid #fff; outline-offset: 5px; border-radius: 50%; }
+.state-label { color: var(--ok); }
+.seg-ring-btn .seg-ring.seg-left + .ring-center, .seg-left .state-label { color: var(--muted); }
+.seg-ring.seg-eat_more + .ring-center .state-label { color: var(--warn); }
+.seg-ring.seg-surplus + .ring-center .state-label { color: var(--danger); }
+.calorie-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 14px; width: 100%; font-size: 11px; color: var(--muted); }
+.calorie-legend > span { display: inline-flex; align-items: center; gap: 5px; }
+.calorie-legend strong { color: var(--text); }
+.calorie-legend .dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; }
+.calorie-legend .dot-left { background: var(--surface-3); border: 1px solid var(--muted-2); }
+.calorie-legend .dot-earned { background: var(--ok); }
+.step-row { display: flex; align-items: center; gap: 9px; width: 100%; margin-top: 12px; padding: 9px 10px; color: inherit; text-decoration: none; border: 1px solid var(--border-soft); border-radius: 12px; background: rgba(255,255,255,.025); }
+.step-row-icon { color: var(--ok); display: inline-flex; }
+.step-row-main { min-width: 0; flex: 1; font-size: 11px; color: var(--muted); }
+.step-row-main > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.step-row-main i { display: block; height: 4px; margin-top: 6px; background: var(--surface-3); border-radius: 4px; overflow: hidden; }
+.step-row-main i b { display: block; height: 100%; background: var(--ok); border-radius: inherit; }
 .macro-mini-tiles {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

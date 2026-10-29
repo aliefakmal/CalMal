@@ -47,7 +47,7 @@
   - `bmiScalePosition(bmi) → number` in 0..1
   - `weightProgress({ start, now, target }) → { pct, deltaKg, toGoKg }` (`toGoKg: null` when no target)
 
-- [ ] **Step 1: Append failing tests to `tests/calc.test.js`**
+- [x] **Step 1: Append failing tests to `tests/calc.test.js`**
 
 ```js
 import { calorieStatus, ringSegments, macroBreakdown, healthyWeightRange, bmiScalePosition, weightProgress } from '../src/utils/calc.js';
@@ -100,9 +100,9 @@ test('weightProgress start equals target', () => assert.equal(weightProgress({ s
 test('weightProgress without target', () => assert.deepEqual(weightProgress({ start: 70, now: 69, target: undefined }), { pct: 0, deltaKg: -1, toGoKg: null }));
 ```
 
-- [ ] **Step 2: Run `node --test tests/calc.test.js`.** Expected: FAIL, missing export.
+- [x] **Step 2: Run `node --test tests/calc.test.js`.** Expected: FAIL, missing export.
 
-- [ ] **Step 3: Implement in `src/utils/calc.js`**
+- [x] **Step 3: Implement in `src/utils/calc.js`**
 
 - `calorieStatus`: `net = kin − kout`, `diff = target − net`, `t = target > 0 ? target : 1`; `near = |net − t| ≤ 0.05·t`; under = `net < t`. Unknown goal → `maintain`. Gain: over and `net ≤ 1.10·t` → `on_target`. Table in spec §1.
 - `ringSegments`: spec §2 formulas, `allowance = t + kout`, `scale = max(allowance, kin)`.
@@ -111,8 +111,8 @@ test('weightProgress without target', () => assert.deepEqual(weightProgress({ st
 - `bmiScalePosition`: `(clamp(bmi, 15, 35) − 15) / 20`.
 - `weightProgress`: `deltaKg = round1(now − start)`; no finite target → `{ pct: 0, deltaKg, toGoKg: null }`; `start === target` → pct 1; else `clamp((start − now)/(start − target), 0, 1)`; `toGoKg = round1(|target − now|)`.
 
-- [ ] **Step 4: Run `npm test`.** Expected: all pass.
-- [ ] **Step 5: Commit**: `git commit -m "feat(calc): calorie status, allowance ring, macro breakdown and body stat helpers"`
+- [x] **Step 4: Run `npm test`.** Expected: all pass.
+- [x] **Step 5: Commit**: `git commit -m "feat(calc): calorie status, allowance ring, macro breakdown and body stat helpers"`
 
 ---
 
@@ -126,7 +126,7 @@ test('weightProgress without target', () => assert.deepEqual(weightProgress({ st
 - Consumes: `ringSegments` output from Task 1.
 - Produces: `segmentedRingSVG({ size, stroke, segments, state }) → string` (SVG). Root has class `seg-ring seg-<state>`; eaten arc has class `seg-eaten`, earned band `seg-earned` (omitted when `earnedTo − earnedFrom` is 0), track `ring-track`. Arcs start at 12 o'clock.
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```js
 import { segmentedRingSVG } from '../src/components/ui.js';
@@ -142,10 +142,10 @@ test('surplus ring is red', () => {
 });
 ```
 
-- [ ] **Step 2: Run `node --test tests/ui.test.js`.** Expected: FAIL.
-- [ ] **Step 3: Implement.** Use `stroke-dasharray`/`dashoffset` like `ringSVG`, and the `data-target` animation pattern so `animateRings` animates the eaten arc. Unique hatch `<pattern>` id per call. Colours come from CSS classes (Task 3), not inline.
-- [ ] **Step 4: Run `npm test`.** Expected: all pass.
-- [ ] **Step 5: Commit**: `git commit -m "feat(ui): segmented allowance ring"`
+- [x] **Step 2: Run `node --test tests/ui.test.js`.** Expected: FAIL.
+- [x] **Step 3: Implement.** Use `stroke-dasharray`/`dashoffset` like `ringSVG`, and the `data-target` animation pattern so `animateRings` animates the eaten arc. Unique hatch `<pattern>` id per call. Colours come from CSS classes (Task 3), not inline.
+- [x] **Step 4: Run `npm test`.** Expected: all pass.
+- [x] **Step 5: Commit**: `git commit -m "feat(ui): segmented allowance ring"`
 
 ---
 
@@ -157,12 +157,12 @@ test('surplus ring is red', () => {
 **Interfaces:**
 - Consumes: `calorieStatus`, `ringSegments` (Task 1); `segmentedRingSVG` (Task 2); `dayRoutes` (`src/utils/dayRoutes.js`); `tracker.isActive()`, `tracker.getStats().steps` (`src/services/gpsTracker.js`); `icons.footprints`.
 
-- [ ] **Step 1: Replace ring logic.** `const status = calorieStatus({ goal: p.goal, target: s.target, kin: s.kin, kout: s.kout })`. `isOver` becomes `status.state === 'surplus'` everywhere it is used (companion `over_limit`, sound key).
-- [ ] **Step 2: Card markup.** Badge text `t(status.label)`. Ring: `segmentedRingSVG({ size: 210, stroke: 12, segments: ringSegments(...), state: status.state })`. Centre: `Math.abs(status.diff)`, label `t(status.label)` in the state colour. Legend chips: eaten `s.kin`, left `max(0, status.diff)`, `+s.kout` earned (hidden when 0). The ring is a `<button aria-expanded>` that toggles the equation row (`Food − Burned = Net / Target`). Default: open on ≥ 768 px via `matchMedia`, otherwise closed; the toggled state is held in a module-level variable. Keep the Adjust button and weekly bank pill.
-- [ ] **Step 3: Steps row** under the legend: `<a href="#/activity">` with footprints icon, `{steps} / {goal}` and a thin bar. Steps = `dayRoutes(store.state.activities, todayKey()).steps + (tracker.isActive() ? tracker.getStats().steps : 0)`, goal = `store.profile?.stepGoal || 8000`.
-- [ ] **Step 4: CSS + i18n.** State classes `.seg-deficit/.seg-on_target` → `--ok`, `.seg-left` → white eaten and muted label, `.seg-eat_more` → `--warn`, `.seg-surplus` → `--danger` eaten and label. Keys in `en` + `ms`: `cal_deficit`, `cal_left`, `cal_on_target`, `cal_surplus`, `cal_eat_more`, `cal_eaten`, `cal_left_chip`, `cal_earned`, `cal_net`, `cal_show_math`, `steps_of_goal`.
-- [ ] **Step 5: Verify.** `npm test` all pass. `npm run build` succeeds. In headless Chrome at 390 px, check `goal` = lose / maintain / gain with under, near and over meal sets: badge text, ring colour and centre number match. Check the equation toggle works by click and by Enter. Check `ms` strings, no console errors and `scrollWidth ≤ innerWidth`.
-- [ ] **Step 6: Commit**: `git commit -m "feat(dashboard): goal-aware allowance ring and steps row"`
+- [x] **Step 1: Replace ring logic.** `const status = calorieStatus({ goal: p.goal, target: s.target, kin: s.kin, kout: s.kout })`. `isOver` becomes `status.state === 'surplus'` everywhere it is used (companion `over_limit`, sound key).
+- [x] **Step 2: Card markup.** Badge text `t(status.label)`. Ring: `segmentedRingSVG({ size: 210, stroke: 12, segments: ringSegments(...), state: status.state })`. Centre: `Math.abs(status.diff)`, label `t(status.label)` in the state colour. Legend chips: eaten `s.kin`, left `max(0, status.diff)`, `+s.kout` earned (hidden when 0). The ring is a `<button aria-expanded>` that toggles the equation row (`Food − Burned = Net / Target`). Default: open on ≥ 768 px via `matchMedia`, otherwise closed; the toggled state is held in a module-level variable. Keep the Adjust button and weekly bank pill.
+- [x] **Step 3: Steps row** under the legend: `<a href="#/activity">` with footprints icon, `{steps} / {goal}` and a thin bar. Steps = `dayRoutes(store.state.activities, todayKey()).steps + (tracker.isActive() ? tracker.getStats().steps : 0)`, goal = `store.profile?.stepGoal || 8000`.
+- [x] **Step 4: CSS + i18n.** State classes `.seg-deficit/.seg-on_target` → `--ok`, `.seg-left` → white eaten and muted label, `.seg-eat_more` → `--warn`, `.seg-surplus` → `--danger` eaten and label. Keys in `en` + `ms`: `cal_deficit`, `cal_left`, `cal_on_target`, `cal_surplus`, `cal_eat_more`, `cal_eaten`, `cal_left_chip`, `cal_earned`, `cal_net`, `cal_show_math`, `steps_of_goal`.
+- [x] **Step 5: Verify.** `npm test` all pass. `npm run build` succeeds. In headless Chrome at 390 px, check `goal` = lose / maintain / gain with under, near and over meal sets: badge text, ring colour and centre number match. Check the equation toggle works by click and by Enter. Check `ms` strings, no console errors and `scrollWidth ≤ innerWidth`.
+- [x] **Step 6: Commit**: `git commit -m "feat(dashboard): goal-aware allowance ring and steps row"`
 
 ---
 

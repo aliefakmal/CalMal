@@ -1,15 +1,20 @@
 import { store } from '../services/store.js';
 import { icons } from '../components/icons.js';
-import { ringSVG, macroBar, animateRings, routeThumbSVG, openSheet, toast, setLoading } from '../components/ui.js';
+import { ringSVG, segmentedRingSVG, macroBar, animateRings, routeThumbSVG, openSheet, toast, setLoading } from '../components/ui.js';
 import { companionBubble, bindCompanionEvents, showMilestoneCelebration } from '../components/companion.js';
 import { dashboardMessage, onMealLogged } from '../services/companionService.js';
 import { fetchFastingTimes, nextFastingEvent, DEFAULT_TIMES } from '../services/prayerTimes.js';
 import { computeStreak } from '../utils/streak.js';
 import { buildStoryCard, shareStoryCard } from '../utils/storyCard.js';
 import { openMealEditor } from '../components/mealEditor.js';
-import { formatPace, formatDuration, calcSuggestedDailyTarget } from '../utils/calc.js';
+import { formatPace, formatDuration, calcSuggestedDailyTarget, calorieStatus, ringSegments } from '../utils/calc.js';
 import { esc, fmtTime, todayKey } from '../utils/helpers.js';
 import { t, getLang } from '../utils/i18n.js';
+import { dayRoutes } from '../utils/dayRoutes.js';
+import * as tracker from '../services/gpsTracker.js';
+
+let calorieEquationOpen = null;
+let selectedMacro = null;
 
 export function renderDashboard(container) {
   let unsub = null;
@@ -108,10 +113,15 @@ export function renderDashboard(container) {
     const settings = store.settings;
     if (settings.fastingMode) refreshFastingTimes();
 
-    // Progress calculation for calorie ring
-    const effectiveTarget = Math.max(1, s.target + s.kout);
-    const progress = Math.min(1.2, s.kin / effectiveTarget);
-    const isOver = s.kin > effectiveTarget;
+    const status = calorieStatus({ goal: p.goal, target: s.target, kin: s.kin, kout: s.kout });
+    const segments = ringSegments({ target: s.target, kin: s.kin, kout: s.kout });
+    const isOver = status.state === 'surplus';
+    const equationOpen = calorieEquationOpen ?? (typeof window !== 'undefined' && window.matchMedia?.('(min-width: 768px)').matches);
+    if (calorieEquationOpen === null) calorieEquationOpen = equationOpen;
+    const routes = dayRoutes(store.state.activities, todayKey());
+    const steps = routes.steps + (tracker.isActive() ? tracker.getStats().steps : 0);
+    const stepGoal = store.profile?.stepGoal || 8000;
+    const stepPct = Math.min(100, Math.round((steps / Math.max(1, stepGoal)) * 100));
 
     // Companion 5-state calculation
     const compState = isOver
@@ -162,24 +172,33 @@ export function renderDashboard(container) {
                   ${icons.edit}
                   <span>${t('dash_adjust')}</span>
                 </button>
-                <span class="badge ${isOver ? 'bad' : 'ok'}">${isOver ? t('dash_surplus') : t('dash_on_target')}</span>
+                <span class="badge ${status.state === 'surplus' ? 'bad' : status.state === 'eat_more' ? 'warn' : status.state === 'left' ? '' : 'ok'}">${t(status.label)}</span>
               </div>
             </div>
 
-            <div class="ring-wrap">
-              ${ringSVG({ size: 210, stroke: 7, progress, over: isOver })}
+            <button type="button" class="seg-ring-btn ring-wrap" id="btn-calorie-ring" aria-expanded="${equationOpen}" aria-controls="calorie-equation" aria-label="${t('cal_show_math')}">
+              ${segmentedRingSVG({ size: 210, stroke: 12, segments, state: status.state })}
               <div class="ring-center">
                 <div class="ring-big num ${isOver ? 'color-danger' : ''}" style="${isOver ? 'color:var(--danger)' : ''}">
-                  ${Math.abs(s.remaining)}
+                  ${Math.abs(status.diff)}
                 </div>
-                <div class="ring-label">
-                  ${isOver ? t('dash_kcal_over') : t('dash_kcal_remaining')}
-                </div>
+                <div class="ring-label state-label">${t(status.label)}</div>
               </div>
+            </button>
+
+            <div class="calorie-legend" aria-label="${t('dash_calorie_balance')}">
+              <span><b class="dot dot-food"></b>${t('cal_eaten')} <strong class="num">${Math.round(s.kin)}</strong></span>
+              <span><b class="dot dot-left"></b>${t('cal_left_chip')} <strong class="num">${Math.max(0, Math.round(status.diff))}</strong></span>
+              ${s.kout > 0 ? `<span><b class="dot dot-earned"></b>${t('cal_earned')} <strong class="num">+${Math.round(s.kout)}</strong></span>` : ''}
             </div>
 
+            <a class="step-row" href="#/activity" aria-label="${steps} / ${stepGoal} ${t('steps_of_goal')}">
+              <span class="step-row-icon">${icons.footprints}</span>
+              <span class="step-row-main"><span>${steps} / ${stepGoal} ${t('steps_of_goal')}</span><i><b style="width:${stepPct}%"></b></i></span>
+            </a>
+
             <!-- Formula: Target - In + Out = Remaining -->
-            <div class="equation" style="width:100%">
+            <div class="equation ${equationOpen ? '' : 'hidden'}" id="calorie-equation" style="width:100%">
               <div class="eq-cell">
                 <span>${t('dash_target')}</span>
                 <b class="num">${s.target}</b>
@@ -597,6 +616,11 @@ export function renderDashboard(container) {
   }
 
   function bindEvents() {
+    container.querySelector('#btn-calorie-ring')?.addEventListener('click', () => {
+      calorieEquationOpen = !calorieEquationOpen;
+      render();
+    });
+
     // 1. Adjust Daily Calorie Target Modal (Bug Fixed)
     container.querySelector('#btn-adjust-target')?.addEventListener('click', () => {
       const currentProfile = store.profile || {};

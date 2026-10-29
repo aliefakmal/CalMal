@@ -21,6 +21,8 @@
   --danger: #ff453a;
   --ok: #3ddc97;
   --warn: #ffd60a;
+  --macro-carbs: #5ecbff;
+  --macro-fat: #ff9f43;
   --hero-accent: var(--deku);
   --hero-glow: var(--deku-glow);
 
@@ -480,6 +482,15 @@ input[type='range'] { width: 100%; accent-color: #fff; height: 28px; }
 .ring-track { stroke: var(--surface-3); }
 .ring-fill { stroke: #fff; stroke-linecap: round; transition: stroke-dashoffset 1.1s var(--ease); filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.25)); }
 .ring-fill.over { stroke: var(--danger); filter: drop-shadow(0 0 8px rgba(255, 69, 58, 0.4)); }
+.seg-ring { transform: none !important; overflow: visible; display: block; }
+.seg-ring circle { stroke-linecap: round; }
+.seg-ring .seg-eaten { stroke: #fff; transition: stroke-dashoffset 1.1s var(--ease); }
+.seg-ring .seg-earned { stroke-linecap: butt; opacity: .9; }
+.seg-ring .seg-hatch { stroke: currentColor; stroke-width: 2; }
+.seg-ring.seg-deficit .seg-earned, .seg-ring.seg-on_target .seg-earned { color: var(--ok); }
+.seg-ring.seg-left .seg-eaten { stroke: #fff; }
+.seg-ring.seg-eat_more .seg-eaten { stroke: var(--warn); }
+.seg-ring.seg-surplus .seg-eaten { stroke: var(--danger); }
 .ring-center {
   position: absolute;
   inset: 0;
@@ -713,5 +724,7 @@ input[type='range'] { width: 100%; accent-color: #fff; height: 28px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  .skeleton { animation: none; }
+  .seg-ring .seg-eaten { transition: none; }
 }
 
