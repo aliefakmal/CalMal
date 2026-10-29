@@ -363,7 +363,7 @@ const DICTIONARY = {
   },
   ms: {
     // Topbar & Nav
-    nav_dashboard: 'Papan Pemuka',
+    nav_dashboard: 'Utama',
     nav_activity: 'Aktiviti',
     nav_scan: '+ IMBAS',
     nav_recipes: 'Resipi',

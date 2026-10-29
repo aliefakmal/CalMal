@@ -235,31 +235,30 @@ export function renderDashboard(container) {
 
             <!-- Water Tracker Card (Customizable Any Amount) -->
             <div class="card bento-card water-widget" style="padding:16px">
-              <div class="row between" style="margin-bottom:8px">
-                <div class="row" style="gap:8px;align-items:center;cursor:pointer" id="btn-water-header" title="${t('dash_custom_water')}">
-                  <div class="water-icon-circle ${water >= waterTarget && waterTarget > 0 ? 'complete' : ''}">${icons.droplet}</div>
-                  <div>
-                    <div class="row" style="gap:6px;align-items:center">
-                      <span class="small bold" style="color:#fff">${t('dash_water_title')}</span>
-                      <button type="button" class="btn btn-xs btn-ghost" id="btn-custom-water" style="padding:1px 6px;font-size:10px;border:1px solid var(--border-soft)">${t('dash_custom_water')}</button>
-                    </div>
-                    <div class="xs muted">${water} / ${waterTarget} ml (${waterPct}%)</div>
+              <div class="water-header-row">
+                <div class="row" style="gap:10px;align-items:center;cursor:pointer;min-width:0;flex:1" id="btn-water-header" title="${t('dash_custom_water')}">
+                  <div class="water-icon-circle ${water >= waterTarget && waterTarget > 0 ? 'complete' : ''}" style="flex-shrink:0">${icons.droplet}</div>
+                  <div style="min-width:0">
+                    <div class="small bold" style="color:#fff;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t('dash_water_title')}</div>
+                    <div class="xs muted" style="margin-top:2px">${water} / ${waterTarget} ml (${waterPct}%)</div>
                   </div>
                 </div>
-                <div class="row" style="gap:4px;align-items:center">
-                  <button type="button" class="btn btn-xs btn-ghost" id="btn-sub-water" title="Remove 250ml water" style="padding:3px 7px;font-size:11px;border:1px solid var(--border-soft);color:var(--text-muted);touch-action:manipulation">
-                    ${icons.minus}
-                    <span>250ml</span>
-                  </button>
-                  <button type="button" class="btn btn-xs btn-primary btn-water-add" id="btn-add-water" title="Add 250ml water" style="padding:3px 7px;font-size:11px;touch-action:manipulation">
-                    ${icons.plus}
-                    <span>250ml</span>
-                  </button>
-                </div>
+                <button type="button" class="btn btn-xs btn-ghost" id="btn-custom-water" style="flex-shrink:0;padding:3px 8px;font-size:11px;border:1px solid var(--border-soft);white-space:nowrap">${t('dash_custom_water')}</button>
               </div>
 
               <div class="water-track" style="cursor:pointer" id="water-bar-click" title="Click to adjust water">
                 <div class="water-fill ${water >= waterTarget && waterTarget > 0 ? 'complete' : ''}" style="width:${waterPct}%"></div>
+              </div>
+
+              <div class="water-actions-row">
+                <button type="button" class="btn btn-xs btn-ghost btn-water-sub" id="btn-sub-water" title="Remove 250ml water" style="border:1px solid var(--border-soft);color:var(--text-muted);touch-action:manipulation">
+                  ${icons.minus}
+                  <span>250ml</span>
+                </button>
+                <button type="button" class="btn btn-xs btn-primary btn-water-add" id="btn-add-water" title="Add 250ml water" style="touch-action:manipulation">
+                  ${icons.plus}
+                  <span>250ml</span>
+                </button>
               </div>
             </div>
           </div>
