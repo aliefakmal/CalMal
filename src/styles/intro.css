@@ -1,0 +1,67 @@
+/* The plate-to-route stroke connects CalMal's nutrition and movement features. */
+body.launching .sidebar, body.launching .topbar, body.launching .bottom-nav { display: none; }
+body.launching .app { display: block; }
+body.launching .view { max-width: none; padding: 0; animation: none; }
+.kickoff {
+  min-height: 100svh;
+  min-height: 100dvh;
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  padding: max(20px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  background: #080a09;
+  color: #f5f5f2;
+  overflow: hidden;
+}
+.kickoff-skip {
+  justify-self: end;
+  min-height: 44px;
+  min-width: 76px;
+  padding: 8px 16px;
+  background: transparent;
+  color: #d5d9d6;
+  border: 1px solid #777e79;
+  border-radius: 10px;
+  font: inherit;
+  cursor: pointer;
+  z-index: 1;
+}
+.kickoff-stage { width: min(100%, 680px); justify-self: center; padding: 24px 0 36px; }
+.kickoff-scene { position: relative; width: 100%; aspect-ratio: 560 / 260; }
+.kickoff-path { width: 100%; height: auto; overflow: visible; stroke-linecap: round; stroke-linejoin: round; }
+.kickoff-route { stroke: #ff7a1a; stroke-width: 3; stroke-dasharray: 1; animation: kickoff-draw 1.5s .8s both; }
+.kickoff-plate { stroke: #8d9c92; stroke-width: 2; animation: kickoff-reveal .5s .5s both; }
+.kickoff-frame { stroke: #3ddc97; stroke-width: 3; animation: kickoff-reveal .5s .5s both; }
+.kickoff-scan { stroke: #3ddc97; stroke-width: 2; animation: kickoff-scan 1s .8s both; }
+.kickoff-finish { stroke: #ff7a1a; stroke-width: 3; animation: kickoff-reveal .45s 1.8s both; }
+.kickoff-coach { position: absolute; top: 4%; transform: translateX(-50%); }
+.kickoff-coach-food { left: 19.6%; animation: kickoff-left .8s both; }
+.kickoff-coach-move { left: 80.4%; animation: kickoff-right .8s both; }
+.kickoff .avatar { --sz: clamp(40px, 10vw, 64px) !important; }
+.kickoff .avatar * { animation: none !important; filter: none !important; }
+.kickoff .spark, .kickoff .crackle { display: none; }
+.kickoff-labels { display: flex; justify-content: space-between; gap: 24px; color: #b6bfb9; font-size: clamp(12px, 2.5vw, 15px); }
+.kickoff-labels span { width: 40%; text-align: center; }
+.kickoff-title { margin-top: 32px; font-size: clamp(68px, 16vw, 132px); font-weight: 900; line-height: 1; letter-spacing: -.07em; text-align: center; animation: kickoff-name .65s 2.1s both; }
+.kickoff-period { color: #3ddc97; }
+.kickoff-caption { margin-top: 20px; color: #d5d9d6; font-size: clamp(15px, 3vw, 19px); text-align: center; line-height: 1.5; animation: kickoff-reveal .5s 2.5s both; }
+.kickoff-foot { color: #b6bfb9; text-align: center; font-size: 12px; line-height: 1.5; }
+.kickoff-stage { animation: kickoff-exit .6s 3.4s both; }
+@keyframes kickoff-left { from { opacity: 0; transform: translate(-100%, 12px) rotate(-12deg); } to { opacity: 1; transform: translateX(-50%); } }
+@keyframes kickoff-right { from { opacity: 0; transform: translate(0, 12px) rotate(12deg); } to { opacity: 1; transform: translateX(-50%); } }
+@keyframes kickoff-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes kickoff-reveal { from { opacity: 0; } to { opacity: 1; } }
+@keyframes kickoff-scan { 0% { opacity: 0; transform: translateY(-36px); } 20%, 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(36px); } }
+@keyframes kickoff-name { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes kickoff-exit { from { opacity: 1; } to { opacity: 0; } }
+@media (max-height: 540px) and (min-width: 600px) {
+  .kickoff-stage { max-width: 380px; padding: 0; }
+  .kickoff-scene { max-width: 260px; margin: auto; }
+  .kickoff-title { font-size: 64px; margin-top: 12px; }
+  .kickoff-caption { margin-top: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kickoff *, .kickoff *::before, .kickoff *::after { animation: none !important; }
+  .kickoff-scan { display: none; }
+}

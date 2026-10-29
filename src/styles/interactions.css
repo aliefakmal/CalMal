@@ -1,0 +1,44 @@
+/* Shared feedback stays brief so logging meals and starting workouts remain immediate. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}
+:where(button, .btn, .chip, .nav-item, .side-item, .nav-fab) {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 160ms var(--ease), background-color 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+button:not(:disabled), a, select { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+button:disabled:active { transform: none; filter: none; }
+:where(button, .btn, .chip):not(:disabled):active { transform: scale(.98); }
+.nav-item:active, .side-item:active { transform: translateY(1px) scale(.98); }
+.nav-fab:active { transform: translateY(-16px) scale(.98); }
+.nav-item[aria-current="page"] { color: var(--hero-accent); }
+.nav-item[aria-current="page"] svg { transform: translateY(-2px); }
+.nav-item svg { transition: transform 180ms var(--ease); }
+.input, .select, textarea { transition: border-color 160ms ease, background-color 160ms ease; }
+.input:focus, .select:focus, textarea:focus { border-color: #c5ccc8; }
+.backdrop.closing { pointer-events: none; }
+.sheet-grip { touch-action: none; }
+.sheet { overscroll-behavior: contain; }
+.kickoff-skip:focus-visible { outline-color: #3ddc97; }
+@media (hover: hover) {
+  .kickoff-skip:hover { background: #252d28; border-color: #d5d9d6; }
+  .btn:not(:disabled):hover { transform: translateY(-1px); }
+  .nav-item:hover, .side-item:not(.active):hover { background-color: var(--surface-2); }
+}
+/* Idle coaches should settle; meaningful loading indicators keep their existing behavior. */
+.avatar.state-idle .bolt, .avatar.state-idle .burst, .avatar.state-idle .crackle, .avatar.state-idle .spark { animation: none; }
+.avatar.state-idle .spark { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .kickoff *, .kickoff *::before, .kickoff *::after { animation: none !important; }
+  button:active, .btn:hover, .btn:active, .chip:active, .nav-item:active, .side-item:active { transform: none !important; }
+  .nav-fab:active { transform: translateY(-16px) !important; }
+}

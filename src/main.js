@@ -1,6 +1,9 @@
 import 'leaflet/dist/leaflet.css';
 import './styles/index.css';
 import './styles/screens.css';
+import './styles/intro.css';
+import './styles/interactions.css';
+import { renderIntro } from './components/intro.js';
 
 import { store } from './services/store.js';
 import { icons } from './components/icons.js';
@@ -31,6 +34,7 @@ function getRoutes() {
 
 const view = document.getElementById('view');
 let cleanup = null;
+let introComplete = false;
 
 function currentRoute() {
   const routes = getRoutes();
@@ -56,6 +60,7 @@ function renderNav(active) {
     .join('');
 
   nav.querySelectorAll('a').forEach((link) => {
+    if (link.id === `nav-${active}`) link.setAttribute('aria-current', 'page');
     link.addEventListener('click', () => {
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
         navigator.vibrate(10);
@@ -69,6 +74,7 @@ function renderNav(active) {
       .map((k) => `<a href="#/${k}" id="side-${k}" class="side-item ${active === k ? 'active' : ''}">${k === 'scan' ? icons.camera : routes[k].icon}<span>${k === 'scan' ? t('dash_scan_btn') : routes[k].label}</span></a>`)
       .join('')}
     <div class="side-foot">${t('side_foot').replace(/\n/g, '<br/>')}</div>`;
+  document.getElementById(`side-${active}`)?.setAttribute('aria-current', 'page');
 }
 
 function renderTopbar() {
@@ -122,6 +128,8 @@ function renderTopbar() {
 }
 
 function route() {
+  if (!introComplete) return;
+  document.documentElement.lang = getLang();
   cleanup?.();
   cleanup = null;
   const container = view;
@@ -170,9 +178,25 @@ onLangChange(() => route());
 initPwaInstall();
 subscribeInstallState(() => renderTopbar());
 
-route();
-startReminderLoop();
+function enterApp() {
+  if (introComplete) return;
+  introComplete = true;
+  document.body.classList.remove('launching');
+  route();
+  view.focus({ preventScroll: true });
+  startReminderLoop();
+}
+
+document.body.classList.add('launching');
+document.documentElement.lang = getLang();
+try {
+  cleanup = renderIntro(view, enterApp);
+} catch (error) {
+  console.error('CalMal introduction could not open.', error);
+  enterApp();
+}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }
+

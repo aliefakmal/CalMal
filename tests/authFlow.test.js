@@ -44,6 +44,10 @@ class MiniElement {
 
   append(child) { child.parentElement = this; this.children.push(child); }
   appendChild(child) { this.append(child); return child; }
+  remove() {
+    if (this.parentElement) this.parentElement.children = this.parentElement.children.filter((child) => child !== this);
+    this.parentElement = null;
+  }
   setAttribute(name, value) {
     this.attributes[name] = String(value);
     if (name === 'value') this.value = String(value);
@@ -313,6 +317,28 @@ test('onboarding stores the active username in its profile', async () => {
   assert.equal(store.profile.username, 'profile_user');
 });
 
+test('rejected sign out restores its control after event.currentTarget becomes null', async () => {
+  auth.createLocalAccount('retry_logout', 'Password1');
+  store.activateAccount('retry_logout');
+  store.saveProfile({ name: 'Kept' });
+  const original = store.clearActiveAccount;
+  let reject;
+  store.clearActiveAccount = () => new Promise((_, fail) => { reject = fail; });
+  try {
+    const container = new MiniElement();
+    renderProfile(container);
+    const button = container.querySelector('#btn-sign-out');
+    const event = { type: 'click' };
+    const pending = button.dispatchEvent(event);
+    event.currentTarget = null;
+    assert.equal(button.disabled, true);
+    reject(new Error('Storage unavailable'));
+    await pending;
+    assert.equal(button.disabled, false);
+    assert.match(container.querySelector('#account-action-status').textContent, /Storage unavailable/);
+  } finally { store.clearActiveAccount = original; }
+});
+
 test('profile sign out only clears the session and retains selectable account data', async () => {
   auth.createLocalAccount('signed_out', 'Password1');
   store.activateAccount('signed_out');
@@ -340,3 +366,4 @@ test('profile sign out only clears the session and retains selectable account da
     storage.clear = originalClear;
   }
 });
+

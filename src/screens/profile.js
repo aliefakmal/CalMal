@@ -423,14 +423,15 @@ export function renderProfile(container) {
 
   function bindEvents() {
     container.querySelector('#btn-sign-out')?.addEventListener('click', async (event) => {
-      event.currentTarget.disabled = true;
+      const button = event.currentTarget;
+      button.disabled = true;
       try {
         await store.clearActiveAccount();
         location.hash = '#/home';
       } catch (error) {
         const status = container.querySelector('#account-action-status');
         if (status) status.textContent = error.message || 'Could not sign out. Try again.';
-        event.currentTarget.disabled = false;
+        button.disabled = false;
       }
     });
     // Edit Profile Modal Trigger
@@ -570,4 +571,5 @@ export function renderProfile(container) {
 
   render();
 }
+
 

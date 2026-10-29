@@ -2,6 +2,11 @@
 import { icons } from './icons.js';
 import { esc } from '../utils/helpers.js';
 
+const sheets = [];
+let savedOverflow;
+let savedAppInert;
+const loadingButtons = new WeakMap();
+
 export function toast(message, type = 'info', ms = 3200) {
   const root = document.getElementById('toast-root');
   const el = document.createElement('div');
@@ -12,34 +17,75 @@ export function toast(message, type = 'info', ms = 3200) {
   setTimeout(() => {
     el.classList.add('out');
     el.addEventListener('animationend', () => el.remove(), { once: true });
+    setTimeout(() => el.remove(), 300);
   }, ms);
 }
 
 /** Bottom sheet (mudah alih) / dialog tengah (desktop). Pulangkan { el, close } */
 export function openSheet(html, { onClose, className = '' } = {}) {
   const root = document.getElementById('overlay-root');
+  const app = document.getElementById('app');
+  const opener = document.activeElement;
   const bd = document.createElement('div');
   bd.className = 'backdrop';
   bd.innerHTML = `<div class="sheet ${className}" role="dialog" aria-modal="true"><div class="sheet-grip"></div>${html}</div>`;
   root.appendChild(bd);
+  if (!sheets.length) {
+    savedOverflow = document.body.style.overflow;
+    savedAppInert = app?.inert;
+    if (app) app.inert = true;
+  } else {
+    sheets.at(-1).inert = true;
+  }
+  sheets.push(bd);
   document.body.style.overflow = 'hidden';
   const sheet = bd.querySelector('.sheet');
+  sheet.tabIndex = -1;
+  sheet.setAttribute('aria-label', sheet.querySelector('h1, h2, h3, .sheet-title')?.textContent || 'CalMal');
+  const focusable = () => [...sheet.querySelectorAll('button, a[href], input, select, textarea, [tabindex]')]
+    .filter((el) => !el.disabled && el.tabIndex >= 0 && !el.closest('[inert]') && el.getClientRects().length);
+  const focusFirst = () => (focusable()[0] || sheet).focus({ preventScroll: true });
 
   let closed = false;
   const close = (result) => {
     if (closed) return;
     closed = true;
+    const wasTop = sheets.at(-1) === bd;
+    sheets.splice(sheets.indexOf(bd), 1);
+    bd.inert = true;
     bd.classList.add('closing');
-    document.body.style.overflow = '';
-    setTimeout(() => bd.remove(), 240);
+    if (sheets.length) sheets.at(-1).inert = false;
+    else {
+      document.body.style.overflow = savedOverflow;
+      if (app) app.inert = savedAppInert;
+    }
+    setTimeout(() => bd.remove(), window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 240);
     document.removeEventListener('keydown', onKey);
+    if (wasTop) {
+      if (opener?.isConnected && !opener.closest('[inert]')) opener.focus({ preventScroll: true });
+      else (sheets.at(-1)?.querySelector('.sheet') || document.getElementById('view'))?.focus({ preventScroll: true });
+    }
     onClose?.(result);
   };
-  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  const onKey = (e) => {
+    if (sheets.at(-1) !== bd) return;
+    if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+    if (e.key !== 'Tab') return;
+    const controls = focusable();
+    const first = controls[0];
+    const last = controls.at(-1);
+    if (!first) { e.preventDefault(); sheet.focus(); }
+    else if (e.shiftKey && (document.activeElement === first || !controls.includes(document.activeElement))) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && (document.activeElement === last || !controls.includes(document.activeElement))) {
+      e.preventDefault(); first.focus();
+    }
+  };
   document.addEventListener('keydown', onKey);
   bd.addEventListener('click', (e) => { if (e.target === bd) close(); });
   sheet.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => close()));
   bindSheetDrag(sheet, close);
+  queueMicrotask(() => { if (!closed && sheets.at(-1) === bd) focusFirst(); });
   return { el: sheet, close };
 }
 
@@ -80,7 +126,11 @@ function bindSheetDrag(sheet, close) {
     }
   };
   sheet.addEventListener('pointerup', end);
-  sheet.addEventListener('pointercancel', end);
+  sheet.addEventListener('pointercancel', () => {
+    dragging = false;
+    sheet.classList.remove('dragging');
+    sheet.style.transform = '';
+  });
 }
 
 export function confirmSheet({ title, message, confirmText = 'Yes', danger = false }) {
@@ -101,12 +151,17 @@ export function confirmSheet({ title, message, confirmText = 'Yes', danger = fal
 export function setLoading(btn, loading, label) {
   if (!btn) return;
   if (loading) {
-    btn.dataset.html = btn.innerHTML;
+    if (!loadingButtons.has(btn)) loadingButtons.set(btn, { html: btn.innerHTML, disabled: btn.disabled });
     btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
     btn.innerHTML = `<span class="spinner"></span>${label ? `<span>${esc(label)}</span>` : ''}`;
   } else {
-    btn.disabled = false;
-    if (btn.dataset.html) btn.innerHTML = btn.dataset.html;
+    const previous = loadingButtons.get(btn);
+    if (!previous) return;
+    btn.disabled = previous.disabled;
+    btn.innerHTML = previous.html;
+    btn.removeAttribute('aria-busy');
+    loadingButtons.delete(btn);
   }
 }
 
@@ -174,3 +229,4 @@ export function routeThumbSVG(segments = [], { w = 120, h = 80, stroke = 2.5 } =
     .join('');
   return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">${paths}</svg>`;
 }
+
