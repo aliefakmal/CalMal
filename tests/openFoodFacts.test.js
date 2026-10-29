@@ -33,3 +33,11 @@ test('lookupBarcode rejects incomplete Open Food Facts product', async () => {
   }) });
   await assert.rejects(() => lookupBarcode('955-123-456-789'), (error) => error.code === 'INCOMPLETE');
 });
+
+test('lookupBarcode rejects product with no name', async () => {
+  globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({
+    status: 1,
+    product: { serving_size: '30 g', serving_quantity: '30', nutriments: { 'energy-kcal_100g': 100, proteins_100g: 2, carbohydrates_100g: 4, fat_100g: 1 } },
+  }) });
+  await assert.rejects(() => lookupBarcode('955123456789'), (error) => error.code === 'INCOMPLETE');
+});

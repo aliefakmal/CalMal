@@ -31,7 +31,7 @@ export async function lookupBarcode(code) {
 
   const record = {
     code,
-    name: p.product_name_ms || p.product_name || p.product_name_en || 'Produk tanpa nama',
+    name: p.product_name_ms || p.product_name || p.product_name_en || '',
     brand: (p.brands || '').split(',')[0],
     image: p.image_front_small_url || '',
     servingLabel: p.serving_size || '',

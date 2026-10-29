@@ -948,6 +948,7 @@ export function renderScanner(container) {
         }
 
         onScanModeUsed(mode);
+        startCamera();
       });
     });
 
