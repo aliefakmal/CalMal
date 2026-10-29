@@ -2,6 +2,10 @@
 import { store } from './store.js';
 import { showCompanion, showCutIn, showMilestoneCelebration } from '../components/companion.js';
 import { toast } from '../components/ui.js';
+import { computeStreak, isLateNight } from '../utils/streak.js';
+import { todayKey } from '../utils/helpers.js';
+import { DEFAULT_TIMES } from './prayerTimes.js';
+import { t } from '../utils/i18n.js';
 
 export const BADGES = {
   first_meal: { title: 'First Bite', desc: 'Logged your first meal', who: 'deku', iconKey: 'bowl', color: '#3ddc97' },
@@ -67,6 +71,16 @@ export function checkReminders() {
   const m = mins(now.getHours(), now.getMinutes());
   const meals = store.mealsOn();
 
+  if (store.settings.fastingMode) {
+    const times = store.settings.fastingTimes || DEFAULT_TIMES;
+    const toMins = (hhmm) => mins(...hhmm.split(':').map(Number));
+    const imsak = toMins(times.imsak);
+    const maghrib = toMins(times.maghrib);
+    if (m >= imsak - 45 && m <= imsak && !meals.length) fire('remind:sahur', 'deku', t('fast_remind_sahur'));
+    if (m >= maghrib && m <= maghrib + 20) fire('remind:iftar', 'deku', t('fast_remind_iftar'));
+    return;
+  }
+
   for (const r of REMINDERS) {
     if (m >= mins(...r.at) && m <= mins(...r.until)) {
       const logged = meals.some((x) => x.mealType === r.meal);
@@ -103,16 +117,15 @@ export function onMealLogged(meal) {
   const s = store.summary();
   const currentCoach = store.profile?.selectedCompanion || 'deku';
 
-  // 3-day streak
-  const days = new Set(store.state.meals.map((x) => x.date));
-  const d = new Date();
-  let streak = 0;
-  for (let i = 0; i < 3; i++) {
-    const k = new Date(d.getTime() - i * 864e5);
-    const key = `${k.getFullYear()}-${String(k.getMonth() + 1).padStart(2, '0')}-${String(k.getDate()).padStart(2, '0')}`;
-    if (days.has(key)) streak++;
+  // Gentle late-night note, once per night; never blocks the log.
+  const night = isLateNight(new Date());
+  if (night.late && !store.settings.fastingMode && !store.flag('latenight', night.nightKey)) {
+    store.setFlag('latenight', night.nightKey);
+    showCompanion({ who: currentCoach, text: t('late_tip') });
   }
-  if (streak >= 3) unlock('streak_3');
+
+  // 3-day streak (shielded days count)
+  if (computeStreak(store.state.meals.map((x) => x.date), todayKey()).streak >= 3) unlock('streak_3');
 
   // 100% Daily Protein Milestone (Sprite Bubble Animation)
   if (s.macros?.protein > 20 && s.protein >= s.macros.protein && !store.flag('celebrate:macros')) {

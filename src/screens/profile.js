@@ -11,6 +11,7 @@ import { soundboard } from '../services/audioService.js';
 import { esc, fmtDate, todayKey } from '../utils/helpers.js';
 import { t, getLang } from '../utils/i18n.js';
 import { getAccountStorageKey, getActiveUsername } from '../services/authService.js';
+import { fetchFastingTimes } from '../services/prayerTimes.js';
 
 
 export function renderProfile(container) {
@@ -26,7 +27,7 @@ export function renderProfile(container) {
   };
 
   const weights = store.state.weights || [];
-  const settings = store.settings || {};
+  let settings = store.settings || {};
 
   function renderWeightChart(list, targetW) {
     if (list.length < 2) {
@@ -96,6 +97,7 @@ export function renderProfile(container) {
 
   function render() {
     profile = store.profile || profile;
+    settings = store.settings || {};
     const bmi = calcBMI(profile);
     const bmiCategory = bmiLabel(bmi);
     const targetKcal = calcDailyTarget(profile);
@@ -292,6 +294,18 @@ export function renderProfile(container) {
             </div>
             <input type="checkbox" id="fasting-toggle" ${settings.fastingMode ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
           </label>
+          ${
+            settings.fastingMode
+              ? `<div class="field" style="margin:4px 0 6px">
+                  <label for="fasting-city">${t('fast_city')}</label>
+                  <div class="row" style="gap:8px">
+                    <input class="input" id="fasting-city" type="text" maxlength="60" autocomplete="address-level2" value="${esc(settings.fastingCity || 'Kuala Lumpur')}" style="flex:1" />
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-fasting-city">${t('fast_city_save')}</button>
+                  </div>
+                  ${settings.fastingTimes ? `<span class="xs muted">Imsak <b class="num">${esc(settings.fastingTimes.imsak)}</b> · Maghrib <b class="num">${esc(settings.fastingTimes.maghrib)}</b>${settings.fastingTimes.approx ? ` (${t('fast_approx')})` : ''}</span>` : ''}
+                </div>`
+              : ''
+          }
 
           <div class="divider"></div>
 
@@ -504,6 +518,18 @@ export function renderProfile(container) {
     container.querySelector('#fasting-toggle')?.addEventListener('change', (e) => {
       store.saveSettings({ fastingMode: e.target.checked });
       toast(e.target.checked ? 'Fasting mode activated! Reminders adjusted for Sahur & Iftar.' : 'Fasting mode disabled.', 'info');
+      render();
+    });
+
+    container.querySelector('#btn-fasting-city')?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const city = container.querySelector('#fasting-city')?.value.trim();
+      if (!city) return;
+      setLoading(btn, true);
+      const times = await fetchFastingTimes(city, todayKey(), store.settings.fastingTimes);
+      store.saveSettings({ fastingCity: city, fastingTimes: times });
+      toast(times.approx ? t('fast_failed') : `${t('fast_updated')}: Imsak ${times.imsak} · Maghrib ${times.maghrib}`, times.approx ? 'error' : 'success');
+      render();
     });
 
     // Toggle Continuous Live Camera

@@ -1,15 +1,98 @@
 import { store } from '../services/store.js';
 import { icons } from '../components/icons.js';
-import { ringSVG, macroBar, animateRings, routeThumbSVG, openSheet, toast } from '../components/ui.js';
+import { ringSVG, macroBar, animateRings, routeThumbSVG, openSheet, toast, setLoading } from '../components/ui.js';
 import { companionBubble, bindCompanionEvents, showMilestoneCelebration } from '../components/companion.js';
-import { dashboardMessage } from '../services/companionService.js';
+import { dashboardMessage, onMealLogged } from '../services/companionService.js';
+import { fetchFastingTimes, nextFastingEvent, DEFAULT_TIMES } from '../services/prayerTimes.js';
+import { computeStreak } from '../utils/streak.js';
+import { buildStoryCard, shareStoryCard } from '../utils/storyCard.js';
 import { openMealEditor } from '../components/mealEditor.js';
 import { formatPace, formatDuration, calcSuggestedDailyTarget } from '../utils/calc.js';
 import { esc, fmtTime, todayKey } from '../utils/helpers.js';
-import { t } from '../utils/i18n.js';
+import { t, getLang } from '../utils/i18n.js';
 
 export function renderDashboard(container) {
   let unsub = null;
+  let fastingFetchFor = null;
+  let fastingTimer = null;
+
+  // Fetch today's Sahur/Iftar times once per day+city; saving settings re-renders the strip.
+  function refreshFastingTimes() {
+    const { fastingCity = 'Kuala Lumpur', fastingTimes } = store.settings;
+    const key = `${todayKey()}|${fastingCity}`;
+    if (fastingFetchFor === key) return;
+    if (fastingTimes && fastingTimes.date === todayKey() && fastingTimes.city === fastingCity) return;
+    fastingFetchFor = key;
+    fetchFastingTimes(fastingCity, todayKey(), fastingTimes).then((times) => {
+      if (store.settings.fastingMode) store.saveSettings({ fastingTimes: times });
+    });
+  }
+
+  function fastingCountdown() {
+    const times = store.settings.fastingTimes || DEFAULT_TIMES;
+    const ev = nextFastingEvent(times);
+    const h = Math.floor(ev.minsLeft / 60);
+    const m = ev.minsLeft % 60;
+    return `${ev.kind === 'sahur' ? t('fast_sahur_ends') : t('fast_iftar')} ${t('fast_in')} ${h ? `${h}h ` : ''}${m}m`;
+  }
+
+  function fastingStrip() {
+    const times = store.settings.fastingTimes || { ...DEFAULT_TIMES, approx: true };
+    return `
+      <div class="fasting-strip" role="status">
+        <span class="fasting-icon">${icons.moon}</span>
+        <div class="fasting-times">
+          <span>${t('fast_sahur_ends')} <b class="num">${esc(times.imsak)}</b></span>
+          <span>${t('fast_iftar')} <b class="num">${esc(times.maghrib)}</b></span>
+          ${times.approx ? `<span class="xs muted">(${t('fast_approx')})</span>` : ''}
+        </div>
+        <b class="fasting-next num" id="fasting-next">${fastingCountdown()}</b>
+      </div>`;
+  }
+
+  function openStreakSheet(streak) {
+    openSheet(`
+      <div class="sheet-head row between" style="margin-bottom:12px">
+        <h3 class="sheet-title" style="margin:0">${t('streak_title')}</h3>
+        <button type="button" class="btn btn-icon btn-ghost btn-sm" data-close aria-label="${t('close')}">${icons.close}</button>
+      </div>
+      <div class="grid grid-2" style="gap:10px;margin-bottom:14px">
+        <div class="stat"><span>${t('streak_days')}</span><b class="num">${streak.streak}</b></div>
+        <div class="stat"><span>${t('streak_shields')}</span><b class="num">${streak.shields} / 2</b></div>
+      </div>
+      <p class="small muted" style="line-height:1.55;margin:0 0 10px">${t('streak_rule')}</p>
+      ${streak.shieldedDays.length ? `<p class="small" style="margin:0 0 10px">${t('streak_saved')}: <b class="num">${streak.shieldedDays.join(', ')}</b></p>` : ''}
+      ${store.mealsOn().length ? '' : `<p class="small" style="margin:0;color:var(--warn)">${t('streak_today_hint')}</p>`}
+    `);
+  }
+
+  async function shareDay(btn, streak) {
+    const s = store.summary();
+    setLoading(btn, true);
+    try {
+      const blob = await buildStoryCard({
+        ...s,
+        name: store.profile?.name || '',
+        dateLabel: new Date().toLocaleDateString(getLang() === 'ms' ? 'ms-MY' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' }),
+        water: store.getWater(),
+        waterTarget: store.getWaterTarget(),
+        streak: streak.streak,
+        accent: getComputedStyle(document.documentElement).getPropertyValue('--hero-accent').trim() || '#3ddc97',
+        labels: {
+          remaining: t('story_remaining'), over: t('story_over'), target: t('story_target'), eaten: t('story_eaten'),
+          burned: t('story_burned'), water: t('story_water'), streak: t('story_streak'),
+          protein: t('dash_protein'), carbs: t('dash_carbs'), fat: t('dash_fat'),
+        },
+      });
+      const result = await shareStoryCard(blob, `calmal-${todayKey()}.png`);
+      if (result === 'downloaded') toast(t('story_downloaded'), 'success');
+    } catch (e) {
+      console.warn('Story card failed', e);
+      toast(t('story_failed'), 'error');
+    } finally {
+      setLoading(btn, false);
+    }
+  }
 
   function render() {
     const s = store.summary();
@@ -21,6 +104,9 @@ export function renderDashboard(container) {
     const waterTarget = store.getWaterTarget();
     const waterPct = Math.min(100, Math.round((water / waterTarget) * 100));
     const weekly = store.weeklySummary();
+    const streak = computeStreak(store.state.meals.map((m) => m.date), todayKey());
+    const settings = store.settings;
+    if (settings.fastingMode) refreshFastingTimes();
 
     // Progress calculation for calorie ring
     const effectiveTarget = Math.max(1, s.target + s.kout);
@@ -45,12 +131,23 @@ export function renderDashboard(container) {
             <span class="badge ok" style="font-size:10px;padding:2px 7px">${heroRank.pct}% EXP</span>
           </div>
           <h1 class="page-title">Hi, ${esc(p.name)}!</h1>
+          <button type="button" class="streak-chip ${streak.streak ? '' : 'is-zero'}" id="btn-streak" aria-label="${streak.streak} ${t('streak_days')}, ${streak.shields} ${t('streak_shields')}">
+            ${icons.flame}<b class="num">${streak.streak}</b><span>${t('streak_days')}</span>
+            ${streak.shields ? `<i class="streak-shield">${icons.shield}<b class="num">${streak.shields}</b></i>` : ''}
+          </button>
         </div>
-        <a href="#/scan" class="btn btn-sm btn-primary" id="btn-quick-scan">
-          ${icons.camera}
-          <span>${t('dash_scan_btn')}</span>
-        </a>
+        <div class="row" style="gap:8px">
+          <button type="button" class="btn btn-icon btn-secondary" id="btn-share-day" aria-label="${t('story_share')}" title="${t('story_share')}">
+            ${icons.share}
+          </button>
+          <a href="#/scan" class="btn btn-sm btn-primary" id="btn-quick-scan">
+            ${icons.camera}
+            <span>${t('dash_scan_btn')}</span>
+          </a>
+        </div>
       </div>
+
+      ${settings.fastingMode ? fastingStrip() : ''}
 
       <!-- Bento Grid Layout -->
       <div class="bento-container">
@@ -256,10 +353,13 @@ export function renderDashboard(container) {
           <div class="card bento-card">
             <div class="card-title row between">
               <span>${t('dash_recent_activity')}</span>
-              <a href="#/activity" class="btn btn-sm btn-ghost">
-                ${icons.run}
-                <span>${t('dash_start_activity')}</span>
-              </a>
+              <div class="row" style="gap:6px">
+                ${s.acts.length ? `<a href="#/activity?day=today" class="btn btn-sm btn-ghost">${icons.pin}<span>${t('day_today_path')}</span></a>` : ''}
+                <a href="#/activity" class="btn btn-sm btn-ghost">
+                  ${icons.run}
+                  <span>${t('dash_start_activity')}</span>
+                </a>
+              </div>
             </div>
 
             <div class="list">
@@ -306,6 +406,15 @@ export function renderDashboard(container) {
     `;
 
     bindEvents();
+    container.querySelector('#btn-streak')?.addEventListener('click', () => openStreakSheet(streak));
+    container.querySelector('#btn-share-day')?.addEventListener('click', (e) => shareDay(e.currentTarget, streak));
+    clearInterval(fastingTimer);
+    if (settings.fastingMode) {
+      fastingTimer = setInterval(() => {
+        const el = container.querySelector('#fasting-next');
+        if (el) el.textContent = fastingCountdown();
+      }, 60000);
+    }
     bindCompanionEvents(container, () => scheduleRender());
     animateRings(container);
     checkDailyMilestones();
@@ -605,7 +714,7 @@ export function renderDashboard(container) {
           weight_g: Number(b.dataset.w || 150),
           mealType: 'Meal',
         };
-        store.addMeal(meal);
+        onMealLogged(store.addMeal(meal));
         toast(`Logged: ${meal.name} (+${meal.kcal} kcal)`, 'success');
         if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
       });
@@ -664,6 +773,7 @@ export function renderDashboard(container) {
 
   return () => {
     unsub?.();
+    clearInterval(fastingTimer);
   };
 }
 
