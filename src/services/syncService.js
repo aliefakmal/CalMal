@@ -38,6 +38,15 @@ export function enqueueMutation(table, action, payload) {
   return item;
 }
 
+export function enqueueScanCache(identity, product) {
+  if (!identity || !product) return;
+  enqueueMutation('food_scan_cache', 'UPSERT', {
+    identity,
+    product,
+    updated_at: new Date().toISOString(),
+  });
+}
+
 export function enqueueStateSync(state) {
   if (!state || !getActiveUsername()) return;
   if (state.profile) enqueueMutation('profiles', 'UPSERT', {

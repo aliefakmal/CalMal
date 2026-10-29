@@ -16,6 +16,7 @@ const defaults = () => ({
   water: {},
   badges: {},
   flags: {},
+  scanCache: {},
   companionLines: { deku: null, bakugou: null },
   settings: { apiKey: '', notifications: false, companions: true, soundEnabled: true, cameraAlwaysOn: true, cameraFacing: 'environment' },
 });
@@ -41,6 +42,9 @@ function normalizeState(parsed) {
   for (const key of ['water', 'badges', 'flags']) {
     merged[key] = isRecord(merged[key]) ? merged[key] : {};
   }
+  merged.scanCache = isRecord(merged.scanCache)
+    ? Object.fromEntries(Object.entries(merged.scanCache).filter(([, value]) => isRecord(value) && Number.isFinite(value.savedAt)))
+    : {};
   merged.profile = isRecord(merged.profile) ? merged.profile : null;
   merged.mealPlan = isRecord(merged.mealPlan) ? merged.mealPlan : null;
   merged.companionLines = isRecord(merged.companionLines) ? merged.companionLines : def.companionLines;
@@ -152,6 +156,38 @@ export const store = {
     const key = liveKey();
     if (!key) return;
     try { localStorage.removeItem(key); } catch { /* noop */ }
+  },
+
+  // ---------- Verified scanner cache ----------
+  getScanCache(identity) {
+    const key = String(identity || '').trim();
+    const value = key ? state.scanCache?.[key] : null;
+    return isRecord(value) ? { ...value } : null;
+  },
+  saveScanCache(identity, record) {
+    const key = String(identity || '').trim();
+    if (!key || !isRecord(record)) return null;
+    const safe = {};
+    for (const field of ['code', 'name', 'brand', 'servingLabel', 'servingSize', 'quantity', 'image', 'per100', 'perServing', 'kcal', 'protein', 'carbs', 'fat', 'items', 'recommendation']) {
+      if (record[field] == null || (field === 'image' && String(record[field]).startsWith('data:'))) continue;
+      safe[field] = record[field];
+    }
+    safe.savedAt = Date.now();
+    state.scanCache = { ...(state.scanCache || {}), [key]: safe };
+    const entries = Object.entries(state.scanCache).sort((a, b) => (a[1].savedAt || 0) - (b[1].savedAt || 0));
+    state.scanCache = Object.fromEntries(entries.slice(-50));
+    emit('scanCache');
+    enqueueMutation('food_scan_cache', 'UPSERT', { identity: key, product: safe, updated_at: new Date().toISOString() });
+    return { ...safe };
+  },
+  clearScanCache(identity) {
+    const key = String(identity || '').trim();
+    if (!key || !state.scanCache?.[key]) return;
+    const next = { ...state.scanCache };
+    delete next[key];
+    state.scanCache = next;
+    emit('scanCache');
+    enqueueMutation('food_scan_cache', 'DELETE', { identity: key });
   },
 
   // ---------- Profile ----------
