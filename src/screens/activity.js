@@ -6,7 +6,10 @@ import { icons } from '../components/icons.js';
 import { toast, confirmSheet, routeThumbSVG, openSheet } from '../components/ui.js';
 import { formatPace, formatDuration, metLabel, metForSpeed } from '../utils/calc.js';
 import { onActivityFinished } from '../services/companionService.js';
-import { esc, fmtTime } from '../utils/helpers.js';
+import { esc, fmtTime, todayKey } from '../utils/helpers.js';
+import { dayRoutes, lastNDays } from '../utils/dayRoutes.js';
+
+const DAY_COLORS = ['#ff5a1a', '#3ddc97', '#38bdf8', '#a78bfa', '#fbbf24'];
 import { t, getLang } from '../utils/i18n.js';
 
 export function renderActivity(container) {
@@ -17,7 +20,11 @@ export function renderActivity(container) {
   let tileLayer = null;
   let isSim = false;
   let inspectingActivityId = null; // ID aktiviti sejarah yang sedang dipaparkan di peta
+  // Daily path map: a date key; mutually exclusive with inspectingActivityId.
+  let selectedDay = location.hash.includes('day=today') ? todayKey() : null;
   let hasCenteredInitialGPS = false;
+  let trackerUnsub = null;
+  let mapTileStyle = 'standard';
 
   function render() {
     const stats = tracker.getStats();
@@ -101,6 +108,8 @@ export function renderActivity(container) {
           </div>
         </div>
       </div>
+
+      ${stats.status === 'idle' ? dayStripHTML(history) : ''}
 
       <!-- Primary Strava Metrics (4 Columns) -->
       <div class="grid grid-2 md-grid-4" style="margin-bottom:16px">
@@ -224,6 +233,70 @@ export function renderActivity(container) {
     initMap();
   }
 
+  function dayStripHTML(history) {
+    const locale = getLang() === 'ms' ? 'ms-MY' : 'en-GB';
+    const chips = lastNDays(7)
+      .map((key) => {
+        const [y, m, d] = key.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        const has = history.some((a) => a.date === key);
+        return `<button type="button" class="day-chip ${has ? 'has-data' : ''} ${selectedDay === key ? 'active' : ''}" data-day="${key}" aria-pressed="${selectedDay === key}">
+            <span>${date.toLocaleDateString(locale, { weekday: 'short' })}</span>
+            <b class="num">${d}</b>
+            <i class="day-dot"></i>
+          </button>`;
+      })
+      .join('');
+
+    let summary = '';
+    if (selectedDay) {
+      const r = dayRoutes(history, selectedDay);
+      summary = r.sessions.length
+        ? `<div class="day-summary">
+            <div class="stat"><span>${t('day_sessions')}</span><b class="num">${r.sessions.length}</b></div>
+            <div class="stat"><span>km</span><b class="num">${r.km.toFixed(2)}</b></div>
+            <div class="stat"><span>${t('day_steps')}</span><b class="num">${r.steps}</b></div>
+            <div class="stat"><span>kcal</span><b class="num" style="color:var(--ok)">${r.kcal}</b></div>
+            <div class="stat"><span>${t('act_duration')}</span><b class="num">${formatDuration(r.sec)}</b></div>
+          </div>`
+        : `<p class="small muted" style="margin:0">${t('day_empty')}</p>`;
+    }
+
+    return `
+      <div class="card stack" style="margin-bottom:16px;gap:12px">
+        <div class="card-title row between" style="margin:0">
+          <span>${t('day_path')}</span>
+          ${selectedDay ? `<button type="button" class="btn btn-sm btn-ghost" id="btn-day-live">${icons.crosshair}<span>${t('day_live')}</span></button>` : ''}
+        </div>
+        <div class="day-strip" role="group" aria-label="${t('day_path')}">${chips}</div>
+        ${summary}
+      </div>`;
+  }
+
+  function drawDayRoutes(date) {
+    if (!map || !polylineLayer || !markerLayer) return;
+    polylineLayer.clearLayers();
+    markerLayer.clearLayers();
+    const r = dayRoutes(store.state.activities, date);
+    const pin = (label, color, at) =>
+      L.marker(at, {
+        icon: L.divIcon({ html: `<div class="day-pin" style="background:${color}">${label}</div>`, className: '', iconSize: [22, 22], iconAnchor: [11, 11] }),
+      }).addTo(markerLayer);
+
+    // Oldest session first so colours follow the order of the day.
+    [...r.sessions].sort((a, b) => (a.startedAt || 0) - (b.startedAt || 0)).forEach((act, i) => {
+      const color = DAY_COLORS[i % DAY_COLORS.length];
+      const segs = (act.segments || []).filter((s) => s.length > 1);
+      segs.forEach((seg) => L.polyline(seg, { color, weight: 5, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }).addTo(polylineLayer));
+      if (segs.length) {
+        pin('S', color, segs[0][0]);
+        const last = segs[segs.length - 1];
+        pin('F', color, last[last.length - 1]);
+      }
+    });
+    if (r.coords.length) map.fitBounds(L.latLngBounds(r.coords), { padding: [40, 40], maxZoom: 17 });
+  }
+
   function initMap() {
     const mapEl = container.querySelector('#strava-map');
     if (!mapEl) return;
@@ -259,6 +332,11 @@ export function renderActivity(container) {
     polylineLayer = L.layerGroup().addTo(map);
     markerLayer = L.layerGroup().addTo(map);
 
+    if (selectedDay && stats.status === 'idle') {
+      drawDayRoutes(selectedDay);
+      return;
+    }
+
     // Jika sedang meneliti aktiviti sejarah lepas, lukis laluannya
     if (inspectingActivityId) {
       const act = store.state.activities.find((a) => a.id === inspectingActivityId);
@@ -286,7 +364,7 @@ export function renderActivity(container) {
     if (!map || !polylineLayer || !markerLayer) return;
 
     // Jika sedang meninjau larian arkib lama dan sesi larian tidak aktif, kekalkan paparan arkib
-    if (inspectingActivityId && stats.status === 'idle') return;
+    if ((inspectingActivityId || selectedDay) && stats.status === 'idle') return;
 
     polylineLayer.clearLayers();
     markerLayer.clearLayers();
@@ -417,7 +495,9 @@ export function renderActivity(container) {
         mapTileStyle = btn.dataset.layer;
         container.querySelectorAll('#osm-layer-tabs button').forEach((b) => b.classList.toggle('active', b === btn));
         applyTileLayer();
-        if (inspectingActivityId) {
+        if (selectedDay) {
+          drawDayRoutes(selectedDay);
+        } else if (inspectingActivityId) {
           const act = store.state.activities.find((a) => a.id === inspectingActivityId);
           if (act) drawHistoryRoute(act);
         } else {
@@ -458,6 +538,11 @@ export function renderActivity(container) {
       }
       if (pos && map) {
         inspectingActivityId = null;
+        if (selectedDay) {
+          selectedDay = null;
+          render();
+          return;
+        }
         map.setView([pos.lat, pos.lng], 16, { animate: true });
         updateMapGraphics(tracker.getStats());
         toast('Map recentered to your position.', 'info');
@@ -471,8 +556,22 @@ export function renderActivity(container) {
     });
 
     // Start Run Session
+    container.querySelectorAll('.day-chip').forEach((b) => {
+      b.addEventListener('click', () => {
+        selectedDay = selectedDay === b.dataset.day ? null : b.dataset.day;
+        inspectingActivityId = null;
+        render();
+      });
+    });
+
+    container.querySelector('#btn-day-live')?.addEventListener('click', () => {
+      selectedDay = null;
+      render();
+    });
+
     container.querySelector('#btn-start-run')?.addEventListener('click', async () => {
       inspectingActivityId = null;
+      selectedDay = null;
       if (!isSim && !tracker.getLiveLocation()) {
         try {
           await tracker.detectLiveLocation();
@@ -547,6 +646,11 @@ export function renderActivity(container) {
         const act = store.state.activities.find((a) => a.id === id);
         if (act) {
           inspectingActivityId = id;
+          if (selectedDay) {
+            selectedDay = null;
+            render();
+            return;
+          }
           drawHistoryRoute(act);
           container.querySelectorAll('.list-item[data-id]').forEach((el) => {
             el.style.border = el.dataset.id === id ? '1px solid #3897f0' : '';
@@ -621,7 +725,7 @@ export function renderActivity(container) {
     if (dElev) dElev.innerHTML = `+${Math.round(st.elevGain)}<small>m</small>`;
     if (dSteps) dSteps.innerHTML = `${st.steps}<small>step</small>`;
 
-    if (!inspectingActivityId || st.status !== 'idle') {
+    if ((!inspectingActivityId && !selectedDay) || st.status !== 'idle') {
       updateMapGraphics(st);
     }
   });

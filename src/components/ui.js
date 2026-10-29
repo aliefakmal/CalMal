@@ -39,7 +39,48 @@ export function openSheet(html, { onClose, className = '' } = {}) {
   document.addEventListener('keydown', onKey);
   bd.addEventListener('click', (e) => { if (e.target === bd) close(); });
   sheet.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => close()));
+  bindSheetDrag(sheet, close);
   return { el: sheet, close };
+}
+
+/** Mobile: drag the grip (or top edge) down to dismiss. Desktop dialogs are unaffected. */
+function bindSheetDrag(sheet, close) {
+  if (typeof window.matchMedia !== 'function' || window.matchMedia('(min-width: 720px)').matches) return;
+  let startY = 0, startT = 0, dy = 0, dragging = false;
+
+  sheet.addEventListener('pointerdown', (e) => {
+    const fromTop = e.clientY - sheet.getBoundingClientRect().top;
+    if (!e.target.closest('.sheet-grip') && (fromTop > 28 || sheet.scrollTop > 0)) return;
+    if (e.target.closest('button, input, select, textarea, a')) return;
+    dragging = true;
+    startY = e.clientY;
+    startT = performance.now();
+    dy = 0;
+    sheet.classList.add('dragging');
+    sheet.setPointerCapture?.(e.pointerId);
+  });
+
+  sheet.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    dy = Math.max(0, e.clientY - startY);
+    sheet.style.transform = `translateY(${dy}px)`;
+  });
+
+  const end = () => {
+    if (!dragging) return;
+    dragging = false;
+    sheet.classList.remove('dragging');
+    const velocity = dy / Math.max(1, performance.now() - startT);
+    if (dy > 110 || (dy > 30 && velocity > 0.6)) {
+      sheet.classList.add('drag-dismiss');
+      sheet.style.transform = 'translateY(100%)';
+      close();
+    } else {
+      sheet.style.transform = '';
+    }
+  };
+  sheet.addEventListener('pointerup', end);
+  sheet.addEventListener('pointercancel', end);
 }
 
 export function confirmSheet({ title, message, confirmText = 'Yes', danger = false }) {

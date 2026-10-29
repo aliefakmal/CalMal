@@ -656,7 +656,12 @@ input[type='range'] { width: 100%; accent-color: #fff; height: 28px; }
   animation: sheetIn 0.35s var(--ease);
 }
 .backdrop.closing .sheet { animation: sheetOut 0.25s var(--ease) forwards; }
-.sheet-grip { width: 40px; height: 5px; border-radius: 5px; background: #48484a; margin: 4px auto 16px; }
+.sheet-grip { position: relative; width: 40px; height: 5px; border-radius: 5px; background: #48484a; margin: 4px auto 16px; cursor: grab; touch-action: none; }
+/* Invisible 44px-tall hit area so the grip is easy to catch with a thumb */
+.sheet-grip::before { content: ''; position: absolute; left: -40px; right: -40px; top: -18px; bottom: -18px; }
+.sheet { transition: transform 0.28s var(--ease); }
+.sheet.dragging { transition: none; animation: none; cursor: grabbing; }
+.backdrop.closing .sheet.drag-dismiss { animation: none; }
 .sheet-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
 @media (min-width: 720px) {
   .backdrop { align-items: center; }
