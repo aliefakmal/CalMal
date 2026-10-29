@@ -62,6 +62,12 @@ function load() {
 }
 
 let state = load();
+let beforeAccountChange = null;
+const LIVE_MAX_AGE_MS = 12 * 3600e3;
+const liveKey = () => {
+  const username = getActiveUsername();
+  return username ? `${getAccountStorageKey(username)}.live` : null;
+};
 
 function persist() {
   const username = getActiveUsername();
@@ -105,6 +111,7 @@ export const store = {
     return username ? getAccountStorageKey(username) : null;
   },
   activateAccount(username) {
+    beforeAccountChange?.();
     persistForSwitch();
     resumeLocalAccount(username);
     state = load();
@@ -113,10 +120,38 @@ export const store = {
     return state;
   },
   async clearActiveAccount() {
+    beforeAccountChange?.();
     persistForSwitch();
     await signOut();
     state = defaults();
     listeners.forEach((fn) => fn('reset', state));
+  },
+
+  // Lets the GPS tracker freeze its session before the account key changes, without store importing it.
+  onBeforeAccountChange(fn) { beforeAccountChange = fn; },
+
+  // ---------- Live activity session (separate key: written every few seconds, never synced) ----------
+  getLiveSession(nowMs = Date.now()) {
+    const key = liveKey();
+    if (!key) return null;
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const snap = JSON.parse(raw);
+      if (isRecord(snap) && Number.isFinite(snap.savedAt) && nowMs - snap.savedAt <= LIVE_MAX_AGE_MS) return snap;
+    } catch { /* corrupt snapshot: drop it below */ }
+    try { localStorage.removeItem(key); } catch { /* noop */ }
+    return null;
+  },
+  saveLiveSession(snapshot) {
+    const key = liveKey();
+    if (!key) return;
+    try { localStorage.setItem(key, JSON.stringify({ ...snapshot, savedAt: Date.now() })); } catch { /* storage full: keep running */ }
+  },
+  clearLiveSession() {
+    const key = liveKey();
+    if (!key) return;
+    try { localStorage.removeItem(key); } catch { /* noop */ }
   },
 
   // ---------- Profile ----------
