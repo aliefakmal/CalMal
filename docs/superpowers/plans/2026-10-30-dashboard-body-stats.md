@@ -174,12 +174,12 @@ test('surplus ring is red', () => {
 **Interfaces:**
 - Consumes: `macroBreakdown` (Task 1), `ringSVG`, `s.meals` from `store.summary()`.
 
-- [ ] **Step 1: Tiles.** Three `<button class="macro-tile" aria-expanded aria-controls="macro-breakdown">`, each with `ringSVG({ size: 64, stroke: 6, progress: eaten/target })`, a `%` in the centre, `eaten / target g`, and `N g left` or `N g over` (`--danger`). Ring colour per macro: protein `--ok`, carbs `--macro-carbs`, fat `--macro-fat`.
-- [ ] **Step 2: Breakdown panel** `#macro-breakdown` under the row, for the selected macro only. Tapping the same tile again closes it. Rows show name (ellipsis), grams and a share bar. The merged row reads `t('mac_others').replace('{n}', others)`. Empty state: `mac_empty` with the macro name and a link to `#/scan`. The selected macro is held in a module-level variable so a re-render keeps it.
-- [ ] **Step 3: i18n** `mac_left`, `mac_over`, `mac_by_meal`, `mac_others`, `mac_empty` in `en` + `ms`. Tokens `--macro-carbs`, `--macro-fat`: check contrast with the antislop contrast tool.
-- [ ] **Step 4: Remove** the old `.macro-mini-tile` markup, plus its CSS if nothing else uses it (grep first).
-- [ ] **Step 5: Verify.** `npm test`. In the browser at 390 px: expand/collapse by tap and keyboard; switch between macros; empty day; a meal named `Nasi Kandar (Nasi + Ayam Goreng + Sayur Kubis + Kuah Campur)` truncates without overflow.
-- [ ] **Step 6: Commit**: `git commit -m "feat(dashboard): macro ring tiles with per-meal breakdown"`
+- [x] **Step 1: Tiles.** Three `<button class="macro-tile" aria-expanded aria-controls="macro-breakdown">`, each with `ringSVG({ size: 64, stroke: 6, progress: eaten/target })`, a `%` in the centre, `eaten / target g`, and `N g left` or `N g over` (`--danger`). Ring colour per macro: protein `--ok`, carbs `--macro-carbs`, fat `--macro-fat`.
+- [x] **Step 2: Breakdown panel** `#macro-breakdown` under the row, for the selected macro only. Tapping the same tile again closes it. Rows show name (ellipsis), grams and a share bar. The merged row reads `t('mac_others').replace('{n}', others)`. Empty state: `mac_empty` with the macro name and a link to `#/scan`. The selected macro is held in a module-level variable so a re-render keeps it.
+- [x] **Step 3: i18n** `mac_left`, `mac_over`, `mac_by_meal`, `mac_others`, `mac_empty` in `en` + `ms`. Tokens `--macro-carbs`, `--macro-fat`: check contrast with the antislop contrast tool.
+- [x] **Step 4: Remove** the old `.macro-mini-tile` markup, plus its CSS if nothing else uses it (grep first).
+- [x] **Step 5: Verify.** `npm test`. In the browser at 390 px: expand/collapse by tap and keyboard; switch between macros; empty day; a meal named `Nasi Kandar (Nasi + Ayam Goreng + Sayur Kubis + Kuah Campur)` truncates without overflow.
+- [x] **Step 6: Commit**: `git commit -m "feat(dashboard): macro ring tiles with per-meal breakdown"`
 
 ---
 

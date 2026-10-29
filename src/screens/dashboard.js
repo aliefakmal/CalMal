@@ -7,7 +7,7 @@ import { fetchFastingTimes, nextFastingEvent, DEFAULT_TIMES } from '../services/
 import { computeStreak } from '../utils/streak.js';
 import { buildStoryCard, shareStoryCard } from '../utils/storyCard.js';
 import { openMealEditor } from '../components/mealEditor.js';
-import { formatPace, formatDuration, calcSuggestedDailyTarget, calorieStatus, ringSegments } from '../utils/calc.js';
+import { formatPace, formatDuration, calcSuggestedDailyTarget, calorieStatus, ringSegments, macroBreakdown } from '../utils/calc.js';
 import { esc, fmtTime, todayKey } from '../utils/helpers.js';
 import { t, getLang } from '../utils/i18n.js';
 import { dayRoutes } from '../utils/dayRoutes.js';
@@ -122,6 +122,34 @@ export function renderDashboard(container) {
     const steps = routes.steps + (tracker.isActive() ? tracker.getStats().steps : 0);
     const stepGoal = store.profile?.stepGoal || 8000;
     const stepPct = Math.min(100, Math.round((steps / Math.max(1, stepGoal)) * 100));
+    const macroDefs = [
+      { key: 'protein', label: t('dash_protein'), eaten: Number(s.protein) || 0, target: Number(s.macros?.protein) || 0, cls: 'macro-protein' },
+      { key: 'carbs', label: t('dash_carbs'), eaten: Number(s.carbs) || 0, target: Number(s.macros?.carbs) || 0, cls: 'macro-carbs' },
+      { key: 'fat', label: t('dash_fat'), eaten: Number(s.fat) || 0, target: Number(s.macros?.fat) || 0, cls: 'macro-fat' },
+    ];
+    if (selectedMacro && !macroDefs.some((m) => m.key === selectedMacro)) selectedMacro = null;
+    const selectedDef = macroDefs.find((m) => m.key === selectedMacro);
+    const macroPanel = selectedDef ? (() => {
+      const rows = macroBreakdown(s.meals, selectedDef.key);
+      return `<div id="macro-breakdown" class="macro-breakdown" aria-live="polite">
+        <div class="row between small bold"><span>${t('mac_by_meal')}</span><span class="muted">${selectedDef.label}</span></div>
+        ${rows.length ? rows.map((row) => `<div class="macro-breakdown-row">
+          <span class="macro-meal-name" title="${esc(row.name || t('mac_others').replace('{n}', row.others))}">${esc(row.name || t('mac_others').replace('{n}', row.others))}</span>
+          <span class="num">${Math.round(row.grams)}g</span>
+          <i><b style="width:${Math.round(row.share * 100)}%"></b></i>
+        </div>`).join('') : `<p class="small muted">${t('mac_empty').replace('{macro}', selectedDef.label)} <a href="#/scan">${t('dash_scan_btn')}</a></p>`}
+      </div>`;
+    })() : '';
+    const macroTiles = macroDefs.map((m) => {
+      const pct = m.target > 0 ? Math.round((m.eaten / m.target) * 100) : 0;
+      const remaining = Math.round(m.target - m.eaten);
+      return `<button type="button" class="macro-tile ${m.cls}" data-macro="${m.key}" aria-expanded="${selectedMacro === m.key}" aria-controls="macro-breakdown">
+        <span class="macro-tile-ring">${ringSVG({ size: 64, stroke: 6, progress: m.target > 0 ? m.eaten / m.target : 0, over: remaining < 0 })}<b>${pct}%</b></span>
+        <span class="macro-tile-name">${m.label}</span>
+        <span class="macro-tile-value num">${Math.round(m.eaten)} / ${Math.round(m.target)}g</span>
+        <span class="macro-tile-left ${remaining < 0 ? 'over' : ''}">${Math.abs(remaining)}g ${remaining < 0 ? t('mac_over') : t('mac_left')}</span>
+      </button>`;
+    }).join('');
 
     // Companion 5-state calculation
     const compState = isOver
@@ -230,26 +258,8 @@ export function renderDashboard(container) {
                 <span>${t('dash_macros')}</span>
                 <span class="xs muted">${t('dash_daily_goals')}</span>
               </div>
-              <div class="macro-mini-tiles">
-                <div class="macro-mini-tile tile-p">
-                  <span class="m-label">${t('dash_protein')}</span>
-                  <b class="m-val num">${Math.round(s.protein)}<small>g</small></b>
-                  <div class="m-sub xs muted">/ ${s.macros.protein}g</div>
-                  <div class="m-bar"><div class="m-bar-fill" style="width:${Math.min(100, (s.protein / (s.macros.protein || 1)) * 100)}%"></div></div>
-                </div>
-                <div class="macro-mini-tile tile-c">
-                  <span class="m-label">${t('dash_carbs')}</span>
-                  <b class="m-val num">${Math.round(s.carbs)}<small>g</small></b>
-                  <div class="m-sub xs muted">/ ${s.macros.carbs}g</div>
-                  <div class="m-bar"><div class="m-bar-fill" style="width:${Math.min(100, (s.carbs / (s.macros.carbs || 1)) * 100)}%"></div></div>
-                </div>
-                <div class="macro-mini-tile tile-f">
-                  <span class="m-label">${t('dash_fat')}</span>
-                  <b class="m-val num">${Math.round(s.fat)}<small>g</small></b>
-                  <div class="m-sub xs muted">/ ${s.macros.fat}g</div>
-                  <div class="m-bar"><div class="m-bar-fill" style="width:${Math.min(100, (s.fat / (s.macros.fat || 1)) * 100)}%"></div></div>
-                </div>
-              </div>
+              <div class="macro-tiles">${macroTiles}</div>
+              ${macroPanel}
             </div>
 
             <!-- Water Tracker Card (Customizable Any Amount) -->
@@ -616,6 +626,11 @@ export function renderDashboard(container) {
   }
 
   function bindEvents() {
+    container.querySelectorAll('.macro-tile').forEach((tile) => tile.addEventListener('click', () => {
+      selectedMacro = selectedMacro === tile.dataset.macro ? null : tile.dataset.macro;
+      render();
+    }));
+
     container.querySelector('#btn-calorie-ring')?.addEventListener('click', () => {
       calorieEquationOpen = !calorieEquationOpen;
       render();

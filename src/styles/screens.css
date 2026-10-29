@@ -1092,57 +1092,52 @@
 .step-row-main > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .step-row-main i { display: block; height: 4px; margin-top: 6px; background: var(--surface-3); border-radius: 4px; overflow: hidden; }
 .step-row-main i b { display: block; height: 100%; background: var(--ok); border-radius: inherit; }
-.macro-mini-tiles {
+.macro-tiles {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
   min-width: 0;
 }
-.macro-mini-tile {
+.macro-tile {
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px;
-  padding: 10px 8px;
+  padding: 10px 6px;
   text-align: center;
   min-width: 0;
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
 }
-.macro-mini-tile .m-label {
+.macro-tile-ring { position: relative; display: grid; place-items: center; }
+.macro-tile-ring svg { width: 64px; height: 64px; transform: none; }
+.macro-tile-ring .ring-fill { stroke: currentColor; filter: none; }
+.macro-tile-ring > b { position: absolute; font-size: 11px; }
+.macro-tile-name {
   display: block;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.macro-mini-tile .m-val {
-  font-size: 16px;
-  font-weight: 800;
-  color: #fff;
-  margin: 4px 0 2px;
-  display: block;
-}
-.macro-mini-tile .m-val small {
-  font-size: 11px;
-  color: var(--muted);
-  font-weight: normal;
-  margin-left: 2px;
-}
-.macro-mini-tile .m-bar {
-  height: 4px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-top: 6px;
-}
-.macro-mini-tile .m-bar-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.4s var(--ease);
-}
-.tile-p .m-bar-fill { background: #3ddc97; }
-.tile-c .m-bar-fill { background: #ffd60a; }
-.tile-f .m-bar-fill { background: #ff7a1a; }
+.macro-tile-value { font-size: 12px; font-weight: 800; }
+.macro-tile-left { font-size: 10px; color: var(--muted); }
+.macro-tile-left.over { color: var(--danger); }
+.macro-protein .macro-tile-ring { color: var(--ok); }
+.macro-carbs .macro-tile-ring { color: var(--macro-carbs); }
+.macro-fat .macro-tile-ring { color: var(--macro-fat); }
+.macro-breakdown { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-soft); display: grid; gap: 8px; }
+.macro-breakdown-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; font-size: 12px; }
+.macro-meal-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.macro-breakdown-row i { grid-column: 1 / -1; height: 4px; background: var(--surface-3); border-radius: 4px; overflow: hidden; }
+.macro-breakdown-row i b { display: block; height: 100%; background: var(--ok); border-radius: inherit; }
+/* Keep tile type colors distinct while the shared progress fill stays quiet. */
+.macro-carbs .macro-breakdown-row i b { background: var(--macro-carbs); }
+.macro-fat .macro-breakdown-row i b { background: var(--macro-fat); }
 
 /* Water Tracker */
 .water-widget {
