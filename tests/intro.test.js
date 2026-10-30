@@ -3,6 +3,7 @@ import { test, mock } from 'node:test';
 
 mock.module('../src/components/companion.js', { namedExports: { avatar: () => '<svg></svg>' } });
 mock.module('../src/utils/i18n.js', { namedExports: { getLang: () => 'en' } });
+mock.module('../src/services/audioService.js', { namedExports: { soundboard: { playIntroTheme: () => {}, stopIntroTheme: () => {}, unlockAudio: () => Promise.resolve() } } });
 const { renderIntro } = await import('../src/components/intro.js');
 
 function setup(reduced = false) {

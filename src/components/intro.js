@@ -1,14 +1,23 @@
 import { avatar } from './companion.js';
 import { getLang } from '../utils/i18n.js';
+import { soundboard } from '../services/audioService.js';
 
 export function renderIntro(container, onComplete) {
   const ms = getLang() === 'ms';
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const skip = ms ? 'Langkau' : 'Skip';
   const proceed = ms ? 'Teruskan' : 'Continue';
+  const musicLabel = ms ? 'Muzik Intro' : 'Intro Music';
+
   container.innerHTML = `
     <section class="kickoff" aria-labelledby="kickoff-title">
-      <button type="button" class="kickoff-skip" data-intro-skip>${motion.matches ? proceed : skip}</button>
+      <div class="kickoff-top-bar">
+        <button type="button" class="kickoff-sound-btn" data-intro-sound aria-label="${musicLabel}">
+          <span class="kickoff-sound-icon">🔊</span>
+          <span>${musicLabel}</span>
+        </button>
+        <button type="button" class="kickoff-skip" data-intro-skip>${motion.matches ? proceed : skip}</button>
+      </div>
       <div class="kickoff-stage">
         <div class="kickoff-scene" aria-hidden="true">
           <svg class="kickoff-path" viewBox="0 0 560 260" width="560" height="260" fill="none">
@@ -25,36 +34,74 @@ export function renderIntro(container, onComplete) {
         <h1 id="kickoff-title" class="kickoff-title">CalMal<span class="kickoff-period">.</span></h1>
         <p class="kickoff-caption">${ms ? 'Makan dengan bijak. Bergerak setiap hari.' : 'Eat with intention. Move every day.'}</p>
       </div>
-      <p class="kickoff-foot">${ms ? 'Pemakanan dan kecergasan, bersama jurulatih anda.' : 'Nutrition and fitness, with your coaches.'}</p>
+      <p class="kickoff-foot">${ms ? 'Ketik mana-mana skrin untuk muzik • Bersama jurulatih anda.' : 'Tap anywhere for music • With your coaches.'}</p>
     </section>`;
 
   const button = container.querySelector('[data-intro-skip]');
+  const soundBtn = container.querySelector('[data-intro-sound]');
   let finished = false;
   let timer;
+
+  function triggerIntroAudio() {
+    soundBtn?.classList?.add?.('playing');
+    soundboard.unlockAudio?.()?.then?.(() => {
+      soundboard.playIntroTheme?.();
+    })?.catch?.(() => {});
+  }
+
+  // Attempt automatic launch (works on desktop / allowed browsers)
+  soundboard.playIntroTheme?.();
+
+  // Listen globally for ANY user gesture to unlock and start audio immediately
+  const handleUserGesture = (e) => {
+    if (finished) return;
+    if (e.target?.closest?.('[data-intro-skip]')) return;
+    triggerIntroAudio();
+    removeGestureListeners();
+  };
+
+  const removeGestureListeners = () => {
+    window.removeEventListener?.('pointerdown', handleUserGesture);
+    window.removeEventListener?.('touchstart', handleUserGesture);
+    window.removeEventListener?.('click', handleUserGesture);
+  };
+
+  window.addEventListener?.('pointerdown', handleUserGesture, { passive: true });
+  window.addEventListener?.('touchstart', handleUserGesture, { passive: true });
+  window.addEventListener?.('click', handleUserGesture, { passive: true });
+
+  soundBtn?.addEventListener?.('click', (e) => {
+    e.stopPropagation?.();
+    triggerIntroAudio();
+  });
+
   const cleanup = () => {
     clearTimeout(timer);
-    document.removeEventListener('keydown', onKey);
-    button.removeEventListener('click', finish);
-    motion.removeEventListener('change', onMotion);
+    soundboard.stopIntroTheme?.();
+    removeGestureListeners();
+    document.removeEventListener?.('keydown', onKey);
+    button.removeEventListener?.('click', finish);
+    motion.removeEventListener?.('change', onMotion);
   };
   function finish() {
     if (finished) return;
     finished = true;
+    soundboard.stopIntroTheme?.();
     cleanup();
     onComplete();
   }
   function onKey(event) {
-    if (event.key === 'Escape') { event.preventDefault(); finish(); }
+    if (event.key === 'Escape') { event.preventDefault?.(); finish(); }
   }
   function onMotion() {
     clearTimeout(timer);
     button.textContent = motion.matches ? proceed : skip;
     if (!motion.matches) timer = setTimeout(finish, 4000);
   }
-  button.addEventListener('click', finish);
-  document.addEventListener('keydown', onKey);
-  motion.addEventListener('change', onMotion);
+  button.addEventListener?.('click', finish);
+  document.addEventListener?.('keydown', onKey);
+  motion.addEventListener?.('change', onMotion);
   if (!motion.matches) timer = setTimeout(finish, 4000);
-  button.focus({ preventScroll: true });
+  button.focus?.({ preventScroll: true });
   return () => { finished = true; cleanup(); };
 }
