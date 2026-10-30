@@ -1,5 +1,6 @@
 import { avatar } from './companion.js';
 import { getLang } from '../utils/i18n.js';
+import { soundboard } from '../services/audioService.js';
 
 export function renderIntro(container, onComplete) {
   const ms = getLang() === 'ms';
@@ -31,8 +32,18 @@ export function renderIntro(container, onComplete) {
   const button = container.querySelector('[data-intro-skip]');
   let finished = false;
   let timer;
+
+  soundboard.playIntroTheme();
+  const onInteraction = () => {
+    soundboard.playIntroTheme();
+    container.removeEventListener?.('pointerdown', onInteraction);
+  };
+  container.addEventListener?.('pointerdown', onInteraction, { passive: true });
+
   const cleanup = () => {
     clearTimeout(timer);
+    soundboard.stopIntroTheme();
+    container.removeEventListener?.('pointerdown', onInteraction);
     document.removeEventListener('keydown', onKey);
     button.removeEventListener('click', finish);
     motion.removeEventListener('change', onMotion);
@@ -40,6 +51,7 @@ export function renderIntro(container, onComplete) {
   function finish() {
     if (finished) return;
     finished = true;
+    soundboard.stopIntroTheme();
     cleanup();
     onComplete();
   }

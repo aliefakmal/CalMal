@@ -150,6 +150,8 @@ class AudioService {
     this.currentSourceNode = null;
     this.isPaused = false;
     this.currentLine = null;
+    this.introGainNode = null;
+    this.introActiveNodes = [];
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = () => {
@@ -502,12 +504,135 @@ class AudioService {
   }
 
   /**
+   * Procedural Heroic Anime Opening Jingle (Web Audio API)
+   * 3.5s catchy anime shonen fanfare (Deku/Bakugou kickoff theme)
+   * Plays during 4-second app launch screen.
+   */
+  playIntroTheme() {
+    if (store.settings?.soundEnabled === false || this.isMuted) return;
+    this.init();
+    if (!this.audioContext) return;
+
+    if (this.audioContext.state === 'suspended') {
+      this.audioContext.resume().then(() => this._synthIntroTheme()).catch(() => {});
+    } else {
+      this._synthIntroTheme();
+    }
+  }
+
+  _synthIntroTheme() {
+    try {
+      this.stopIntroTheme();
+      const ctx = this.audioContext;
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      const masterGain = ctx.createGain();
+      masterGain.gain.setValueAtTime(0.28, now);
+      masterGain.connect(ctx.destination);
+      this.introGainNode = masterGain;
+      this.introActiveNodes = [];
+
+      // 1. Rising Sparkle Arpeggio (0.0s -> 0.8s)
+      const arpeggio = [
+        { freq: 523.25, time: 0.00, dur: 0.18, vol: 0.35, type: 'triangle' }, // C5
+        { freq: 659.25, time: 0.12, dur: 0.18, vol: 0.38, type: 'triangle' }, // E5
+        { freq: 783.99, time: 0.24, dur: 0.20, vol: 0.42, type: 'triangle' }, // G5
+        { freq: 1046.50, time: 0.36, dur: 0.30, vol: 0.48, type: 'sine' },     // C6
+        { freq: 1318.51, time: 0.48, dur: 0.35, vol: 0.50, type: 'sine' },     // E6
+      ];
+
+      // 2. Anime Heroic Brass / Power Chord hits (0.75s -> 2.6s)
+      const chords = [
+        // Chord 1 (F major / heroic lift)
+        { freq: 349.23, time: 0.75, dur: 0.50, vol: 0.32, type: 'sawtooth' },
+        { freq: 440.00, time: 0.75, dur: 0.50, vol: 0.30, type: 'triangle' },
+        { freq: 523.25, time: 0.75, dur: 0.50, vol: 0.35, type: 'sine' },
+
+        // Chord 2 (G major / dominant peak)
+        { freq: 392.00, time: 1.28, dur: 0.55, vol: 0.34, type: 'sawtooth' },
+        { freq: 493.88, time: 1.28, dur: 0.55, vol: 0.32, type: 'triangle' },
+        { freq: 587.33, time: 1.28, dur: 0.55, vol: 0.38, type: 'sine' },
+
+        // Chord 3 - Final PLUS ULTRA Power Chord (C major)
+        { freq: 261.63, time: 1.82, dur: 1.60, vol: 0.40, type: 'sawtooth' },
+        { freq: 392.00, time: 1.82, dur: 1.60, vol: 0.35, type: 'triangle' },
+        { freq: 659.25, time: 1.82, dur: 1.60, vol: 0.38, type: 'sine' },
+        { freq: 1046.50, time: 1.82, dur: 1.60, vol: 0.42, type: 'triangle' },
+        { freq: 1567.98, time: 1.82, dur: 1.40, vol: 0.25, type: 'sine' },
+      ];
+
+      const allNotes = [...arpeggio, ...chords];
+
+      allNotes.forEach(({ freq, time, dur, vol, type }) => {
+        const osc = ctx.createOscillator();
+        const noteGain = ctx.createGain();
+        osc.type = type || 'sine';
+        osc.frequency.setValueAtTime(freq, now + time);
+
+        if (time >= 0.75) {
+          osc.frequency.linearRampToValueAtTime(freq * 1.015, now + time + dur * 0.4);
+          osc.frequency.linearRampToValueAtTime(freq, now + time + dur);
+        }
+
+        noteGain.gain.setValueAtTime(0.0001, now + time);
+        noteGain.gain.linearRampToValueAtTime(vol, now + time + 0.04);
+        noteGain.gain.exponentialRampToValueAtTime(0.0001, now + time + dur);
+
+        osc.connect(noteGain);
+        noteGain.connect(masterGain);
+
+        osc.start(now + time);
+        osc.stop(now + time + dur + 0.05);
+
+        this.introActiveNodes.push({ osc, gain: noteGain });
+      });
+
+      masterGain.gain.setValueAtTime(0.28, now + 2.8);
+      masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 3.5);
+
+      setTimeout(() => {
+        if (this.introGainNode === masterGain) {
+          this.stopIntroTheme();
+        }
+      }, 3600);
+    } catch {
+      // Audio synthesis fallback silently ignored
+    }
+  }
+
+  stopIntroTheme() {
+    if (this.introGainNode) {
+      try {
+        const ctx = this.audioContext;
+        if (ctx) {
+          this.introGainNode.gain.setValueAtTime(this.introGainNode.gain.value, ctx.currentTime);
+          this.introGainNode.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
+        }
+      } catch { /* noop */ }
+      this.introGainNode = null;
+    }
+
+    if (this.introActiveNodes && this.introActiveNodes.length) {
+      this.introActiveNodes.forEach(({ osc, gain }) => {
+        try {
+          osc.stop();
+          osc.disconnect();
+          gain.disconnect();
+        } catch { /* noop */ }
+      });
+      this.introActiveNodes = [];
+    }
+  }
+
+  /**
    * Immediately stops any currently playing audio, speech, or SFX
    * Prevents audio running in the background or overlapping
    */
   stopAll() {
     this._playbackId = (this._playbackId || 0) + 1;
     this.isPaused = false;
+    this.stopIntroTheme();
     if (this.currentAudio) {
       try {
         this.currentAudio.pause();
