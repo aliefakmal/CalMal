@@ -297,3 +297,56 @@ test('a failed current-account persist rejects clearing the active account and e
   assert.equal(auth.getActiveUsername(), 'alpha');
   assert.equal(notifications, 0);
 });
+
+test('live session round trip', () => {
+  createAccount('alpha');
+  store.activateAccount('alpha');
+  store.saveLiveSession({ status: 'running', distanceKm: 1.2 });
+  const snap = store.getLiveSession();
+  assert.equal(snap.status, 'running');
+  assert.equal(snap.distanceKm, 1.2);
+  assert.equal(typeof snap.savedAt, 'number');
+});
+
+test('live session expires after 12 h', () => {
+  const key = createAccount('alpha');
+  store.activateAccount('alpha');
+  store.saveLiveSession({ status: 'running' });
+  assert.equal(store.getLiveSession(Date.now() + 12 * 3600e3 + 1), null);
+  assert.equal(storage.getItem(`${key}.live`), null);
+});
+
+test('corrupt live snapshot returns null', () => {
+  const key = createAccount('alpha');
+  store.activateAccount('alpha');
+  storage.setItem(`${key}.live`, '{oops');
+  assert.equal(store.getLiveSession(), null);
+  storage.setItem(`${key}.live`, '[1]');
+  assert.equal(store.getLiveSession(), null);
+});
+
+test('live session is per account', () => {
+  createAccount('alpha');
+  createAccount('beta');
+  store.activateAccount('alpha');
+  store.saveLiveSession({ status: 'paused', distanceKm: 2 });
+  store.activateAccount('beta');
+  assert.equal(store.getLiveSession(), null);
+  store.activateAccount('alpha');
+  assert.equal(store.getLiveSession().distanceKm, 2);
+  store.clearLiveSession();
+  assert.equal(store.getLiveSession(), null);
+});
+
+test('onBeforeAccountChange runs before switch and sign-out', async () => {
+  const aKey = createAccount('alpha');
+  createAccount('beta');
+  store.activateAccount('alpha');
+  const seen = [];
+  store.onBeforeAccountChange(() => seen.push(store.getStorageKey()));
+  store.activateAccount('beta');
+  assert.deepEqual(seen, [aKey]);
+  store.activateAccount('alpha');
+  await store.clearActiveAccount();
+  assert.deepEqual(seen, [aKey, auth.getAccountStorageKey('beta'), aKey]);
+});

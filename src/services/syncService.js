@@ -38,6 +38,15 @@ export function enqueueMutation(table, action, payload) {
   return item;
 }
 
+export function enqueueScanCache(identity, product) {
+  if (!identity || !product) return;
+  enqueueMutation('food_scan_cache', 'UPSERT', {
+    identity,
+    product,
+    updated_at: new Date().toISOString(),
+  });
+}
+
 export function enqueueStateSync(state) {
   if (!state || !getActiveUsername()) return;
   if (state.profile) enqueueMutation('profiles', 'UPSERT', {
@@ -45,7 +54,7 @@ export function enqueueStateSync(state) {
     display_name: state.profile.name || state.profile.displayName || 'Hero',
     height_cm: state.profile.height, weight_kg: state.profile.weight, age: state.profile.age,
     gender: state.profile.gender, activity_level: state.profile.activity,
-    daily_calorie_goal: state.profile.dailyCalorieGoal, selected_companion: state.profile.selectedCompanion || 'deku',
+    daily_calorie_goal: state.profile.dailyCalorieGoal, daily_step_goal: state.profile.stepGoal ?? null, selected_companion: state.profile.selectedCompanion || 'deku',
     updated_at: state.profile.updatedAt || new Date().toISOString(),
   });
   (state.meals || []).forEach((m) => enqueueMutation('meal_logs', 'UPSERT', {
@@ -54,7 +63,7 @@ export function enqueueStateSync(state) {
     portion_multiplier: m.portion_multiplier || 1, image_url: m.image_url || null, updated_at: m.updatedAt || new Date().toISOString(),
   }));
   (state.activities || []).forEach((a) => enqueueMutation('activity_sessions', 'UPSERT', {
-    client_id: a.id, activity_type: a.type || a.activityType || 'walk', start_time: a.startTime, end_time: a.endTime,
+    client_id: a.id, activity_type: a.activityType || 'walk', start_time: a.startedAt || a.startTime, end_time: a.endedAt || a.endTime,
     duration_sec: a.durationSec || a.duration, distance_meters: (a.distanceKm || 0) * 1000, steps: a.steps || 0,
     calories_burned: a.kcal || a.calories || 0, avg_pace_sec_per_km: a.avgPaceSecPerKm || null, route_geojson: a.routeGeojson || null,
   }));

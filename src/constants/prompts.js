@@ -29,15 +29,16 @@ Return ONLY valid JSON strictly following this schema:
   "calories_kcal": 240,
   "macros": { "protein_g": 4.0, "carbs_g": 38.0, "fat_g": 6.0 },
   "items_breakdown": [
-    {"name": "Vanilla Oolong Tea Base & Fresh Milk (Less Sweet)", "weight_g": 480, "calories_kcal": 210},
-    {"name": "Ice & Sweetener", "weight_g": 20, "calories_kcal": 30}
+    {"name": "Vanilla Oolong Tea Base & Fresh Milk (Less Sweet)", "weight_g": 480, "calories_kcal": 210, "protein_g": 4, "carbs_g": 30, "fat_g": 5},
+    {"name": "Ice & Sweetener", "weight_g": 20, "calories_kcal": 30, "protein_g": 0, "carbs_g": 8, "fat_g": 0}
   ],
   "body_weight_recommendation": {
     "suitability_status": "GOOD",
     "recommended_portion_adjustment": "For your weight of ${weight} kg, this drink contributes X% of your daily target...",
     "deku_analysis_note": "Midoriya: ...",
     "bakugou_reaction_note": "Bakugou: ..."
-  }
+  },
+  "local_food_reference": "Use Malaysian serving conventions when visible, such as nasi lemak bungkus, mamak drinks, kuih, kopitiam coffee, and hawker portions."
 }`;
 }
 

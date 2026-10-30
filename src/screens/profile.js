@@ -4,7 +4,7 @@ import { BADGES, onWeightLogged, requestNotificationPermission } from '../servic
 import { GeminiConfig } from '../config/gemini.js';
 import { testApiKey } from '../services/gemini.js';
 import { toast, confirmSheet, setLoading } from '../components/ui.js';
-import { calcBMI, bmiLabel, calcDailyTarget, calc7DayMovingAverage } from '../utils/calc.js';
+import { calcBMI, bmiLabel, calcDailyTarget, calc7DayMovingAverage, calcBMR, calcTDEE, calcSuggestedDailyTarget, GOALS, healthyWeightRange, bmiScalePosition, weightProgress } from '../utils/calc.js';
 import { avatar } from '../components/companion.js';
 import { openProfileEditor } from '../components/profileEditor.js';
 import { soundboard } from '../services/audioService.js';
@@ -12,6 +12,8 @@ import { esc, fmtDate, todayKey } from '../utils/helpers.js';
 import { t, getLang } from '../utils/i18n.js';
 import { getAccountStorageKey, getActiveUsername } from '../services/authService.js';
 import { fetchFastingTimes } from '../services/prayerTimes.js';
+
+let tdeeEquationOpen = false;
 
 
 export function renderProfile(container) {
@@ -85,7 +87,7 @@ export function renderProfile(container) {
             .join('')}
         </svg>
         <div class="row between xs muted weight-chart-legend" style="margin-top:8px;padding:0 4px;flex-wrap:wrap;gap:8px">
-          <div class="row" style="gap:12px;align-items:center">
+          <div class="row" style="gap:12px;align-items:center;flex-wrap:wrap">
             <span class="row" style="gap:4px;align-items:center"><span style="width:10px;height:2.5px;background:#fff;display:inline-block;border-radius:2px"></span> Daily Weight</span>
             <span class="row" style="gap:4px;align-items:center"><span style="width:10px;height:2px;background:#f6ad55;display:inline-block;border-radius:2px"></span> 7-Day Trend (Smoothed)</span>
           </div>
@@ -98,9 +100,26 @@ export function renderProfile(container) {
   function render() {
     profile = store.profile || profile;
     settings = store.settings || {};
-    const bmi = calcBMI(profile);
-    const bmiCategory = bmiLabel(bmi);
-    const targetKcal = calcDailyTarget(profile);
+    const weights = store.state.weights || [];
+    const bmi = Number.isFinite(calcBMI(profile)) ? calcBMI(profile) : null;
+    const bmiCategory = bmi == null ? '' : bmiLabel(bmi);
+    const targetKcal = Number.isFinite(calcDailyTarget(profile)) ? calcDailyTarget(profile) : 0;
+    const bmr = Number.isFinite(calcBMR(profile)) ? calcBMR(profile) : 0;
+    const tdee = Number.isFinite(calcTDEE(profile)) ? calcTDEE(profile) : 0;
+    const goalDelta = (GOALS.find((g) => g.value === profile.goal) || GOALS[1]).delta;
+    const suggested = Number.isFinite(calcSuggestedDailyTarget(profile)) ? calcSuggestedDailyTarget(profile) : 0;
+    const range = healthyWeightRange(profile.height);
+    const sortedWeights = [...weights].filter((w) => Number(w.weight) > 0).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    const startWeight = Number(sortedWeights[0]?.weight || profile.weight) || 0;
+    const nowWeight = Number(profile.weight) || startWeight;
+    const progress = weightProgress({ start: startWeight, now: nowWeight, target: profile.targetWeight });
+    const bmiPos = bmi == null ? 0 : bmiScalePosition(bmi);
+    const targetValue = Number(profile.targetWeight);
+    const tdeeEquation = `<div class="equation body-equation ${tdeeEquationOpen ? '' : 'hidden'}" id="tdee-equation">
+      <span class="eq-step"><b>${bmr}</b><small>${t('body_bmr')}</small></span><span class="eq-op">× ${Number(profile.activity || 1.2)}</span>
+      <span class="eq-step"><b>${tdee}</b><small>${t('body_tdee')}</small></span><span class="eq-op">${goalDelta >= 0 ? '+' : ''}${goalDelta}</span>
+      <span class="eq-step"><b>${profile.customTarget ? Math.round(Number(profile.customTarget)) : targetKcal}</b><small>${profile.customTarget ? t('body_custom_target') : suggested > tdee + goalDelta ? t('body_min_floor') : t('dash_target')}</small></span>
+    </div>`;
     const pendingCount = store.pendingCount();
     const heroRank = store.getHeroRank();
     const activeCoach = profile.selectedCompanion || 'deku';
@@ -129,50 +148,34 @@ export function renderProfile(container) {
           <div><button type="button" class="btn btn-secondary" id="btn-sign-out">${isEn ? 'Sign Out' : 'Log Keluar'}</button></div>
           <p class="small" role="status" id="account-action-status"></p>
         </div>
-        <!-- 1. Current Biometrics Summary Card (TOP PRIORITY STATS) -->
-        <div class="card stack" style="gap:14px">
-          <div class="row between wrap" style="align-items:center;gap:10px;margin-bottom:2px">
-            <div class="row" style="gap:8px;align-items:center;flex-shrink:0">
-              <span style="display:inline-flex;align-items:center;color:var(--primary);width:20px;height:20px">
-                ${icons.scale}
-              </span>
-              <span style="font-size:16px;font-weight:700;color:var(--text-1);letter-spacing:-0.02em;white-space:nowrap">
-                ${t('prof_stats_title')}
-              </span>
-            </div>
-            <div class="row wrap" style="gap:6px;align-items:center">
-              <span class="badge ${profile.goal === 'lose' ? 'primary' : 'ok'}" style="white-space:nowrap;font-size:11px;padding:3px 9px;height:24px">
-                ${t('prof_goal_' + (profile.goal || 'lose'))}
-              </span>
-              <span class="badge ok" style="white-space:nowrap;font-size:11px;padding:3px 9px;height:24px">
-                ${bmiCategory} (BMI ${bmi.toFixed(1)})
-              </span>
-            </div>
+        <!-- Body stats keep BMI first, then energy needs and weight trend. -->
+        <div class="card stack body-stats" style="gap:12px">
+          <div class="row between wrap" style="align-items:center;gap:10px">
+            <div class="row" style="gap:8px;align-items:center"><span style="display:inline-flex;color:var(--ok);width:20px;height:20px">${icons.scale}</span><span class="card-title">${t('prof_stats_title')}</span></div>
+            <span class="badge ok">${t('prof_goal_' + (profile.goal || 'maintain'))}</span>
           </div>
 
-          <!-- Key Metrics Equation -->
-          <div class="equation">
-            <div class="eq-cell">
-              <span>${t('prof_weight')}</span>
-              <b class="num">${profile.weight}<small style="font-size:12px;color:var(--muted)">kg</small></b>
-            </div>
-            <div class="eq-cell">
-              <span>${t('prof_target_weight')}</span>
-              <b class="num">${profile.targetWeight || '–'}<small style="font-size:12px;color:var(--muted)">kg</small></b>
-            </div>
-            <div class="eq-cell">
-              <span>${t('dash_target')}</span>
-              <b class="num">${targetKcal}<small style="font-size:12px;color:var(--muted)">kcal</small></b>
-            </div>
+          <div class="body-stat-tile bmi-tile">
+            <div class="row between"><span class="eyebrow">${t('body_bmi')}</span><b class="num body-stat-value">${bmi == null ? '–' : bmi.toFixed(1)}</b></div>
+            <div class="small" style="color:var(--ok)">${bmiCategory || t('normal')}</div>
+            <div class="bmi-scale"><i style="left:${bmiPos * 100}%"></i></div>
+            <div class="row between xs muted"><span>15</span><span>18.5</span><span>23</span><span>27.5</span><span>35</span></div>
+            ${range ? `<div class="small muted">${t('body_normal_range')}: <b>${range[0]} - ${range[1]} kg</b></div>` : ''}
           </div>
 
-          <!-- Weight Progress Chart -->
-          <div style="margin-top:12px">
-            <div class="row between" style="margin-bottom:4px">
-              <span class="small bold muted" style="text-transform:uppercase;letter-spacing:0.06em">${isEn ? 'Weight Progress' : 'Kemajuan Berat Badan'}</span>
-              <span class="xs muted">${weights.length} ${isEn ? 'records' : 'rekod'}</span>
-            </div>
+          <div class="body-stat-grid">
+            <div class="body-stat-tile"><span class="eyebrow">${t('body_bmr')}</span><b class="num body-stat-value">${bmr}</b><small class="muted">${t('body_bmr_sub')}</small></div>
+            <button type="button" class="body-stat-tile tdee-btn" id="btn-tdee" aria-expanded="${tdeeEquationOpen}" aria-controls="tdee-equation"><span class="eyebrow">${t('body_tdee')}</span><b class="num body-stat-value">${tdee}</b><small class="muted">${t('body_tdee_sub')}</small></button>
+          </div>
+          ${tdeeEquation}
+
+          <div class="body-stat-tile weight-tile">
+            <div class="row between"><span class="eyebrow">${t('body_weight')}</span><b class="num ${progress.deltaKg < 0 ? 'color-ok' : progress.deltaKg > 0 ? 'color-warn' : ''}">${progress.deltaKg > 0 ? '+' : ''}${progress.deltaKg} kg</b></div>
             ${renderWeightChart(weights, profile.targetWeight)}
+            <div class="weight-progress-wrap" style="margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)">
+              <div class="weight-progress-bar"><i style="width:${Math.round(progress.pct * 100)}%"></i></div>
+              <div class="row between xs muted" style="margin-top:6px"><span>${t('body_start')} ${startWeight}kg</span><span>${t('body_now')} ${nowWeight}kg</span>${Number.isFinite(targetValue) ? `<span>${t('body_target')} ${targetValue}kg</span>` : ''}</div>
+            </div>
           </div>
 
           <!-- Daily Weight Log Input -->
@@ -422,6 +425,11 @@ export function renderProfile(container) {
   }
 
   function bindEvents() {
+    container.querySelector('#btn-tdee')?.addEventListener('click', () => {
+      tdeeEquationOpen = !tdeeEquationOpen;
+      render();
+    });
+
     container.querySelector('#btn-sign-out')?.addEventListener('click', async (event) => {
       const button = event.currentTarget;
       button.disabled = true;

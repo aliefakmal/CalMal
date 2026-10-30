@@ -1347,7 +1347,7 @@ export function renderRecipes(container) {
           </button>
         </div>
 
-        ${currentRecipe ? renderRecipeCard(currentRecipe) : ''}
+        ${isGenerating ? renderAiSkeleton() : currentRecipe ? renderRecipeCard(currentRecipe) : ''}
       </div>
     `;
   }
@@ -1417,7 +1417,18 @@ export function renderRecipes(container) {
     `;
   }
 
+  function renderAiSkeleton() {
+    return `<div class="card stack" aria-busy="true">
+      <span class="sr-only">${t('rec_generating')}</span>
+      <i class="skeleton" style="width:58%;height:24px"></i>
+      <i class="skeleton" style="width:92%;height:14px"></i>
+      <div class="stack" style="gap:7px"><i class="skeleton" style="width:86%;height:13px"></i><i class="skeleton" style="width:74%;height:13px"></i><i class="skeleton" style="width:80%;height:13px"></i></div>
+      <div class="row" style="gap:8px"><i class="skeleton" style="width:31%;height:42px"></i><i class="skeleton" style="width:31%;height:42px"></i><i class="skeleton" style="width:31%;height:42px"></i></div>
+    </div>`;
+  }
+
   function renderMealPlanner() {
+    if (isGeneratingPlan) return renderAiSkeleton();
     if (currentMealPlan && !isGeneratingPlan) {
       return renderMealPlanResult(currentMealPlan);
     }

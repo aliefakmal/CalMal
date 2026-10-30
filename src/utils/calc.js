@@ -83,13 +83,18 @@ export function bmiLabel(bmi) {
   return 'Obese';
 }
 
-/** Dynamic MET based on speed (km/h) */
+// Compendium of Physical Activities walking/running points, km/h -> MET.
+const MET_TABLE = [[1, 2.0], [3.2, 2.8], [4.8, 3.5], [5.6, 4.3], [6.4, 5.0], [8.0, 8.3], [9.7, 9.8], [11.3, 11.0], [12.9, 11.8], [16.1, 14.5]];
+
+/** Dynamic MET, linearly interpolated between Compendium points */
 export function metForSpeed(kmh) {
-  if (kmh < 1) return 0; // stopped
-  if (kmh < 5) return 3.5;
-  if (kmh < 7.5) return 5.0;
-  if (kmh < 10) return 8.3;
-  return 11.0;
+  if (!(kmh >= 1)) return 0; // stopped
+  const last = MET_TABLE[MET_TABLE.length - 1];
+  if (kmh >= last[0]) return last[1];
+  const i = MET_TABLE.findIndex(([v]) => v > kmh);
+  const [v0, m0] = MET_TABLE[i - 1];
+  const [v1, m1] = MET_TABLE[i];
+  return m0 + ((kmh - v0) / (v1 - v0)) * (m1 - m0);
 }
 
 export function metLabel(kmh) {
@@ -142,3 +147,97 @@ export function strideMeters(heightCm) {
   return (heightCm * 0.415) / 100;
 }
 
+
+/** Sensor steps when the accelerometer works, otherwise a walking-stride estimate from GPS distance. */
+export function fuseSteps({ sensorOk, sensorSteps, distanceKm, heightCm }) {
+  if (sensorOk) return { steps: Math.round(sensorSteps), source: 'sensor' };
+  return { steps: gapSteps(distanceKm, heightCm), source: 'gps' };
+}
+
+export function gapSteps(gapKm, heightCm) {
+  return Math.round(((gapKm || 0) * 1000) / strideMeters(heightCm || 170));
+}
+
+/** Time the page was hidden counts as moving only if at least 20 m were covered. */
+export function settleGap({ gapSec, gapKm, weightKg }) {
+  if (!(gapKm >= 0.02) || !(gapSec > 0)) return { movingSec: 0, kcal: 0 };
+  return { movingSec: gapSec, kcal: kcalBurned(metForSpeed(gapKm / (gapSec / 3600)), weightKg, gapSec / 60) };
+}
+
+export function autoPaused(prev, { speedKmh, msSinceLastStep }) {
+  return prev
+    ? !(msSinceLastStep < 1000 || speedKmh > 1.5)
+    : speedKmh < 1 && msSinceLastStep >= 10000;
+}
+
+/** Walking speed implied by cadence over the last 10 s (treadmill / no GPS movement). */
+export function cadenceSpeedKmh(stepTimes, nowMs, heightCm) {
+  const spm = stepTimes.filter((t) => nowMs - t <= 10000).length * 6;
+  return (spm * strideMeters(heightCm || 170) * 60) / 1000;
+}
+
+export function calorieStatus({ goal, target, kin, kout }) {
+  const t = Number(target) > 0 ? Number(target) : 1;
+  const net = Number(kin || 0) - Number(kout || 0);
+  const diff = t - net;
+  const near = Math.abs(net - t) <= t * 0.05;
+  const g = goal === 'lose' || goal === 'gain' ? goal : 'maintain';
+  let state;
+  if (near) state = 'on_target';
+  else if (net < t) state = g === 'lose' ? 'deficit' : g === 'gain' ? 'eat_more' : 'left';
+  else state = g === 'gain' && net <= t * 1.1 ? 'on_target' : 'surplus';
+  return { net, diff, state, label: `cal_${state}` };
+}
+
+export function ringSegments({ target, kin, kout }) {
+  const t = Number(target) > 0 ? Number(target) : 1;
+  const food = Math.max(0, Number(kin) || 0);
+  const burned = Math.max(0, Number(kout) || 0);
+  const allowance = t + burned;
+  const scale = Math.max(allowance, food, 1);
+  return {
+    eaten: food > allowance ? 1 : food / scale,
+    left: Math.max(0, allowance - food) / scale,
+    earnedFrom: t / scale,
+    earnedTo: allowance / scale,
+    over: food > allowance,
+  };
+}
+
+export function macroBreakdown(meals, key, limit = 3) {
+  const rows = (meals || []).map((m) => ({ name: m?.name ?? null, grams: Number(m?.[key]) }))
+    .filter((m) => Number.isFinite(m.grams) && m.grams > 0)
+    .sort((a, b) => b.grams - a.grams);
+  const total = rows.reduce((sum, row) => sum + row.grams, 0);
+  if (!total) return [];
+  const top = rows.slice(0, limit).map(({ name, grams }) => ({ name, grams, share: grams / total }));
+  const rest = rows.slice(limit);
+  if (rest.length) {
+    const grams = rest.reduce((sum, row) => sum + row.grams, 0);
+    top.push({ name: null, others: rest.length, grams, share: grams / total });
+  }
+  return top;
+}
+
+const round1 = (value) => Math.round(value * 10) / 10;
+
+export function healthyWeightRange(heightCm) {
+  const h = Number(heightCm);
+  if (!(h > 0)) return null;
+  const m2 = (h / 100) ** 2;
+  return [round1(18.5 * m2), round1(22.9 * m2)];
+}
+
+export function bmiScalePosition(bmi) {
+  return (Math.max(15, Math.min(35, Number(bmi) || 0)) - 15) / 20;
+}
+
+export function weightProgress({ start, now, target }) {
+  const s = Number(start) || 0;
+  const n = Number(now) || 0;
+  const deltaKg = round1(n - s);
+  const t = Number(target);
+  if (!Number.isFinite(t)) return { pct: 0, deltaKg, toGoKg: null };
+  if (s === t) return { pct: 1, deltaKg, toGoKg: round1(Math.abs(t - n)) };
+  return { pct: Math.max(0, Math.min(1, (s - n) / (s - t))), deltaKg, toGoKg: round1(Math.abs(t - n)) };
+}
