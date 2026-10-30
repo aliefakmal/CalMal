@@ -86,8 +86,8 @@ export function renderProfile(container) {
             )
             .join('')}
         </svg>
-        <div class="row between xs muted" style="margin-top:6px;padding:0 4px">
-          <div class="row" style="gap:12px;align-items:center">
+        <div class="row between xs muted weight-chart-legend" style="margin-top:8px;padding:0 4px;flex-wrap:wrap;gap:8px">
+          <div class="row" style="gap:12px;align-items:center;flex-wrap:wrap">
             <span class="row" style="gap:4px;align-items:center"><span style="width:10px;height:2.5px;background:#fff;display:inline-block;border-radius:2px"></span> Daily Weight</span>
             <span class="row" style="gap:4px;align-items:center"><span style="width:10px;height:2px;background:#f6ad55;display:inline-block;border-radius:2px"></span> 7-Day Trend (Smoothed)</span>
           </div>
@@ -172,8 +172,10 @@ export function renderProfile(container) {
           <div class="body-stat-tile weight-tile">
             <div class="row between"><span class="eyebrow">${t('body_weight')}</span><b class="num ${progress.deltaKg < 0 ? 'color-ok' : progress.deltaKg > 0 ? 'color-warn' : ''}">${progress.deltaKg > 0 ? '+' : ''}${progress.deltaKg} kg</b></div>
             ${renderWeightChart(weights, profile.targetWeight)}
-            <div class="weight-progress-bar"><i style="width:${Math.round(progress.pct * 100)}%"></i></div>
-            <div class="row between xs muted"><span>${t('body_start')} ${startWeight}kg</span><span>${t('body_now')} ${nowWeight}kg</span>${Number.isFinite(targetValue) ? `<span>${t('body_target')} ${targetValue}kg</span>` : ''}</div>
+            <div class="weight-progress-wrap" style="margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)">
+              <div class="weight-progress-bar"><i style="width:${Math.round(progress.pct * 100)}%"></i></div>
+              <div class="row between xs muted" style="margin-top:6px"><span>${t('body_start')} ${startWeight}kg</span><span>${t('body_now')} ${nowWeight}kg</span>${Number.isFinite(targetValue) ? `<span>${t('body_target')} ${targetValue}kg</span>` : ''}</div>
+            </div>
           </div>
 
           <!-- Daily Weight Log Input -->
