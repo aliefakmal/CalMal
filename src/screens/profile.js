@@ -264,6 +264,12 @@ export function renderProfile(container) {
             </div>
             <input type="checkbox" id="sound-toggle" ${settings.soundEnabled !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:#fff" />
           </label>
+          <div style="margin-top:8px">
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-play-intro-preview" style="gap:6px;font-size:12px;height:34px;padding:0 12px">
+              <span>🔊</span>
+              <span>${isEn ? 'Play Anime Intro Music' : 'Dengar Muzik Intro Anime'}</span>
+            </button>
+          </div>
 
           <div class="divider"></div>
 
@@ -496,6 +502,13 @@ export function renderProfile(container) {
     container.querySelector('#companion-toggle')?.addEventListener('change', (e) => {
       store.saveSettings({ companions: e.target.checked });
       toast(`Companions ${e.target.checked ? 'enabled' : 'disabled'}.`, 'info');
+    });
+
+    // Play Intro Theme Preview Button
+    container.querySelector('#btn-play-intro-preview')?.addEventListener('click', () => {
+      soundboard.unlockAudio().then(() => {
+        soundboard.playIntroTheme();
+      });
     });
 
     // Toggle Sound SFX & Voice
