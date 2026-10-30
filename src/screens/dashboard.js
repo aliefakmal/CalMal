@@ -124,26 +124,30 @@ export function renderDashboard(container) {
 
     container.innerHTML = `
       <!-- Bento Header -->
-      <div class="page-head bento-header row between" style="align-items:center">
-        <div>
-          <div class="row" style="gap:8px;align-items:center;margin-bottom:2px">
-            <span class="eyebrow">Level ${heroRank.level} · ${esc(heroRank.title)}</span>
-            <span class="badge ok" style="font-size:10px;padding:2px 7px">${heroRank.pct}% EXP</span>
+      <div class="page-head bento-header">
+        <div class="bento-header-eyebrow row" style="gap:8px;align-items:center">
+          <span class="eyebrow">Level ${heroRank.level} · ${esc(heroRank.title)}</span>
+          <span class="badge ok" style="font-size:10px;padding:2px 7px;white-space:nowrap">${heroRank.pct}% EXP</span>
+        </div>
+        <div class="bento-header-main row between" style="align-items:center">
+          <div class="bento-header-title-col">
+            <h1 class="page-title" style="margin:0">Hi, ${esc(p.name)}!</h1>
           </div>
-          <h1 class="page-title">Hi, ${esc(p.name)}!</h1>
+          <div class="bento-header-actions row" style="gap:8px;align-items:center">
+            <button type="button" class="btn btn-secondary bento-action-btn" id="btn-share-day" aria-label="${t('story_share')}" title="${t('story_share')}">
+              ${icons.share}
+            </button>
+            <a href="#/scan" class="btn btn-primary bento-action-btn bento-scan-btn" id="btn-quick-scan">
+              ${icons.camera}
+              <span>${t('dash_scan_btn')}</span>
+            </a>
+          </div>
+        </div>
+        <div class="bento-header-sub">
           <button type="button" class="streak-chip ${streak.streak ? '' : 'is-zero'}" id="btn-streak" aria-label="${streak.streak} ${t('streak_days')}, ${streak.shields} ${t('streak_shields')}">
             ${icons.flame}<b class="num">${streak.streak}</b><span>${t('streak_days')}</span>
             ${streak.shields ? `<i class="streak-shield">${icons.shield}<b class="num">${streak.shields}</b></i>` : ''}
           </button>
-        </div>
-        <div class="row" style="gap:8px">
-          <button type="button" class="btn btn-icon btn-secondary" id="btn-share-day" aria-label="${t('story_share')}" title="${t('story_share')}">
-            ${icons.share}
-          </button>
-          <a href="#/scan" class="btn btn-sm btn-primary" id="btn-quick-scan">
-            ${icons.camera}
-            <span>${t('dash_scan_btn')}</span>
-          </a>
         </div>
       </div>
 

@@ -1017,14 +1017,86 @@
 /* ---------------- Weight history chart (SVG) ---------------- */
 .weight-chart-wrap {
   width: 100%;
-  height: 160px;
   position: relative;
-  margin: 10px 0;
+  margin: 10px 0 4px;
+  display: flex;
+  flex-direction: column;
 }
 .weight-chart-wrap svg {
   width: 100%;
-  height: 100%;
+  height: 130px;
   overflow: visible;
+}
+.weight-chart-legend {
+  margin-top: 8px;
+  padding: 0 4px;
+}
+
+/* ---------------- Bento Header (v2.0) ---------------- */
+.bento-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+.bento-header-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.bento-header-eyebrow .eyebrow {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.08em;
+}
+.bento-header-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+.bento-header-title-col {
+  min-width: 0;
+  flex: 1;
+}
+.bento-header-title-col .page-title {
+  margin: 0;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bento-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.bento-action-btn {
+  height: 38px !important;
+  border-radius: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+#btn-share-day.bento-action-btn {
+  width: 38px !important;
+  padding: 0 !important;
+}
+.bento-scan-btn {
+  padding: 0 14px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+}
+.bento-header-sub {
+  margin-top: 2px;
 }
 
 /* ---------------- Bento Grid Layout (v2.0) ---------------- */

@@ -84,7 +84,7 @@ export function renderProfile(container) {
             )
             .join('')}
         </svg>
-        <div class="row between xs muted" style="margin-top:6px;padding:0 4px">
+        <div class="row between xs muted weight-chart-legend" style="margin-top:8px;padding:0 4px;flex-wrap:wrap;gap:8px">
           <div class="row" style="gap:12px;align-items:center">
             <span class="row" style="gap:4px;align-items:center"><span style="width:10px;height:2.5px;background:#fff;display:inline-block;border-radius:2px"></span> Daily Weight</span>
             <span class="row" style="gap:4px;align-items:center"><span style="width:10px;height:2px;background:#f6ad55;display:inline-block;border-radius:2px"></span> 7-Day Trend (Smoothed)</span>
