@@ -3,6 +3,10 @@ import { getLang } from '../utils/i18n.js';
 import { soundboard } from '../services/audioService.js';
 
 export function renderIntro(container, onComplete) {
+  // Pre-initialize and start intro theme immediately to eliminate startup latency
+  soundboard.init?.();
+  soundboard.playIntroTheme?.();
+
   const ms = getLang() === 'ms';
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const skip = ms ? 'Langkau' : 'Skip';
@@ -34,14 +38,15 @@ export function renderIntro(container, onComplete) {
   let finished = false;
   let timer;
 
-  // Autoplay intro theme immediately as natural background audio
-  soundboard.playIntroTheme?.();
-
   // If autoplay is restricted by browser policy, start immediately on first user touch anywhere
   const triggerAudioOnFirstGesture = () => {
-    soundboard.unlockAudio?.()?.then?.(() => {
-      soundboard.playIntroTheme?.();
-    })?.catch?.(() => {});
+    if (!soundboard.introGainNode) {
+      soundboard.unlockAudio?.()?.then?.(() => {
+        if (!soundboard.introGainNode) {
+          soundboard.playIntroTheme?.(true);
+        }
+      })?.catch?.(() => {});
+    }
     cleanupGesture();
   };
 
@@ -60,6 +65,7 @@ export function renderIntro(container, onComplete) {
   const cleanup = () => {
     clearTimeout(timer);
     cleanupGesture();
+    soundboard.stopIntroTheme?.();
     document.removeEventListener?.('keydown', onKey);
     button.removeEventListener?.('click', finish);
     motion.removeEventListener?.('change', onMotion);
@@ -68,6 +74,7 @@ export function renderIntro(container, onComplete) {
   function finish() {
     if (finished) return;
     finished = true;
+    soundboard.stopIntroTheme?.();
     cleanup();
     onComplete();
   }

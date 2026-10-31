@@ -189,6 +189,7 @@ function enterApp() {
 
 document.body.classList.add('launching');
 document.documentElement.lang = getLang();
+soundboard.init?.();
 try {
   cleanup = renderIntro(view, enterApp);
 } catch (error) {

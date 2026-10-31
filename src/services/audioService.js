@@ -162,6 +162,11 @@ class AudioService {
       this.voices = window.speechSynthesis.getVoices();
     }
 
+    // Prewarm AudioContext eagerly to eliminate kickoff audio startup latency
+    if (typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext)) {
+      this.init();
+    }
+
     // Auto-stop audio when app is minimized, sent to background, or navigated
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', () => {
@@ -186,8 +191,8 @@ class AudioService {
     // Unlock AudioContext on first gesture (conforms to browser autoplay policies)
     const unlockAudio = () => {
       this.init();
-      if (this._introPending && !this.introThemePlayed) {
-        this.playIntroTheme();
+      if (this._introPending && !this.introGainNode && !this.introThemePlayed) {
+        this.playIntroTheme(true);
       }
       window.removeEventListener('pointerdown', unlockAudio);
       window.removeEventListener('keydown', unlockAudio);
@@ -523,6 +528,7 @@ class AudioService {
 
   playIntroTheme(force = false) {
     if (store.settings?.soundEnabled === false || this.isMuted) return;
+    if (this.introGainNode && !force) return;
     if (this.introThemePlayed && !force) return;
     this.init();
     if (!this.audioContext) return;
@@ -541,9 +547,9 @@ class AudioService {
 
   _synthIntroTheme() {
     try {
+      this.stopIntroTheme();
       this.introThemePlayed = true;
       this._introPending = false;
-      this.stopIntroTheme();
       const ctx = this.audioContext;
       if (!ctx || ctx.state !== 'running') return;
       const now = ctx.currentTime;
@@ -555,7 +561,7 @@ class AudioService {
       this.introGainNode = masterGain;
       this.introActiveNodes = [];
 
-      // 1. Rising Sparkle Arpeggio (0.0s -> 0.8s)
+      // 1. Rising Sparkle Arpeggio (0.0s -> 0.8s) - Deku & Bakugou entrance slide
       const arpeggio = [
         { freq: 523.25, time: 0.00, dur: 0.22, vol: 0.45, type: 'triangle' }, // C5
         { freq: 659.25, time: 0.15, dur: 0.22, vol: 0.48, type: 'triangle' }, // E5
@@ -564,24 +570,25 @@ class AudioService {
         { freq: 1318.51, time: 0.60, dur: 0.40, vol: 0.60, type: 'sine' },     // E6
       ];
 
-      // 2. Anime Heroic Brass / Power Chord hits (0.75s -> 2.6s)
+      // 2. Anime Heroic Brass / Power Chord hits synchronized with animation milestones
       const chords = [
-        // Chord 1 (F major / heroic lift) at 0.9s
-        { freq: 349.23, time: 0.90, dur: 0.55, vol: 0.40, type: 'sawtooth' },
-        { freq: 440.00, time: 0.90, dur: 0.55, vol: 0.38, type: 'triangle' },
-        { freq: 523.25, time: 0.90, dur: 0.55, vol: 0.45, type: 'sine' },
+        // Milestone 1 (0.80s): Coaches land into place, scanner & route draw starts (F major)
+        { freq: 349.23, time: 0.80, dur: 0.60, vol: 0.42, type: 'sawtooth' }, // F4
+        { freq: 440.00, time: 0.80, dur: 0.60, vol: 0.40, type: 'triangle' }, // A4
+        { freq: 523.25, time: 0.80, dur: 0.60, vol: 0.45, type: 'sine' },     // C5
 
-        // Chord 2 (G major / dominant peak) at 1.45s
-        { freq: 392.00, time: 1.45, dur: 0.60, vol: 0.42, type: 'sawtooth' },
-        { freq: 493.88, time: 1.45, dur: 0.60, vol: 0.40, type: 'triangle' },
-        { freq: 587.33, time: 1.45, dur: 0.60, vol: 0.48, type: 'sine' },
+        // Milestone 2 (1.80s): Scanner sweep completes & finish marker reveals (G major)
+        { freq: 392.00, time: 1.80, dur: 0.45, vol: 0.44, type: 'sawtooth' }, // G4
+        { freq: 493.88, time: 1.80, dur: 0.45, vol: 0.42, type: 'triangle' }, // B4
+        { freq: 587.33, time: 1.80, dur: 0.45, vol: 0.48, type: 'sine' },     // D5
 
-        // Chord 3 - Final PLUS ULTRA Power Chord (C major) at 2.05s
-        { freq: 261.63, time: 2.05, dur: 1.65, vol: 0.45, type: 'sawtooth' }, // C4
-        { freq: 392.00, time: 2.05, dur: 1.65, vol: 0.40, type: 'triangle' }, // G4
-        { freq: 659.25, time: 2.05, dur: 1.65, vol: 0.45, type: 'sine' },     // E5
-        { freq: 1046.50, time: 2.05, dur: 1.65, vol: 0.50, type: 'triangle' },// C6
-        { freq: 1567.98, time: 2.05, dur: 1.45, vol: 0.35, type: 'sine' },    // G6
+        // Milestone 3 (2.10s): CalMal title slams in (C major PLUS ULTRA climax)
+        { freq: 130.81, time: 2.10, dur: 1.50, vol: 0.35, type: 'sawtooth' }, // C3 (deep impact)
+        { freq: 261.63, time: 2.10, dur: 1.50, vol: 0.45, type: 'sawtooth' }, // C4
+        { freq: 392.00, time: 2.10, dur: 1.50, vol: 0.40, type: 'triangle' }, // G4
+        { freq: 659.25, time: 2.10, dur: 1.50, vol: 0.45, type: 'sine' },     // E5
+        { freq: 1046.50, time: 2.10, dur: 1.50, vol: 0.50, type: 'triangle' },// C6
+        { freq: 1567.98, time: 2.10, dur: 1.40, vol: 0.35, type: 'sine' },    // G6
       ];
 
       const allNotes = [...arpeggio, ...chords];
@@ -610,14 +617,15 @@ class AudioService {
         this.introActiveNodes.push({ osc, gain: noteGain });
       });
 
-      masterGain.gain.setValueAtTime(0.65, now + 3.2);
-      masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 3.8);
+      // Milestone 4 (3.40s -> 4.00s): Smooth fadeout aligned with kickoff stage exit animation
+      masterGain.gain.setValueAtTime(0.65, now + 3.4);
+      masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 3.98);
 
       setTimeout(() => {
         if (this.introGainNode === masterGain) {
           this.stopIntroTheme();
         }
-      }, 3900);
+      }, 4000);
     } catch {
       // Audio synthesis fallback silently ignored
     }

@@ -1,9 +1,19 @@
 import assert from 'node:assert/strict';
 import { test, mock } from 'node:test';
 
+let stoppedIntroCalls = 0;
 mock.module('../src/components/companion.js', { namedExports: { avatar: () => '<svg></svg>' } });
 mock.module('../src/utils/i18n.js', { namedExports: { getLang: () => 'en' } });
-mock.module('../src/services/audioService.js', { namedExports: { soundboard: { playIntroTheme: () => {}, stopIntroTheme: () => {}, unlockAudio: () => Promise.resolve() } } });
+mock.module('../src/services/audioService.js', {
+  namedExports: {
+    soundboard: {
+      init: () => {},
+      playIntroTheme: () => {},
+      stopIntroTheme: () => { stoppedIntroCalls++; },
+      unlockAudio: () => Promise.resolve(),
+    },
+  },
+});
 const { renderIntro } = await import('../src/components/intro.js');
 
 function setup(reduced = false) {
@@ -86,3 +96,13 @@ test('returning to full motion restarts a bounded completion timer', (t) => {
   t.mock.timers.tick(4000);
   assert.equal(calls, 1);
 });
+
+test('intro stops audio theme on finish and skip', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { root, button } = setup();
+  stoppedIntroCalls = 0;
+  renderIntro(root, () => {});
+  button.dispatchEvent(new Event('click'));
+  assert.ok(stoppedIntroCalls >= 1, 'stopIntroTheme should be called when intro finishes');
+});
+
