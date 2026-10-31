@@ -2,15 +2,18 @@ import assert from 'node:assert/strict';
 import { test, mock } from 'node:test';
 
 let stoppedIntroCalls = 0;
+let playIntroCalls = 0;
 mock.module('../src/components/companion.js', { namedExports: { avatar: () => '<svg></svg>' } });
 mock.module('../src/utils/i18n.js', { namedExports: { getLang: () => 'en' } });
 mock.module('../src/services/audioService.js', {
   namedExports: {
     soundboard: {
       init: () => {},
-      playIntroTheme: () => {},
+      playIntroTheme: () => { playIntroCalls++; },
       stopIntroTheme: () => { stoppedIntroCalls++; },
       unlockAudio: () => Promise.resolve(),
+      introGainNode: null,
+      introThemePlayed: false,
     },
   },
 });
@@ -19,12 +22,15 @@ const { renderIntro } = await import('../src/components/intro.js');
 function setup(reduced = false) {
   const button = new EventTarget();
   button.focus = () => {};
+  button.closest = (sel) => (sel === '[data-intro-skip]' ? button : null);
   const root = { innerHTML: '', querySelector: () => button };
   const media = new EventTarget();
   media.matches = reduced;
-  globalThis.window = { matchMedia: () => media };
+  const win = new EventTarget();
+  win.matchMedia = () => media;
+  globalThis.window = win;
   globalThis.document = new EventTarget();
-  return { root, button, media };
+  return { root, button, media, win };
 }
 
 test('Skip and timeout complete only once, without waiting for animation events', (t) => {
@@ -105,4 +111,38 @@ test('intro stops audio theme on finish and skip', (t) => {
   button.dispatchEvent(new Event('click'));
   assert.ok(stoppedIntroCalls >= 1, 'stopIntroTheme should be called when intro finishes');
 });
+
+test('clicking skip does not trigger intro playback after async unlock resolves', async (t) => {
+  const { root, button, win } = setup();
+  playIntroCalls = 0;
+  stoppedIntroCalls = 0;
+  renderIntro(root, () => {});
+  assert.equal(playIntroCalls, 1);
+
+  // User taps the skip button
+  const pointerEvent = new Event('pointerdown');
+  Object.defineProperty(pointerEvent, 'target', { value: button });
+  win.dispatchEvent(pointerEvent);
+
+  button.dispatchEvent(new Event('click'));
+  assert.ok(stoppedIntroCalls >= 1);
+
+  await Promise.resolve();
+  assert.equal(playIntroCalls, 1, 'playIntroTheme should NOT be triggered again after skip');
+});
+
+test('touching kickoff screen before completion triggers playback if not already active', async (t) => {
+  const { root, win } = setup();
+  playIntroCalls = 0;
+  renderIntro(root, () => {});
+  assert.equal(playIntroCalls, 1);
+
+  // User taps background (not skip button)
+  const pointerEvent = new Event('pointerdown');
+  win.dispatchEvent(pointerEvent);
+
+  await Promise.resolve();
+  assert.equal(playIntroCalls, 2, 'playIntroTheme should be triggered on user gesture unlock');
+});
+
 

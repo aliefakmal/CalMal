@@ -192,13 +192,17 @@ class AudioService {
     const unlockAudio = () => {
       this.init();
       if (this._introPending && !this.introGainNode && !this.introThemePlayed) {
-        this.playIntroTheme(true);
+        this.playIntroTheme();
       }
       window.removeEventListener('pointerdown', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
       window.removeEventListener('keydown', unlockAudio);
+      window.removeEventListener('click', unlockAudio);
     };
     window.addEventListener('pointerdown', unlockAudio, { passive: true });
+    window.addEventListener('touchstart', unlockAudio, { passive: true });
     window.addEventListener('keydown', unlockAudio, { passive: true });
+    window.addEventListener('click', unlockAudio, { passive: true });
 
     let lastSoundTime = 0;
 
@@ -583,12 +587,12 @@ class AudioService {
         { freq: 587.33, time: 1.80, dur: 0.45, vol: 0.48, type: 'sine' },     // D5
 
         // Milestone 3 (2.10s): CalMal title slams in (C major PLUS ULTRA climax)
-        { freq: 130.81, time: 2.10, dur: 1.50, vol: 0.35, type: 'sawtooth' }, // C3 (deep impact)
-        { freq: 261.63, time: 2.10, dur: 1.50, vol: 0.45, type: 'sawtooth' }, // C4
-        { freq: 392.00, time: 2.10, dur: 1.50, vol: 0.40, type: 'triangle' }, // G4
-        { freq: 659.25, time: 2.10, dur: 1.50, vol: 0.45, type: 'sine' },     // E5
-        { freq: 1046.50, time: 2.10, dur: 1.50, vol: 0.50, type: 'triangle' },// C6
-        { freq: 1567.98, time: 2.10, dur: 1.40, vol: 0.35, type: 'sine' },    // G6
+        { freq: 130.81, time: 2.10, dur: 1.85, vol: 0.35, type: 'sawtooth' }, // C3 (deep impact)
+        { freq: 261.63, time: 2.10, dur: 1.85, vol: 0.45, type: 'sawtooth' }, // C4
+        { freq: 392.00, time: 2.10, dur: 1.85, vol: 0.40, type: 'triangle' }, // G4
+        { freq: 659.25, time: 2.10, dur: 1.85, vol: 0.45, type: 'sine' },     // E5
+        { freq: 1046.50, time: 2.10, dur: 1.85, vol: 0.50, type: 'triangle' },// C6
+        { freq: 1567.98, time: 2.10, dur: 1.80, vol: 0.35, type: 'sine' },    // G6
       ];
 
       const allNotes = [...arpeggio, ...chords];
@@ -632,28 +636,47 @@ class AudioService {
   }
 
   stopIntroTheme() {
-    this.introThemePlayed = false;
+    this.introThemePlayed = true;
     this._introPending = false;
     if (this.introGainNode) {
       try {
         const ctx = this.audioContext;
         if (ctx) {
           this.introGainNode.gain.setValueAtTime(this.introGainNode.gain.value, ctx.currentTime);
-          this.introGainNode.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
+          this.introGainNode.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.05);
         }
       } catch { /* noop */ }
+      const activeGain = this.introGainNode;
       this.introGainNode = null;
+      setTimeout(() => {
+        try {
+          activeGain.disconnect();
+        } catch { /* noop */ }
+      }, 60);
     }
 
     if (this.introActiveNodes && this.introActiveNodes.length) {
-      this.introActiveNodes.forEach(({ osc, gain }) => {
-        try {
-          osc.stop();
-          osc.disconnect();
-          gain.disconnect();
-        } catch { /* noop */ }
-      });
+      const nodesToStop = this.introActiveNodes;
       this.introActiveNodes = [];
+      nodesToStop.forEach(({ osc, gain }) => {
+        try {
+          const ctx = this.audioContext;
+          const stopTime = ctx ? ctx.currentTime + 0.05 : 0;
+          osc.stop(stopTime);
+          setTimeout(() => {
+            try {
+              osc.disconnect();
+              gain.disconnect();
+            } catch { /* noop */ }
+          }, 60);
+        } catch {
+          try {
+            osc.stop();
+            osc.disconnect();
+            gain.disconnect();
+          } catch { /* noop */ }
+        }
+      });
     }
   }
 

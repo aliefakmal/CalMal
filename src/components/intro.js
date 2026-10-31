@@ -39,15 +39,19 @@ export function renderIntro(container, onComplete) {
   let timer;
 
   // If autoplay is restricted by browser policy, start immediately on first user touch anywhere
-  const triggerAudioOnFirstGesture = () => {
-    if (!soundboard.introGainNode) {
+  const triggerAudioOnFirstGesture = (e) => {
+    if (finished) return;
+    if (e?.target?.closest?.('[data-intro-skip]')) return;
+    if (e?.key === 'Escape') return;
+    cleanupGesture();
+
+    if (!soundboard.introGainNode && !soundboard.introThemePlayed) {
       soundboard.unlockAudio?.()?.then?.(() => {
-        if (!soundboard.introGainNode) {
-          soundboard.playIntroTheme?.(true);
+        if (!finished && !soundboard.introGainNode && !soundboard.introThemePlayed) {
+          soundboard.playIntroTheme?.();
         }
       })?.catch?.(() => {});
     }
-    cleanupGesture();
   };
 
   const cleanupGesture = () => {

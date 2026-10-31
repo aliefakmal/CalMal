@@ -123,7 +123,23 @@ test('playIntroTheme schedules notes accurately aligned with kickoff visual mile
   assert.ok(hasExitFadeStart, 'master gain holds until stage exit milestone at 3.4s');
   assert.ok(hasExitFadeRamp, 'master gain fades out smoothly across 3.4s - 4.0s exit');
 
+  // Verify climax chord sustains through stage exit
+  const stopTimes = soundboard.introActiveNodes.map((n) => Math.round(n.osc.stoppedAt * 10) / 10);
+  assert.ok(stopTimes.includes(4.0), 'sustains climax chord notes to align with 4.0s exit');
+
   soundboard.stopIntroTheme();
   assert.equal(soundboard.introActiveNodes.length, 0);
 });
+
+test('stopIntroTheme retains introThemePlayed state and cancels pending playback', async () => {
+  const { soundboard } = await import('../src/services/audioService.js');
+  soundboard.isMuted = false;
+  soundboard.playIntroTheme(true);
+  assert.equal(soundboard.introThemePlayed, true);
+  soundboard.stopIntroTheme();
+  assert.equal(soundboard.introThemePlayed, true, 'introThemePlayed should remain true after stop');
+  assert.equal(soundboard._introPending, false, '_introPending should be cleared');
+  assert.equal(soundboard.introGainNode, null);
+});
+
 
