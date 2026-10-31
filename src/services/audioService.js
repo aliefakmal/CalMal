@@ -154,6 +154,7 @@ class AudioService {
     this.introActiveNodes = [];
     this.introThemePlayed = false;
     this._introPending = false;
+    this._introTimeout = null;
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = () => {
@@ -189,9 +190,13 @@ class AudioService {
     if (typeof document === 'undefined') return;
 
     // Unlock AudioContext on first gesture (conforms to browser autoplay policies)
-    const unlockAudio = () => {
+    const unlockAudio = (e) => {
       this.init();
-      if (this._introPending && !this.introGainNode && !this.introThemePlayed) {
+      const isSkip = e?.target?.closest?.('[data-intro-skip]') || e?.key === 'Escape';
+      if (isSkip) {
+        this._introPending = false;
+        this.stopIntroTheme();
+      } else if (this._introPending && !this.introGainNode && !this.introThemePlayed) {
         this.playIntroTheme();
       }
       window.removeEventListener('pointerdown', unlockAudio);
@@ -524,7 +529,7 @@ class AudioService {
    */
   unlockAudio() {
     this.init();
-    if (this.audioContext && this.audioContext.state === 'suspended') {
+    if (this.audioContext && this.audioContext.state !== 'running') {
       return this.audioContext.resume();
     }
     return Promise.resolve();
@@ -534,10 +539,11 @@ class AudioService {
     if (store.settings?.soundEnabled === false || this.isMuted) return;
     if (this.introGainNode && !force) return;
     if (this.introThemePlayed && !force) return;
+    if (this._introPending && !force) return;
     this.init();
     if (!this.audioContext) return;
 
-    if (this.audioContext.state === 'suspended') {
+    if (this.audioContext.state !== 'running') {
       this._introPending = true;
       this.audioContext.resume().then(() => {
         if (this.audioContext && this.audioContext.state === 'running' && (this._introPending || force)) {
@@ -625,7 +631,7 @@ class AudioService {
       masterGain.gain.setValueAtTime(0.65, now + 3.4);
       masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 3.98);
 
-      setTimeout(() => {
+      this._introTimeout = setTimeout(() => {
         if (this.introGainNode === masterGain) {
           this.stopIntroTheme();
         }
@@ -638,10 +644,15 @@ class AudioService {
   stopIntroTheme() {
     this.introThemePlayed = true;
     this._introPending = false;
+    if (this._introTimeout) {
+      clearTimeout(this._introTimeout);
+      this._introTimeout = null;
+    }
     if (this.introGainNode) {
       try {
         const ctx = this.audioContext;
         if (ctx) {
+          this.introGainNode.gain.cancelScheduledValues?.(ctx.currentTime);
           this.introGainNode.gain.setValueAtTime(this.introGainNode.gain.value, ctx.currentTime);
           this.introGainNode.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.05);
         }
@@ -662,6 +673,11 @@ class AudioService {
         try {
           const ctx = this.audioContext;
           const stopTime = ctx ? ctx.currentTime + 0.05 : 0;
+          if (ctx && gain?.gain) {
+            gain.gain.cancelScheduledValues?.(ctx.currentTime);
+            gain.gain.setValueAtTime?.(gain.gain.value, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime?.(0.0001, ctx.currentTime + 0.05);
+          }
           osc.stop(stopTime);
           setTimeout(() => {
             try {

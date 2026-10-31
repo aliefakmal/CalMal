@@ -41,8 +41,10 @@ export function renderIntro(container, onComplete) {
   // If autoplay is restricted by browser policy, start immediately on first user touch anywhere
   const triggerAudioOnFirstGesture = (e) => {
     if (finished) return;
-    if (e?.target?.closest?.('[data-intro-skip]')) return;
-    if (e?.key === 'Escape') return;
+    if (e?.target?.closest?.('[data-intro-skip]') || e?.key === 'Escape') {
+      soundboard.stopIntroTheme?.();
+      return;
+    }
     cleanupGesture();
 
     if (!soundboard.introGainNode && !soundboard.introThemePlayed) {
@@ -66,11 +68,16 @@ export function renderIntro(container, onComplete) {
   window?.addEventListener?.('keydown', triggerAudioOnFirstGesture, { passive: true });
   window?.addEventListener?.('click', triggerAudioOnFirstGesture, { passive: true });
 
+  const onSkipPointerDown = () => {
+    soundboard.stopIntroTheme?.();
+  };
+
   const cleanup = () => {
     clearTimeout(timer);
     cleanupGesture();
     soundboard.stopIntroTheme?.();
     document.removeEventListener?.('keydown', onKey);
+    button.removeEventListener?.('pointerdown', onSkipPointerDown);
     button.removeEventListener?.('click', finish);
     motion.removeEventListener?.('change', onMotion);
   };
@@ -84,7 +91,11 @@ export function renderIntro(container, onComplete) {
   }
 
   function onKey(event) {
-    if (event.key === 'Escape') { event.preventDefault?.(); finish(); }
+    if (event.key === 'Escape') {
+      event.preventDefault?.();
+      soundboard.stopIntroTheme?.();
+      finish();
+    }
   }
 
   function onMotion() {
@@ -93,6 +104,7 @@ export function renderIntro(container, onComplete) {
     if (!motion.matches) timer = setTimeout(finish, 4000);
   }
 
+  button.addEventListener('pointerdown', onSkipPointerDown, { passive: true });
   button.addEventListener('click', finish);
   document.addEventListener?.('keydown', onKey);
   motion.addEventListener?.('change', onMotion);

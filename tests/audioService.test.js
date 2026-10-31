@@ -18,6 +18,9 @@ class MockAudioParam {
     this.value = val;
     this.events.push({ type: 'linRamp', val, time });
   }
+  cancelScheduledValues(time) {
+    this.events.push({ type: 'cancel', time });
+  }
 }
 
 class MockGainNode {
@@ -140,6 +143,56 @@ test('stopIntroTheme retains introThemePlayed state and cancels pending playback
   assert.equal(soundboard.introThemePlayed, true, 'introThemePlayed should remain true after stop');
   assert.equal(soundboard._introPending, false, '_introPending should be cleared');
   assert.equal(soundboard.introGainNode, null);
+});
+
+test('gesture unlock cancels pending intro theme when targeting skip button', async () => {
+  const { soundboard } = await import('../src/services/audioService.js');
+  soundboard.isMuted = false;
+  soundboard.introThemePlayed = false;
+  soundboard.introGainNode = null;
+  soundboard._introPending = true;
+  soundboard.setupUIListeners();
+
+  const skipBtn = new EventTarget();
+  skipBtn.closest = (sel) => (sel === '[data-intro-skip]' ? skipBtn : null);
+  const ev = new Event('pointerdown');
+  Object.defineProperty(ev, 'target', { value: skipBtn });
+
+  globalThis.window.dispatchEvent(ev);
+
+  assert.equal(soundboard._introPending, false, '_introPending should be cancelled on skip pointerdown');
+  assert.equal(soundboard.introGainNode, null, 'intro theme should not start on skip gesture');
+});
+
+test('gesture unlock cancels pending intro theme on Escape key', async () => {
+  const { soundboard } = await import('../src/services/audioService.js');
+  soundboard.isMuted = false;
+  soundboard.introThemePlayed = false;
+  soundboard.introGainNode = null;
+  soundboard._introPending = true;
+  soundboard.setupUIListeners();
+
+  const ev = new Event('keydown');
+  ev.key = 'Escape';
+
+  globalThis.window.dispatchEvent(ev);
+
+  assert.equal(soundboard._introPending, false, '_introPending should be cancelled on Escape key');
+  assert.equal(soundboard.introGainNode, null, 'intro theme should not start on Escape key');
+});
+
+test('playIntroTheme does not attach duplicate pending handlers when already pending', async () => {
+  const { soundboard } = await import('../src/services/audioService.js');
+  soundboard.isMuted = false;
+  soundboard.introThemePlayed = false;
+  soundboard.introGainNode = null;
+  soundboard.audioContext.state = 'suspended';
+  soundboard._introPending = true;
+
+  // Subsequent unforced call while pending should return early
+  soundboard.playIntroTheme(false);
+  assert.equal(soundboard._introPending, true);
+  soundboard.stopIntroTheme();
 });
 
 
