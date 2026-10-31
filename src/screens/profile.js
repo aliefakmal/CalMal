@@ -507,7 +507,7 @@ export function renderProfile(container) {
     // Play Intro Theme Preview Button
     container.querySelector('#btn-play-intro-preview')?.addEventListener('click', () => {
       soundboard.unlockAudio().then(() => {
-        soundboard.playIntroTheme();
+        soundboard.playIntroTheme(true);
       });
     });
 

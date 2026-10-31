@@ -152,6 +152,8 @@ class AudioService {
     this.currentLine = null;
     this.introGainNode = null;
     this.introActiveNodes = [];
+    this.introThemePlayed = false;
+    this._introPending = false;
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = () => {
@@ -184,6 +186,9 @@ class AudioService {
     // Unlock AudioContext on first gesture (conforms to browser autoplay policies)
     const unlockAudio = () => {
       this.init();
+      if (this._introPending && !this.introThemePlayed) {
+        this.playIntroTheme();
+      }
       window.removeEventListener('pointerdown', unlockAudio);
       window.removeEventListener('keydown', unlockAudio);
     };
@@ -516,14 +521,16 @@ class AudioService {
     return Promise.resolve();
   }
 
-  playIntroTheme() {
+  playIntroTheme(force = false) {
     if (store.settings?.soundEnabled === false || this.isMuted) return;
+    if (this.introThemePlayed && !force) return;
     this.init();
     if (!this.audioContext) return;
 
     if (this.audioContext.state === 'suspended') {
+      this._introPending = true;
       this.audioContext.resume().then(() => {
-        if (this.audioContext && this.audioContext.state === 'running') {
+        if (this.audioContext && this.audioContext.state === 'running' && (this._introPending || force)) {
           this._synthIntroTheme();
         }
       }).catch(() => {});
@@ -534,6 +541,8 @@ class AudioService {
 
   _synthIntroTheme() {
     try {
+      this.introThemePlayed = true;
+      this._introPending = false;
       this.stopIntroTheme();
       const ctx = this.audioContext;
       if (!ctx || ctx.state !== 'running') return;
@@ -615,6 +624,8 @@ class AudioService {
   }
 
   stopIntroTheme() {
+    this.introThemePlayed = false;
+    this._introPending = false;
     if (this.introGainNode) {
       try {
         const ctx = this.audioContext;
