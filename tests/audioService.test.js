@@ -195,4 +195,45 @@ test('playIntroTheme does not attach duplicate pending handlers when already pen
   soundboard.stopIntroTheme();
 });
 
+test('gesture unlock starts intro theme when AudioContext was suspended on kickoff', async () => {
+  const { soundboard } = await import('../src/services/audioService.js');
+  soundboard.isMuted = false;
+  soundboard.introThemePlayed = false;
+  soundboard.introGainNode = null;
+  soundboard.audioContext.state = 'suspended';
+  soundboard._introPending = false;
+
+  let hasGesture = false;
+  const originalResume = soundboard.audioContext.resume;
+  soundboard.audioContext.resume = function () {
+    if (!hasGesture) {
+      return Promise.reject(new Error('Blocked by autoplay policy'));
+    }
+    this.state = 'running';
+    return Promise.resolve();
+  };
+
+  soundboard.setupUIListeners();
+
+  // Kickoff unforced call while suspended (blocked by browser policy)
+  soundboard.playIntroTheme();
+  await Promise.resolve();
+  assert.equal(soundboard._introPending, true, 'kickoff marks intro as pending');
+  assert.equal(soundboard.introGainNode, null, 'audio context suspended so no nodes yet');
+
+  // Background pointerdown gesture from user
+  hasGesture = true;
+  const bg = new EventTarget();
+  const ev = new Event('pointerdown');
+  Object.defineProperty(ev, 'target', { value: bg });
+  globalThis.window.dispatchEvent(ev);
+
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.ok(soundboard.introGainNode, 'intro theme should start playback after user gesture unlock');
+  soundboard.stopIntroTheme();
+  soundboard.audioContext.resume = originalResume;
+});
+
 

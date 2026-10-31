@@ -197,7 +197,11 @@ class AudioService {
         this._introPending = false;
         this.stopIntroTheme();
       } else if (this._introPending && !this.introGainNode && !this.introThemePlayed) {
-        this.playIntroTheme();
+        this.unlockAudio().then(() => {
+          if (this._introPending && !this.introGainNode && !this.introThemePlayed) {
+            this.playIntroTheme();
+          }
+        }).catch(() => {});
       }
       window.removeEventListener('pointerdown', unlockAudio);
       window.removeEventListener('touchstart', unlockAudio);
@@ -293,7 +297,7 @@ class AudioService {
     this.init();
     if (!this.audioContext) return;
 
-    if (this.audioContext.state === 'suspended') {
+    if (this.audioContext.state !== 'running') {
       this.audioContext.resume().then(() => this._synthUISound(type)).catch(() => {});
     } else {
       this._synthUISound(type);
@@ -539,14 +543,14 @@ class AudioService {
     if (store.settings?.soundEnabled === false || this.isMuted) return;
     if (this.introGainNode && !force) return;
     if (this.introThemePlayed && !force) return;
-    if (this._introPending && !force) return;
+    if (this.audioContext && this.audioContext.state !== 'running' && this._introPending && !force) return;
     this.init();
     if (!this.audioContext) return;
 
     if (this.audioContext.state !== 'running') {
       this._introPending = true;
       this.audioContext.resume().then(() => {
-        if (this.audioContext && this.audioContext.state === 'running' && (this._introPending || force)) {
+        if (this.audioContext && this.audioContext.state === 'running' && !this.introGainNode && (this._introPending || force)) {
           this._synthIntroTheme();
         }
       }).catch(() => {});
@@ -743,7 +747,7 @@ class AudioService {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) this.audioContext = new AudioCtx();
     }
-    if (this.audioContext && this.audioContext.state === 'suspended') {
+    if (this.audioContext && this.audioContext.state !== 'running') {
       this.audioContext.resume().catch(() => {});
     }
   }
